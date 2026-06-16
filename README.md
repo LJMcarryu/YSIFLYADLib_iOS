@@ -2,7 +2,7 @@
 
 `YSIFLYADLib` 是面向 YS 媒体定制的 iOS 广告 SDK，提供开屏、Banner、插屏、自渲染信息流广告能力（**含视频**，**不含激励视频**）。
 
-当前文档覆盖 `YSIFLYADLib 1.0.0`。
+当前文档覆盖 `YSIFLYADLib 1.0.0`；可运行示例工程见 [YSIFLYADLibSimple](./YSIFLYADLibSimple)（`pod install` 后打开 `YSIFLYADLibSimple.xcworkspace`，演示开屏 / Banner / 插屏 / 自渲染信息流的加载、展示、回调、销毁）。
 
 > 本 SDK 为定制白标构建：类型名统一前缀 `YS`（如 `YSIFLYSplashAd`），公开方法统一前缀 `ysifly_`（如 `ysifly_loadAd`），资源包为 `YSAdvSDK.bundle`（已内嵌于 framework），日志前缀 `[YSAd]`。
 

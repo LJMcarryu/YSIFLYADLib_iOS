@@ -10,3 +10,10 @@ xcuserdata/
 build/
 DerivedData/
 .swiftpm/xcode/
+.codex-bridge/
+*.hmap
+
+# CocoaPods 示例工程产物（pod install 生成，不入仓）
+Pods/
+Podfile.lock
+*.xcworkspace
