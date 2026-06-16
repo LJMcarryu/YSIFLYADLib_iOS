@@ -16,9 +16,9 @@
 #endif
 
 #ifndef __OPTIMIZE__
-    #define YSIFLYSampleLogInfo(module, fmt, ...)  NSLog(@"[YSIFLYAdSample] [%@] " fmt, module, ##__VA_ARGS__)
-    #define YSIFLYSampleLogWarn(module, fmt, ...)  NSLog(@"[YSIFLYAdSample] [警告] [%@] " fmt, module, ##__VA_ARGS__)
-    #define YSIFLYSampleLogError(module, fmt, ...) NSLog(@"[YSIFLYAdSample] [错误] [%@] " fmt, module, ##__VA_ARGS__)
+    #define YSIFLYSampleLogInfo(module, fmt, ...)  NSLog(@"[YSAdSample] [%@] " fmt, module, ##__VA_ARGS__)
+    #define YSIFLYSampleLogWarn(module, fmt, ...)  NSLog(@"[YSAdSample] [警告] [%@] " fmt, module, ##__VA_ARGS__)
+    #define YSIFLYSampleLogError(module, fmt, ...) NSLog(@"[YSAdSample] [错误] [%@] " fmt, module, ##__VA_ARGS__)
 #else
     #define YSIFLYSampleLogInfo(...)  {}
     #define YSIFLYSampleLogWarn(...)  {}
