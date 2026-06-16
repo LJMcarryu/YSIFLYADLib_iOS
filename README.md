@@ -26,13 +26,11 @@
 platform :ios, '13.0'
 
 target 'YourApp' do
-  pod 'YSIFLYADLib', :podspec => 'https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/1.0.0/YSIFLYADLib.podspec'
-  # 或在拿到本仓访问权后用 :git
-  # pod 'YSIFLYADLib', :git => 'https://github.com/LJMcarryu/YSIFLYADLib_iOS.git', :tag => '1.0.0'
+  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/1.0.0/YSIFLYADLib.podspec'
 end
 ```
 
-> 本仓为私有分发仓；如用 `:http`/`:git` 拉取 Release 资产，请确保已获得仓库访问授权（GitHub token）。
+> 二进制托管在 GitHub Releases（公开可匿名下载）：podspec 的 `s.source` 指向 Release 的 `YSIFLYADLib.xcframework.zip`，CocoaPods 会自动下载解包并链接其中的 `YSIFLYADLib.xcframework`。
 
 ## Swift Package Manager 接入
 
