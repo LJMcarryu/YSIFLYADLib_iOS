@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify-distribution:
+    name: 校验分发清单与产物（model B 单包）
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package.swift 解析
+        run: swift package dump-package > /dev/null
+
+      - name: 校验 SPM binaryTarget 的 url + checksum 一致
+        run: |
+          python3 - <<'PY'
+          import re, sys, urllib.request, hashlib
+          src = open("Package.swift", encoding="utf-8").read()
+          pairs = re.findall(r'url:\s*"([^"]+)"\s*,\s*checksum:\s*"([0-9a-fA-F]{64})"', src)
+          if not pairs:
+              print("未在 Package.swift 找到 url+checksum 对"); sys.exit(1)
+          bad = 0
+          for url, declared in pairs:
+              data = urllib.request.urlopen(url, timeout=180).read()
+              actual = hashlib.sha256(data).hexdigest()
+              ok = actual.lower() == declared.lower()
+              print(("OK  " if ok else "FAIL") + f"  {url.split('/')[-1]}  declared={declared[:12]}.. actual={actual[:12]}..")
+              bad += 0 if ok else 1
+          print(f"共校验 {len(pairs)} 个二进制，失败 {bad}")
+          sys.exit(1 if bad else 0)
+          PY
+
+      - name: 校验 podspec 的 zip 可下载且含 xcframework
+        run: |
+          python3 - <<'PY'
+          import re, sys, urllib.request, io, zipfile
+          src = open("YSIFLYADLib.podspec", encoding="utf-8").read()
+          m = re.search(r':http\s*=>\s*[\'"]([^\'"]+)[\'"]', src)
+          if not m:
+              print("podspec 未找到 :http source"); sys.exit(1)
+          data = urllib.request.urlopen(m.group(1), timeout=180).read()
+          z = zipfile.ZipFile(io.BytesIO(data))
+          names = z.namelist()
+          fw = [n for n in names if n.endswith(".xcframework/Info.plist")]
+          bundle = any("YSAdvSDK.bundle/" in n for n in names)
+          print(f"zip：{len(fw)} 个 xcframework，内嵌 YSAdvSDK.bundle={bundle}")
+          sys.exit(0 if fw and bundle else 1)
+          PY
+
+      - name: 校验 podspec / Package.swift / README 版本一致
+        run: |
+          python3 - <<'PY'
+          import re, sys
+          spec = open("YSIFLYADLib.podspec", encoding="utf-8").read()
+          pkg = open("Package.swift", encoding="utf-8").read()
+          sv = re.search(r"s\.version\s*=\s*'([^']+)'", spec).group(1)
+          urls = set(re.findall(r"/releases/download/([0-9.]+)/", spec + pkg))
+          ok = urls == {sv}
+          print(f"podspec version={sv}，下载 URL 版本集={sorted(urls)}，一致={ok}")
+          sys.exit(0 if ok else 1)
+          PY
+
+  lint-podspec:
+    name: pod spec lint（结构）
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - name: pod spec lint
+        run: pod spec lint YSIFLYADLib.podspec --quick --allow-warnings
+
+# 说明：以上为只读校验门禁（无需任何密钥）。
+# 更重的检查（全量 pod spec lint 真实编译、示例工程 pod install + xcodebuild build）耗时较长，可按需另加 workflow。
