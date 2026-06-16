@@ -4,6 +4,14 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [1.0.3] - 2026-06-16
+
+### 变更
+- 运行期日志行前缀去品牌：主线 `[IFLYAd <时间戳>]` 经改名链统一为 `[YSAd <时间戳>]`（对齐公开库 6.0.4 的合规去名；主线已改为中性 `[AdSDK]`，YS 变体由 `rebrand` 去名为 `[YSAd]`）。仅日志输出文本变化，公开 API、能力（开屏 / Banner / 插屏 / 信息流，含视频，无激励）、动态 framework 交付形态均与 `1.0.2` 一致。
+
+### 说明
+- 动态 framework 二进制因日志字符串改动重建，`Package.swift` 的 `binaryTarget` checksum 与 `YSIFLYADLib.podspec` 的 `:http` 源已同步到 `1.0.3`。
+
 ## [1.0.2] - 2026-06-16
 
 ### 修复
