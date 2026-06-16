@@ -1,0 +1,11 @@
+source 'https://cdn.cocoapods.org/'
+platform :ios, '13.0'
+
+target 'YSIFLYADLibSimple' do
+  use_frameworks!
+  # YS 媒体定制 SDK（model B 单包：开屏/Banner/插屏/信息流，含视频，无激励）。
+  # 二进制托管在本仓 GitHub Releases，podspec 经 raw URL 直连。
+  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/1.0.0/YSIFLYADLib.podspec'
+end
+
+# 注：静态库含 OC category/+load，已在 podspec 配 -ObjC。
