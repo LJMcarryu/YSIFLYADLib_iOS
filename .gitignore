@@ -1,0 +1,12 @@
+# 二进制产物不入仓，统一托管在 GitHub Releases
+*.xcframework
+*.xcframework.zip
+*.zip
+
+# macOS / Xcode
+.DS_Store
+xcuserdata/
+*.xcuserstate
+build/
+DerivedData/
+.swiftpm/xcode/
