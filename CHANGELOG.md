@@ -4,6 +4,20 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [1.0.4] - 2026-06-16
+
+### 修复
+- **开屏「摇一摇或点击」文案左侧图标变成白色占位文件图标**（运行期缺图）。根因：改名工具链 `rebrand` 的符号发现阶段把 `NS_ENUM` 注释一起扫描，从 `IFLYAdResourceLoader.h` 注释里收割出资源名 `IFLYAd_shack` 当作符号，将代码中 `@"IFLYAd_shack"` 误改为 `@"YSIFLYAd_shack"`，而内嵌 `YSAdvSDK.bundle` 内文件仍为未改名的 `IFLYAd_shack.png` → `pathForResource` 落空 → `NSTextAttachment` 渲染为白色文件占位。影响开屏摇一摇交互按钮与 Banner 摇一摇提示两处。
+- 修复后二进制资源名恢复为 `IFLYAd_shack`，与 `YSAdvSDK.bundle` 内文件一致；二进制零 `YSIFLY*` 资源名残留。
+
+### 变更（资源分发治理，行为不变）
+- 交互图标改用统一资源加载器（按域定位 + 密度选择），替换裸文件路径加载。
+- 资源加载器新增跨域兜底：请求域未命中时回退其余域 bundle（修复边界资产在按格式分包下的“域内缺图”）。
+- `rebrand` 应用 `resourceBundles` 域 bundle 名映射（域 bundle 名品牌化为 `YSAdvSDK*Resources`）。
+
+### 说明
+- 公开 API、能力（开屏 / Banner / 插屏 / 信息流，含视频，无激励）、动态 framework 交付形态均与 `1.0.3` 一致；本版仅为缺图修复与资源分发治理。`Package.swift` 的 `binaryTarget` checksum 与 `YSIFLYADLib.podspec` 的 `:http` 源已同步到 `1.0.4`。
+
 ## [1.0.3] - 2026-06-16
 
 ### 变更
