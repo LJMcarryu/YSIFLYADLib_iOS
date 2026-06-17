@@ -19,8 +19,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "YSIFLYADLib",
-            url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.0.5/YSIFLYADLib.xcframework.zip",
-            checksum: "c346cc56901f8adbf4881d68c1d26429bde4fd0ec9333b0d2c3f16fffee699ab"
+            url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.0.6/YSIFLYADLib.xcframework.zip",
+            checksum: "921b31484dc0b88b328812487404c7ac1797b07d2c4a68d2c02a369b041fe0df"
         ),
     ]
 )

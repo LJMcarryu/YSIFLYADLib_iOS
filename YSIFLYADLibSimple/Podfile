@@ -5,5 +5,5 @@ target 'YSIFLYADLibSimple' do
   use_frameworks!
   # YS 媒体定制 SDK（model B 单包动态 framework：开屏/Banner/插屏/信息流，含视频，无激励）。
   # 二进制托管在本仓 GitHub Releases，podspec 经 raw URL 直连；资源包随动态 framework 自动嵌入，无需 -ObjC。
-  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.0.5/YSIFLYADLib.podspec'
+  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.0.6/YSIFLYADLib.podspec'
 end

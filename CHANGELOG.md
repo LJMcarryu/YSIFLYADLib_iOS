@@ -4,6 +4,13 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [6.0.6] - 2026-06-17
+
+### 变更
+- **SDK 内部日志精简 + 输出去 IFLY 字眼**：随上游 IFLYADLib 6.0.6，删除调试级与冗余追踪日志，移除日志中内部类名（`NSStringFromClass`）/ 裸 `NSError`（域名合成串）打印；运行期日志前缀 `[YSAd]`，无品牌名。
+- 基于上游 6.0.6 重新 `rebrand` 构建；`Package.swift` 的 `binaryTarget` checksum 与 `YSIFLYADLib.podspec` 的 `:http` 源已同步到 `6.0.6`。
+- 公开 API / 能力（开屏 / Banner / 插屏 / 信息流，含视频，无激励）/ 动态 framework 交付形态与 `6.0.5` 一致。
+
 ## [6.0.5] - 2026-06-17
 
 ### 变更
