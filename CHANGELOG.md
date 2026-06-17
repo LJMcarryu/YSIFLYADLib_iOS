@@ -4,6 +4,14 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [6.0.5] - 2026-06-17
+
+### 变更
+- **版本线对齐主 SDK**：版本号由 `1.0.x` 线切换为与上游 IFLYADLib 一致的 `6.0.5`（YS 定制白标即同一 SDK 经 `rebrand` 产出，统一版本号便于与主线对账）。
+- SDK 版本号常量（随广告请求上报的 `sdk_ver`）更新为 `6.0.5`。
+- 基于上游 6.0.5 重新 `rebrand` 构建（含资源加载器跨域兜底修复）；`Package.swift` 的 `binaryTarget` checksum 与 `YSIFLYADLib.podspec` 的 `:http` 源已同步到 `6.0.5`。
+- 公开 API / 能力（开屏 / Banner / 插屏 / 信息流，含视频，无激励）/ 动态 framework 交付形态与 `1.0.4` 一致。
+
 ## [1.0.4] - 2026-06-16
 
 ### 修复
@@ -45,4 +53,5 @@
 - YS 媒体定制广告 SDK 首版（model B 单包）：类型名统一前缀 `YS`（如 `YSIFLYSplashAd`）、公开方法统一前缀 `ysifly_`、资源包 `YSAdvSDK.bundle`、日志前缀 `[YSAd]`。
 - 缺陷：静态 framework 不投递内嵌资源包，广告图片缺失，已由后续版本修复。
 
+[6.0.5]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.5
 [1.0.2]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/1.0.2
