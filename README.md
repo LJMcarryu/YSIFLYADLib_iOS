@@ -2,7 +2,7 @@
 
 `YSIFLYADLib` 是面向 YS 媒体定制的 iOS 广告 SDK，提供**开屏、Banner、插屏、自渲染信息流**广告能力（**含视频素材**，**不含激励视频**）。
 
-当前文档覆盖 `YSIFLYADLib 6.0.7`；可运行示例工程见 [YSIFLYADLibSimple](./YSIFLYADLibSimple)（`pod install` 后打开 `YSIFLYADLibSimple.xcworkspace`，演示开屏 / Banner / 插屏 / 自渲染信息流的加载、展示、回调、销毁）。
+当前文档覆盖 `YSIFLYADLib 6.0.8`；可运行示例工程见 [YSIFLYADLibSimple](./YSIFLYADLibSimple)（`pod install` 后打开 `YSIFLYADLibSimple.xcworkspace`，演示开屏 / Banner / 插屏 / 自渲染信息流的加载、展示、回调、销毁）。
 
 仓库地址：[https://github.com/LJMcarryu/YSIFLYADLib_iOS](https://github.com/LJMcarryu/YSIFLYADLib_iOS)
 
@@ -42,6 +42,7 @@
 
 | 版本 | 日期 | 说明 |
 | --- | --- | --- |
+| 6.0.8 | 2026-06-22 | 随上游 IFLYADLib 6.0.8：SDK 内部日志整体清除，仅保留关键节点 `error`（移除 `info`/`warn`/调试/JSON 日志）——彻底消除运行期日志输出内部类名（含 `YSIFLY*` 含 IFLY 子串）等问题。公开 API、能力与交付形态与 6.0.7 一致。 |
 | 6.0.7 | 2026-06-18 | 随上游 IFLYADLib 6.0.7：服务端竞价（S2S）正式环境域名切换为 `sdk-adx.voiceads.cn`；隐私清单新增该域。公开 API、能力与交付形态与 6.0.6 一致。 |
 | 6.0.6 | 2026-06-17 | 随上游 IFLYADLib 6.0.6：SDK 内部日志精简；公开 API、能力与交付形态与 6.0.5 一致。 |
 | 6.0.5 | 2026-06-17 | 版本线对齐上游主 SDK 6.0.5（同一 SDK 经 rebrand 产出） |
@@ -79,7 +80,7 @@ platform :ios, '13.0'
 target 'YourApp' do
   use_frameworks!
 
-  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.0.7/YSIFLYADLib.podspec'
+  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.0.8/YSIFLYADLib.podspec'
 end
 ```
 
@@ -91,13 +92,13 @@ open YourApp.xcworkspace
 ```
 
 > 说明：
-> - `:podspec` 指向 tag `6.0.7` 的 raw podspec，其 `s.source` 是 Release 的 `YSIFLYADLib.xcframework.zip`，CocoaPods 会自动下载解包并链接其中的 `YSIFLYADLib.xcframework`。
-> - **请把 URL 钉死到具体 tag（如 `6.0.7`），不要指向分支**；升级版本时同步改 URL 里的 tag。
+> - `:podspec` 指向 tag `6.0.8` 的 raw podspec，其 `s.source` 是 Release 的 `YSIFLYADLib.xcframework.zip`，CocoaPods 会自动下载解包并链接其中的 `YSIFLYADLib.xcframework`。
+> - **请把 URL 钉死到具体 tag（如 `6.0.8`），不要指向分支**；升级版本时同步改 URL 里的 tag。
 > - 因是动态 framework，资源与隐私清单随包自动带入，**无需手动加 `-ObjC`**、无需手动拷贝 `.bundle`。
 
 ### Swift Package Manager
 
-在 Xcode「**File → Add Packages…**」填入仓库地址，选择版本 `6.0.7`：
+在 Xcode「**File → Add Packages…**」填入仓库地址，选择版本 `6.0.8`：
 
 ```
 https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
@@ -107,7 +108,7 @@ https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS.git", from: "6.0.7"),
+    .package(url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS.git", from: "6.0.8"),
 ],
 targets: [
     .target(name: "YourApp", dependencies: ["YSIFLYADLib"]),
@@ -523,9 +524,9 @@ if (ad.bidInfo.winNoticeAvailable) {
 
 | 现象 | 排查建议 |
 | --- | --- |
-| `pod install` 找不到 SDK | 确认 `Podfile` 用的是 `:podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.0.7/YSIFLYADLib.podspec'`（钉到 tag）。 |
+| `pod install` 找不到 SDK | 确认 `Podfile` 用的是 `:podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.0.8/YSIFLYADLib.podspec'`（钉到 tag）。 |
 | 广告图片缺失 | 请使用 **1.0.2 及以上**（动态 framework 才会投递内嵌 `YSAdvSDK.bundle`）；早期 1.0.0 静态包已下线。 |
-| 开屏「摇一摇或点击」图标显示为白色文件占位 | 1.0.2/1.0.3 的已知缺陷（改名误改资源名致内嵌图标失配），自 1.0.4 起已修复，**请升级到最新版 6.0.7**。 |
+| 开屏「摇一摇或点击」图标显示为白色文件占位 | 1.0.2/1.0.3 的已知缺陷（改名误改资源名致内嵌图标失配），自 1.0.4 起已修复，**请升级到最新版 6.0.8**。 |
 | 真机启动崩溃 | 1.0.1 有悬空依赖缺陷，已下线；请升级到 **1.0.2 及以上**。 |
 | 模拟器无法运行 | 本定制版含模拟器切片，可直接在模拟器调试；若报架构缺失，确认拉取的是 1.0.2+ 的 zip。 |
 | IDFA 为空 | 确认 `NSUserTrackingUsageDescription` 已配置、用户已允许 ATT、在授权完成后再读取 `ASIdentifierManager`、过滤全零 UUID。 |
