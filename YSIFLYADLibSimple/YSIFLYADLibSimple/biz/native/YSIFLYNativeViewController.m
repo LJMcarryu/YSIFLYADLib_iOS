@@ -9,12 +9,11 @@
 @property (nonatomic, strong) UISegmentedControl *slotControl;
 @property (nonatomic, strong) UILabel *statusLabel;
 @property (nonatomic, strong) UIView *adContainer;
-@property (nonatomic, strong) UIView *mediaContainer;
+@property (nonatomic, strong) UIView *videoView;
 @property (nonatomic, strong) UIImageView *imageView;
-@property (nonatomic, strong) UILabel *titleLabel;
+@property (nonatomic, strong) UILabel *placeholderLabel;
+@property (nonatomic, strong) UILabel *adBadgeLabel;
 @property (nonatomic, strong) UILabel *descLabel;
-@property (nonatomic, strong) UILabel *sourceLabel;
-@property (nonatomic, strong) UIButton *ctaButton;
 @property (nonatomic, strong) UIButton *closeButton;
 @property (nonatomic, strong) UITextView *logView;
 
@@ -74,7 +73,7 @@
     y += 32;
 
     [self buildNativeAdCardAtY:y contentWidth:contentWidth margin:margin];
-    y += 290;
+    y += 246;
 
     UILabel *logTitle = [YSIFLYADUtil createSectionTitleWithText:@"回调日志"
                                                          frame:CGRectMake(margin, y, contentWidth, 18)];
@@ -87,8 +86,9 @@
     [self resetAdCard];
 }
 
+// 卡片布局参考私有库 Demo：深色媒体区（视频承载/图片叠加）+ 下方一行「广告角标 | 描述 | 圆形关闭」。
 - (void)buildNativeAdCardAtY:(CGFloat)y contentWidth:(CGFloat)contentWidth margin:(CGFloat)margin {
-    self.adContainer = [[UIView alloc] initWithFrame:CGRectMake(margin, y, contentWidth, 274)];
+    self.adContainer = [[UIView alloc] initWithFrame:CGRectMake(margin, y, contentWidth, 230)];
     self.adContainer.backgroundColor = UIColor.whiteColor;
     self.adContainer.layer.cornerRadius = 8;
     self.adContainer.layer.borderColor = [UIColor colorWithWhite:0.86 alpha:1.0].CGColor;
@@ -96,48 +96,68 @@
     self.adContainer.clipsToBounds = YES;
     [self.view addSubview:self.adContainer];
 
-    self.mediaContainer = [[UIView alloc] initWithFrame:CGRectMake(12, 12, contentWidth - 24, 150)];
-    self.mediaContainer.backgroundColor = [UIColor colorWithWhite:0.95 alpha:1.0];
-    self.mediaContainer.layer.cornerRadius = 6;
-    self.mediaContainer.clipsToBounds = YES;
-    [self.adContainer addSubview:self.mediaContainer];
+    CGFloat padding = 12;
+    CGFloat innerW = contentWidth - padding * 2;
 
-    self.imageView = [[UIImageView alloc] initWithFrame:self.mediaContainer.bounds];
-    self.imageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    // 媒体区：视频素材承载视图（深色底），图片素材叠加同区域的 imageView
+    self.videoView = [[UIView alloc] initWithFrame:CGRectMake(padding, padding, innerW, 170)];
+    self.videoView.backgroundColor = [UIColor colorWithRed:0.11 green:0.12 blue:0.14 alpha:1.0];
+    self.videoView.layer.cornerRadius = 6;
+    self.videoView.clipsToBounds = YES;
+    [self.adContainer addSubview:self.videoView];
+
+    self.placeholderLabel = [[UILabel alloc] initWithFrame:self.videoView.bounds];
+    self.placeholderLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.placeholderLabel.text = @"广告素材展示区域";
+    self.placeholderLabel.textAlignment = NSTextAlignmentCenter;
+    self.placeholderLabel.textColor = [UIColor colorWithWhite:0.55 alpha:1.0];
+    self.placeholderLabel.font = [UIFont systemFontOfSize:14];
+    [self.videoView addSubview:self.placeholderLabel];
+
+    self.imageView = [[UIImageView alloc] initWithFrame:self.videoView.frame];
+    self.imageView.backgroundColor = [UIColor colorWithRed:0.95 green:0.95 blue:0.96 alpha:1.0];
     self.imageView.contentMode = UIViewContentModeScaleAspectFill;
     self.imageView.clipsToBounds = YES;
-    [self.mediaContainer addSubview:self.imageView];
+    self.imageView.layer.cornerRadius = 6;
+    self.imageView.hidden = YES;
+    [self.adContainer addSubview:self.imageView];
 
-    self.titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 174, contentWidth - 64, 22)];
-    self.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
-    self.titleLabel.textColor = UIColor.labelColor;
-    [self.adContainer addSubview:self.titleLabel];
+    CGFloat rowY = CGRectGetMaxY(self.videoView.frame) + 10;
+    CGFloat rowH = 28;
+    CGFloat badgeW = 40;
+    CGFloat badgeH = 20;
+    CGFloat closeSide = 28;
+    CGFloat gap = 8;
+
+    self.adBadgeLabel = [[UILabel alloc] initWithFrame:CGRectMake(padding, rowY + (rowH - badgeH) * 0.5, badgeW, badgeH)];
+    self.adBadgeLabel.text = @"广告";
+    self.adBadgeLabel.textAlignment = NSTextAlignmentCenter;
+    self.adBadgeLabel.textColor = UIColor.whiteColor;
+    self.adBadgeLabel.font = [UIFont systemFontOfSize:10];
+    self.adBadgeLabel.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.3 alpha:0.4];
+    self.adBadgeLabel.layer.cornerRadius = 4;
+    self.adBadgeLabel.clipsToBounds = YES;
+    self.adBadgeLabel.hidden = YES;
+    [self.adContainer addSubview:self.adBadgeLabel];
 
     self.closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    self.closeButton.frame = CGRectMake(contentWidth - 44, 170, 32, 32);
+    self.closeButton.frame = CGRectMake(contentWidth - padding - closeSide, rowY, closeSide, closeSide);
+    self.closeButton.backgroundColor = [UIColor colorWithRed:0.3 green:0.3 blue:0.3 alpha:0.4];
+    self.closeButton.layer.cornerRadius = closeSide * 0.5;
+    self.closeButton.clipsToBounds = YES;
+    self.closeButton.titleLabel.font = [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];
     [self.closeButton setTitle:@"×" forState:UIControlStateNormal];
-    self.closeButton.titleLabel.font = [UIFont systemFontOfSize:22 weight:UIFontWeightRegular];
+    [self.closeButton setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
     [self.adContainer addSubview:self.closeButton];
 
-    self.descLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 202, contentWidth - 24, 36)];
+    CGFloat descX = CGRectGetMaxX(self.adBadgeLabel.frame) + gap;
+    CGFloat descW = CGRectGetMinX(self.closeButton.frame) - gap - descX;
+    self.descLabel = [[UILabel alloc] initWithFrame:CGRectMake(descX, rowY, descW, rowH)];
     self.descLabel.font = [UIFont systemFontOfSize:13];
-    self.descLabel.textColor = UIColor.secondaryLabelColor;
-    self.descLabel.numberOfLines = 2;
+    self.descLabel.textColor = UIColor.darkGrayColor;
+    self.descLabel.numberOfLines = 1;
+    self.descLabel.lineBreakMode = NSLineBreakByTruncatingTail;
     [self.adContainer addSubview:self.descLabel];
-
-    self.sourceLabel = [[UILabel alloc] initWithFrame:CGRectMake(12, 242, 120, 22)];
-    self.sourceLabel.font = [UIFont systemFontOfSize:12];
-    self.sourceLabel.textColor = UIColor.secondaryLabelColor;
-    [self.adContainer addSubview:self.sourceLabel];
-
-    self.ctaButton = [UIButton buttonWithType:UIButtonTypeSystem];
-    self.ctaButton.frame = CGRectMake(contentWidth - 110, 238, 98, 30);
-    self.ctaButton.backgroundColor = UIColor.blackColor;
-    self.ctaButton.layer.cornerRadius = 6;
-    self.ctaButton.clipsToBounds = YES;
-    self.ctaButton.titleLabel.font = [UIFont systemFontOfSize:13 weight:UIFontWeightMedium];
-    [self.ctaButton setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
-    [self.adContainer addSubview:self.ctaButton];
 }
 
 - (void)ysifly_loadAd {
@@ -173,35 +193,35 @@
 }
 
 - (void)resetAdCard {
-    for (UIView *subview in [self.mediaContainer.subviews copy]) {
-        if (subview != self.imageView) {
+    // 复位媒体区：移除视频承载视图里临时添加的子视图，保留占位标签
+    for (UIView *subview in [self.videoView.subviews copy]) {
+        if (subview != self.placeholderLabel) {
             [subview removeFromSuperview];
         }
     }
-    self.imageView.hidden = NO;
+    self.videoView.hidden = NO;
+    self.placeholderLabel.hidden = NO;
+    self.placeholderLabel.text = @"广告素材展示区域";
+    self.imageView.hidden = YES;
     self.imageView.image = nil;
-    self.titleLabel.text = @"广告标题";
-    self.descLabel.text = @"广告描述";
-    self.sourceLabel.text = @"广告";
-    [self.ctaButton setTitle:@"查看详情" forState:UIControlStateNormal];
+    self.adBadgeLabel.hidden = YES;
+    self.descLabel.text = @"";
+    self.closeButton.hidden = YES;
 }
 
 - (void)renderAndBindAd:(YSIFLYNativeFeedAd *)ad {
     YSIFLYNativeFeedAdData *data = ad.adData;
-    self.titleLabel.text = data.title.length > 0 ? data.title : @"广告标题";
-    self.descLabel.text = data.desc.length > 0 ? data.desc : (data.content.length > 0 ? data.content : @"广告描述");
-    self.sourceLabel.text = data.sponsored.length > 0 ? data.sponsored : (data.appName.length > 0 ? data.appName : @"广告");
-    [self.ctaButton setTitle:data.actionText.length > 0 ? data.actionText : @"查看详情" forState:UIControlStateNormal];
+    self.adBadgeLabel.hidden = NO;
+    self.closeButton.hidden = NO;
+    self.descLabel.text = data.desc.length > 0 ? data.desc : (data.content.length > 0 ? data.content : (data.title.length > 0 ? data.title : @"广告描述"));
 
     [self log:[NSString stringWithFormat:@"素材 materialType=%ld title=%@", (long)data.materialType, data.title ?: @"无"]];
     if (ad.hasVideoTemplate) {
+        // 视频：深色媒体区承载视频，先显示"视频加载中"占位
         self.imageView.hidden = YES;
-        UILabel *placeholder = [[UILabel alloc] initWithFrame:self.mediaContainer.bounds];
-        placeholder.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        placeholder.text = @"视频广告区域";
-        placeholder.textAlignment = NSTextAlignmentCenter;
-        placeholder.textColor = UIColor.secondaryLabelColor;
-        [self.mediaContainer addSubview:placeholder];
+        self.videoView.hidden = NO;
+        self.placeholderLabel.hidden = NO;
+        self.placeholderLabel.text = @"视频加载中...";
         [self bindNativeAd:ad video:YES];
         return;
     }
@@ -215,6 +235,10 @@
                                     return;
                                 }
                                 if (image) {
+                                    // 图文：图片素材覆盖媒体区，隐藏深色占位
+                                    self.placeholderLabel.hidden = YES;
+                                    self.videoView.hidden = YES;
+                                    self.imageView.hidden = NO;
                                     self.imageView.image = image;
                                     [self log:@"图片素材已渲染，开始绑定"];
                                     [self bindNativeAd:ad video:NO];
@@ -226,16 +250,16 @@
 }
 
 - (void)bindNativeAd:(YSIFLYNativeFeedAd *)ad video:(BOOL)isVideo {
+    UIView *mediaView = isVideo ? self.videoView : self.imageView;
     YSIFLYNativeFeedAdViewBinder *binder = [[YSIFLYNativeFeedAdViewBinder alloc] init];
     binder.containerView = self.adContainer;
-    binder.renderViews = @[self.mediaContainer, self.titleLabel, self.descLabel, self.ctaButton];
-    binder.clickViews = @[self.mediaContainer, self.ctaButton];
+    binder.renderViews = @[mediaView, self.adBadgeLabel, self.descLabel, self.closeButton];
+    binder.clickViews = @[mediaView];
     binder.closeView = self.closeButton;
-    binder.videoView = isVideo ? self.mediaContainer : nil;
-    binder.titleView = self.titleLabel;
+    binder.videoView = isVideo ? self.videoView : nil;
+    binder.imageView = isVideo ? nil : self.imageView;
     binder.descView = self.descLabel;
-    binder.imageView = self.imageView;
-    binder.ctaView = self.ctaButton;
+    binder.adSourceView = self.adBadgeLabel;
 
     YSIFLYAdError *error = nil;
     BOOL success = [ad ysifly_bindAdWithViewBinder:binder error:&error];
