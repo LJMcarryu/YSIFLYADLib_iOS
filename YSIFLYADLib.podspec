@@ -8,11 +8,11 @@
 
 Pod::Spec.new do |s|
   s.name     = 'YSIFLYADLib'
-  s.version  = '6.0.8'
+  s.version  = '6.0.9'
   s.summary  = 'YSIFLYADLib —— YS 媒体定制广告 SDK（开屏/Banner/插屏/信息流，含视频，无激励）。'
   s.homepage = 'https://github.com/LJMcarryu/YSIFLYADLib_iOS'
   s.author   = { 'YS' => 'placeholder@example.com' }
-  s.source   = { :http => 'https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.0.8/YSIFLYADLib.xcframework.zip' }
+  s.source   = { :http => 'https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.0.9/YSIFLYADLib.xcframework.zip' }
   s.license  = { :type => 'MIT' }
 
   s.platform = :ios, '13.0'
