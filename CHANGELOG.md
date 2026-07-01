@@ -4,6 +4,13 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [6.0.10] - 2026-07-01
+
+### 新增
+- **自渲染信息流（NativeFeed）新增落地页关闭前回调 `ysifly_nativeFeedAdWillDismissLandingPage:`**：随上游 IFLYADLib 6.0.10，在内嵌落地页关闭动画开始前**同步**回调，作为「落地页露出前的最后确认点」，供媒体在落地页收起、广告重新露出前做最后一次确认；随后仍会照常回调 `ysifly_nativeFeedAdDidDismissLandingPage:`。为 `YSIFLYNativeFeedAdDelegate` 新增的**可选**方法。
+- 基于上游 6.0.10 重新 `rebrand` 构建（变体 `YSNoReward` 动态 framework）；`Package.swift` 的 `binaryTarget` checksum 与 `YSIFLYADLib.podspec` 的 `:http` 源已同步到 `6.0.10`。
+- 公开 API 其余部分 / 能力（开屏 / Banner / 插屏 / 信息流，含视频，无激励）/ 动态 framework 交付形态与 `6.0.9` 一致。
+
 ## [6.0.9] - 2026-06-30
 
 ### 变更
@@ -82,6 +89,7 @@
 - YS 媒体定制广告 SDK 首版（model B 单包）：类型名统一前缀 `YS`（如 `YSIFLYSplashAd`）、公开方法统一前缀 `ysifly_`、资源包 `YSAdvSDK.bundle`、日志前缀 `[YSAd]`。
 - 缺陷：静态 framework 不投递内嵌资源包，广告图片缺失，已由后续版本修复。
 
+[6.0.10]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.10
 [6.0.9]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.9
 [6.0.8]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.8
 [6.0.7]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.7
