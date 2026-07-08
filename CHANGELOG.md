@@ -4,6 +4,17 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [6.0.12] - 2026-07-08
+
+### 变更
+- **交付形态由动态 framework 切换为静态 framework**（应媒体要求）：`YSIFLYADLib.xcframework` 内为静态归档（ar archive），随 app 静态链接，无需 Embed & Sign、运行期少一个动态库加载。公开 API 与能力与 `6.0.11` 一致。
+- **资源包外置**：静态 framework 不投递内嵌资源，`YSAdvSDK.bundle`（内含 Apple 隐私清单 `PrivacyInfo.xcprivacy`）改为外置随包分发——CocoaPods 经 podspec `s.resources` 自动拷入 app；SPM / 手动集成需把 bundle 加入 app target 的 Copy Bundle Resources（见 README 接入方式）。与已下线的 1.0.0（静态包但资源仍内嵌、不投递）不同，本版本资源交付路径经打包脚本断言校验（外置 bundle 非空、framework 内零残留）。
+- **Release 资产结构调整**：每版本发布两个资产——合并 zip `YSIFLYADLib-<版本>.zip`（xcframework + `YSAdvSDK.bundle` + LICENSE，CocoaPods / 手动集成用）与 `YSIFLYADLib.xcframework.zip`（仅 xcframework，SPM binaryTarget 用）。
+
+### 说明
+- 基于上游 6.0.12 重新 rebrand 构建（变体 YSNoReward **静态** framework，`build-xcframework.sh --brand ys` 默认即静态，打包走新增的 `package-ys-release.sh`）；`Package.swift`(url+checksum) / `podspec`（`static_framework` + `s.resources`）/ README（接入方式含新增手动集成章节）/ CHANGELOG / 示例 Podfile 同步 `6.0.12`。
+- 发布前断言：双切片均为静态归档；裸 `IFLY` 类符号、`[IFLYAd` 日志前缀、`itms-services` 字面量均为 0。
+
 ## [6.0.11] - 2026-07-08
 
 ### 修复

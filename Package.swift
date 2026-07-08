@@ -1,10 +1,13 @@
 // swift-tools-version:5.9
 
 // YSIFLYADLib —— YS 媒体定制广告 SDK（model B 单包整变体）的 SwiftPM 分发清单。
-// binaryTarget 指向 GitHub Releases 的 YSIFLYADLib.xcframework.zip（动态 framework，含 device + 模拟器双切片，
-//   资源包 YSAdvSDK.bundle 内嵌于 framework，随动态 framework 整体嵌入消费方 app）；checksum 为 zip 的 sha256。
-// 动态 framework 自动加载全部类/分类，消费方无需 -ObjC、无需额外资源声明。
-// 换版本/主机：dev 仓重跑 rebrand + build-xcframework 后，据新 zip 的 checksum 同步更新此处 url/checksum 与版本。
+// binaryTarget 指向 GitHub Releases 的 YSIFLYADLib.xcframework.zip（6.0.12 起为【静态 framework】，
+//   含 device + 模拟器双切片）；checksum 为 `swift package compute-checksum` 结果。
+// 静态交付下资源包不再内嵌：SwiftPM 的 binaryTarget 不能挂资源，接入方须从同版本 Release 的
+//   合并 zip（YSIFLYADLib-<版本>.zip）取 YSAdvSDK.bundle（含 PrivacyInfo.xcprivacy）手动加入
+//   app target 的 Copy Bundle Resources；或改用 CocoaPods（podspec 已配 s.resources 自动投递）。
+// 换版本/主机：dev 仓重跑 rebrand + build-xcframework + package-ys-release.sh 后，
+//   据 checksums.txt 同步更新此处 url/checksum 与版本。
 
 import PackageDescription
 
@@ -19,8 +22,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "YSIFLYADLib",
-            url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.0.11/YSIFLYADLib.xcframework.zip",
-            checksum: "4ef0c72e02191e846780ef1618a8f23c0d64296f1b71bb7ad2b015b69416b4a7"
+            url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.0.12/YSIFLYADLib.xcframework.zip",
+            checksum: "c11bc397409739c87fc05f43f8ada18f7fd45604d68e6cb130ea1a7a6d175e19"
         ),
     ]
 )
