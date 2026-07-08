@@ -4,6 +4,14 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [6.0.11] - 2026-07-08
+
+### 修复
+- **移除跳转黑名单中的 `itms-services` / `itms-apps` 字面量，改为 `itms` 前缀拦截**（随上游 IFLYADLib 6.0.11）：编译产物中不再出现 `itms-services` 完整字符串（避免被应用市场 / 审核的二进制静态扫描误判为企业分发 / 侧载），拦截行为完全不变且更严（覆盖整个 `itms` 家族）。公开 API、能力与交付形态均与 `6.0.10` 一致。
+
+### 说明
+- 基于上游 6.0.11 重新 rebrand 构建（变体 YSNoReward 动态 framework）；`Package.swift`(checksum) / `podspec` / README 版本表 / CHANGELOG / 示例 Podfile+README 同步 `6.0.11`。
+
 ## [6.0.10] - 2026-07-01
 
 ### 新增
