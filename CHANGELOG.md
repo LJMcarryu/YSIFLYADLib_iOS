@@ -4,6 +4,16 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [6.0.13] - 2026-07-09
+
+### 新增
+- 自渲染信息流（NativeFeed）摇一摇提示控件：交互类型为「点击+摇一摇」的广告绑定成功后，由 SDK 自动在容器右下角添加「摇一摇查看详情」提示（避让关闭按钮、放不下则不添加、非独立点击区域，普通点击广告不展示）。
+- 自渲染素材校验失败（71501）新增 error 级诊断日志（template_id / 素材类型 / 图片数 / videoURL 有无），便于定位投放侧素材配置问题。
+
+### 说明
+- 基于上游 6.0.13 重新 rebrand 构建（变体 YSNoReward 静态 framework），公开 API 签名不变；`Package.swift`(url+checksum) / `podspec` / README / 示例 Podfile 同步 `6.0.13`。
+- 发布前断言：双切片均为静态归档；裸 `IFLY` 类符号、`[IFLYAd` 日志前缀、`itms-services` 字面量均为 0。
+
 ## [6.0.12] - 2026-07-08
 
 ### 变更
