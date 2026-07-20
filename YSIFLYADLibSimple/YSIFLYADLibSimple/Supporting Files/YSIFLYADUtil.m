@@ -51,7 +51,7 @@
 + (UILabel *)createSectionTitleWithText:(NSString *)text frame:(CGRect)frame {
     UILabel *label = [[UILabel alloc] initWithFrame:frame];
     label.text = text;
-    label.textColor = UIColor.secondaryLabelColor;
+    label.textColor = [self demoSecondaryLabelColor];
     label.font = [UIFont systemFontOfSize:13 weight:UIFontWeightRegular];
     label.numberOfLines = 0;
     return label;
@@ -69,6 +69,27 @@
     textView.layer.borderWidth = 1;
     textView.textContainerInset = UIEdgeInsetsMake(8, 6, 8, 6);
     return textView;
+}
+
++ (UIColor *)demoSecondaryLabelColor {
+    if (@available(iOS 13.0, *)) {
+        return UIColor.secondaryLabelColor;
+    }
+    return UIColor.grayColor;
+}
+
++ (UIColor *)demoIndigoColor {
+    if (@available(iOS 13.0, *)) {
+        return UIColor.systemIndigoColor;
+    }
+    return [UIColor colorWithRed:0.35 green:0.34 blue:0.84 alpha:1.0];
+}
+
++ (UIColor *)demoTealColor {
+    if (@available(iOS 13.0, *)) {
+        return UIColor.systemTealColor;
+    }
+    return [UIColor colorWithRed:0.35 green:0.78 blue:0.98 alpha:1.0];
 }
 
 + (void)appendLog:(NSString *)text toTextView:(UITextView *)textView {

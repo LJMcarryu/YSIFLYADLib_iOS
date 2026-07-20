@@ -13,8 +13,9 @@ import PackageDescription
 
 let package = Package(
     name: "YSIFLYADLib",
+    // 6.0.14 的静态 binaryTarget 已按 iOS 11 重新构建并与本声明同步发布。
     platforms: [
-        .iOS(.v13),
+        .iOS("11.0"),
     ],
     products: [
         .library(name: "YSIFLYADLib", targets: ["YSIFLYADLib"]),
@@ -22,8 +23,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "YSIFLYADLib",
-            url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.0.13/YSIFLYADLib.xcframework.zip",
-            checksum: "c8b6b6913fb9abfa4c836b10e8729d0dd8d8176878c3020646c0b93f43053859"
+            url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.0.14/YSIFLYADLib.xcframework.zip",
+            checksum: "1429947dd151f9581b1f141a2894cd3b32f5f314061efb62abf1875ec2094647"
         ),
     ]
 )

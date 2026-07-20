@@ -138,7 +138,7 @@
 
 - (void)destroyAd {
     [self destroyAdSilently];
-    [self updateStatus:@"已销毁" color:UIColor.systemTealColor];
+    [self updateStatus:@"已销毁" color:[YSIFLYADUtil demoTealColor]];
     [self log:@"Destroy"];
 }
 
@@ -180,7 +180,7 @@
                                       ad.hasVideoTemplate ? @"YES" : @"NO",
                                       ad.isLandscapeTemplate ? @"YES" : @"NO",
                                       [ad ecpm]]];
-    [self updateStatus:@"已加载，等待素材 ready" color:UIColor.systemIndigoColor];
+    [self updateStatus:@"已加载，等待素材 ready" color:[YSIFLYADUtil demoIndigoColor]];
 }
 
 - (void)ysifly_splashAdDidReady:(YSIFLYSplashAd *)ad {
@@ -203,7 +203,7 @@
 
 - (void)ysifly_splashAdDidClose:(YSIFLYSplashAd *)ad {
     [self log:@"splashAdDidClose"];
-    [self updateStatus:@"开屏已关闭" color:UIColor.systemTealColor];
+    [self updateStatus:@"开屏已关闭" color:[YSIFLYADUtil demoTealColor]];
 }
 
 - (void)ysifly_splashAdDidSkip:(YSIFLYSplashAd *)ad {

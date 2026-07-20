@@ -25,13 +25,13 @@ open YSIFLYADLibSimple.xcworkspace
 
 ## 接入要点
 
-`Podfile` 通过 GitHub Releases 上的 `YSIFLYADLib.podspec` 集成公开发布的 `6.0.11` 版本：
+`Podfile` 通过 GitHub Releases 上的 `YSIFLYADLib.podspec` 集成公开发布的 `6.0.14` 版本，示例工程最低支持 iOS 11.0：
 
 ```ruby
-pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.0.11/YSIFLYADLib.podspec'
+pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.0.14/YSIFLYADLib.podspec'
 ```
 
-`6.0.11` 为**动态 framework**：资源包 `YSAdvSDK.bundle` 内嵌其中、随 framework 整体嵌入 app，广告图片可正常加载；**无需在 App target 配置 `-ObjC`**（动态 framework 会自动加载全部类与 category）。
+`6.0.14` 为**静态 framework**：代码随 App 静态链接、无需 Embed；`YSAdvSDK.bundle` 由 podspec 自动拷入 App 主包，且无需在 App target 配置 `-ObjC`。SPM 或手动接入时必须自行把该 bundle 加入 Copy Bundle Resources。
 
 ## API 命名约定
 
