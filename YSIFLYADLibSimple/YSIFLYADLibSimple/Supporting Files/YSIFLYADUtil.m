@@ -159,6 +159,16 @@
     return [NSString stringWithFormat:@"code=%d desc=%@", error.errorCode, error.errorDescription ?: @"无"];
 }
 
++ (NSString *)bidInfoSummaryForAd:(nullable YSIFLYAdBase *)ad {
+    YSIFLYAdBidInfo *bidInfo = ad.bidInfo;
+    if (!bidInfo) {
+        return @"bidInfo=nil";
+    }
+    return [NSString stringWithFormat:@"bidInfo={price=%@, dealId=%@}",
+                                      bidInfo.price ?: @"nil",
+                                      bidInfo.dealId.length > 0 ? bidInfo.dealId : @"无"];
+}
+
 + (void)loadImageWithURLString:(NSString *)urlString
                     completion:(void (^)(UIImage *_Nullable image, NSError *_Nullable error))completion {
     NSURL *url = urlString.length > 0 ? [NSURL URLWithString:urlString] : nil;

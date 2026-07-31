@@ -16,6 +16,15 @@ jobs:
       - name: Package.swift 解析
         run: swift package dump-package > /dev/null
 
+      - name: 校验 SwiftPM 资源包装 target
+        run: |
+          test -f spm/YSIFLYADLibResources/YSIFLYADLibResources.swift
+          test -d spm/YSIFLYADLibResources/YSAdvSDK.bundle
+          test -s spm/YSIFLYADLibResources/YSAdvSDK.bundle/PrivacyInfo.xcprivacy
+          plutil -lint spm/YSIFLYADLibResources/YSAdvSDK.bundle/PrivacyInfo.xcprivacy
+          grep -q 'name: "YSIFLYADLibResources"' Package.swift
+          grep -q '\.copy("YSAdvSDK.bundle")' Package.swift
+
       - name: 校验 SPM binaryTarget 的 url + checksum 一致
         run: |
           python3 - <<'PY'

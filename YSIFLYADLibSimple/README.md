@@ -25,13 +25,20 @@ open YSIFLYADLibSimple.xcworkspace
 
 ## 接入要点
 
-`Podfile` 通过 GitHub Releases 上的 `YSIFLYADLib.podspec` 集成公开发布的 `6.0.14` 版本，示例工程最低支持 iOS 11.0：
+`Podfile` 通过 GitHub Releases 上的 `YSIFLYADLib.podspec` 集成公开发布的 `6.1.0` 版本，示例工程最低支持 iOS 11.0：
 
 ```ruby
-pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.0.14/YSIFLYADLib.podspec'
+pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.1.0/YSIFLYADLib.podspec'
 ```
 
-`6.0.14` 为**静态 framework**：代码随 App 静态链接、无需 Embed；`YSAdvSDK.bundle` 由 podspec 自动拷入 App 主包，且无需在 App target 配置 `-ObjC`。SPM 或手动接入时必须自行把该 bundle 加入 Copy Bundle Resources。
+`6.1.0` 为**静态 framework**：代码随 App 静态链接、无需 Embed；`YSAdvSDK.bundle`（含 `PrivacyInfo.xcprivacy`）由 CocoaPods podspec 或 SwiftPM 资源包装 target 自动拷入 App，且无需在 App target 配置 `-ObjC`。只有手动接入时需要自行把该 bundle 加入 Copy Bundle Resources。
+
+自渲染示例已按 `6.1.0` 公开契约更新：
+
+- 通用竞价信息从 `ad.bidInfo.price/dealId` 获取，不再调用 `ecpm`。
+- NativeFeed 使用 `ctaText`、`appName` 和归一后的 `templateId/materialType`；多图按两至三张处理。
+- `Exposure` / `Unknown` 显式传空 `clickViews`，避免 `nil` 回退为整容器可点击。
+- 复用或离开页面前先解绑并销毁旧实例；视频容器交给 SDK，不自行创建 `AVPlayer`。
 
 ## API 命名约定
 

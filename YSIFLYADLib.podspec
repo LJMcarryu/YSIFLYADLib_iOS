@@ -6,15 +6,16 @@
 #   故 YSAdvSDK.bundle（含 PrivacyInfo.xcprivacy）外置于合并 zip 根，经 s.resources 由 CocoaPods
 #   拷入 app 主包，SDK 运行时按 mainBundle 定位；类与 category 随 app 静态链接，无需 embed、无需 -ObjC
 #   （SDK 无独立 category 编译单元，category 均随宿主类 .o 链入）。
+# SwiftPM 由 Package.swift 的 YSIFLYADLibResources target 从仓库 tag 自动投递同一资源包。
 # 换版本/主机：dev 仓重跑 rebrand + build-xcframework + package-ys-release.sh，更新本仓 :http URL / Package.swift checksum 与版本。
 
 Pod::Spec.new do |s|
   s.name     = 'YSIFLYADLib'
-  s.version  = '6.0.14'
+  s.version  = '6.1.0'
   s.summary  = 'YSIFLYADLib —— YS 媒体定制广告 SDK（开屏/Banner/插屏/信息流，含视频，无激励）。'
   s.homepage = 'https://github.com/LJMcarryu/YSIFLYADLib_iOS'
-  s.author   = { 'YS' => 'placeholder@example.com' }
-  s.source   = { :http => 'https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.0.14/YSIFLYADLib-6.0.14.zip' }
+  s.author   = { 'LJMcarryu' => 'jmliu6@iflytek.com' }
+  s.source   = { :http => 'https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.1.0/YSIFLYADLib-6.1.0.zip' }
   s.license  = { :type => 'MIT', :file => 'LICENSE' }
 
   # iOS 11 声明只可随重新构建并验证过的新版本二进制发布；不得套用到旧 release 产物。

@@ -130,9 +130,9 @@
 }
 
 - (void)checkStatus {
-    [self log:[NSString stringWithFormat:@"状态 ysifly_isAdValid=%@ ecpm=%.2f",
+    [self log:[NSString stringWithFormat:@"状态 ysifly_isAdValid=%@ %@",
                                       (self.interstitialAd && [self.interstitialAd ysifly_isAdValid]) ? @"YES" : @"NO",
-                                      self.interstitialAd ? [self.interstitialAd ecpm] : -1.0]];
+                                      [YSIFLYADUtil bidInfoSummaryForAd:self.interstitialAd]]];
 }
 
 - (void)destroyAdSilently {
@@ -163,10 +163,10 @@
 #pragma mark - YSIFLYInterstitialAdDelegate
 
 - (void)ysifly_interstitialAdDidLoad:(YSIFLYInterstitialAd *)ad {
-    [self log:[NSString stringWithFormat:@"interstitialAdDidLoad video=%@ landscape=%@ ecpm=%.2f",
+    [self log:[NSString stringWithFormat:@"interstitialAdDidLoad video=%@ landscape=%@ %@",
                                       ad.hasVideoTemplate ? @"YES" : @"NO",
                                       ad.isLandscapeTemplate ? @"YES" : @"NO",
-                                      [ad ecpm]]];
+                                      [YSIFLYADUtil bidInfoSummaryForAd:ad]]];
     [self updateStatus:@"已加载，等待素材 ready" color:[YSIFLYADUtil demoIndigoColor]];
 }
 

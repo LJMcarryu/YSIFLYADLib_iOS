@@ -135,9 +135,9 @@
 }
 
 - (void)checkStatus {
-    [self log:[NSString stringWithFormat:@"状态 ysifly_isAdValid=%@ ecpm=%.2f",
+    [self log:[NSString stringWithFormat:@"状态 ysifly_isAdValid=%@ %@",
                                       (self.bannerAd && [self.bannerAd ysifly_isAdValid]) ? @"YES" : @"NO",
-                                      self.bannerAd ? [self.bannerAd ecpm] : -1.0]];
+                                      [YSIFLYADUtil bidInfoSummaryForAd:self.bannerAd]]];
 }
 
 - (void)destroyBannerAdSilently {
@@ -181,7 +181,7 @@
 #pragma mark - YSIFLYBannerAdDelegate
 
 - (void)ysifly_bannerAdDidLoad:(YSIFLYBannerAd *)ad {
-    [self log:[NSString stringWithFormat:@"bannerAdDidLoad ecpm=%.2f", [ad ecpm]]];
+    [self log:[NSString stringWithFormat:@"bannerAdDidLoad %@", [YSIFLYADUtil bidInfoSummaryForAd:ad]]];
     [self updateStatus:@"已加载，等待素材 ready" color:[YSIFLYADUtil demoIndigoColor]];
 }
 

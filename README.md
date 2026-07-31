@@ -2,7 +2,7 @@
 
 `YSIFLYADLib` 是面向 YS 媒体定制的 iOS 广告 SDK，提供**开屏、Banner、插屏、自渲染信息流**广告能力（**含视频素材**，**不含激励视频**）。
 
-当前文档覆盖 `YSIFLYADLib 6.0.14`，最低支持 iOS 11.0；可运行示例工程见 [YSIFLYADLibSimple](./YSIFLYADLibSimple)（`pod install` 后打开 `YSIFLYADLibSimple.xcworkspace`，演示开屏 / Banner / 插屏 / 自渲染信息流的加载、展示、回调、销毁）。
+当前文档覆盖 `YSIFLYADLib 6.1.0`，最低支持 iOS 11.0；可运行示例工程见 [YSIFLYADLibSimple](./YSIFLYADLibSimple)（`pod install` 后打开 `YSIFLYADLibSimple.xcworkspace`，演示开屏 / Banner / 插屏 / 自渲染信息流的加载、展示、回调、销毁）。
 
 仓库地址：[https://github.com/LJMcarryu/YSIFLYADLib_iOS](https://github.com/LJMcarryu/YSIFLYADLib_iOS)
 
@@ -10,8 +10,8 @@
 > - 入口类统一前缀 `YS`，如 `YSIFLYSplashAd`、`YSIFLYBannerAd`。
 > - 公开方法统一前缀 `ysifly_`，如 `ysifly_loadAd`、`ysifly_showInView:`、`ysifly_destroy`。
 > - delegate 回调统一前缀 `ysifly_`，如 `ysifly_splashAdDidReady:`。
-> - 初始化方法、属性保持系统风格（**不**加前缀）：`initWithAdUnitId:`、`ad.delegate`、`adData.price`。
-> - 伞头入口：`#import <YSIFLYADLib/YSIFLYADLib.h>`；资源包 `YSAdvSDK.bundle`（**外置随包分发**，CocoaPods 自动投递，SPM/手动集成需加入 app target，见接入方式）；运行期日志前缀 `[YSAd]`。
+> - 初始化方法、属性保持系统风格（**不**加前缀）：`initWithAdUnitId:`、`ad.delegate`、`ad.bidInfo.price`。
+> - 伞头入口：`#import <YSIFLYADLib/YSIFLYADLib.h>`；资源包 `YSAdvSDK.bundle`（**外置随包分发**，CocoaPods / SPM 自动投递，手动集成时需加入 app target，见接入方式）；运行期日志前缀 `[YSAd]`。
 
 ---
 
@@ -43,6 +43,7 @@
 
 | 版本 | 日期 | 说明 |
 | --- | --- | --- |
+| 6.1.0 | 2026-07-31 | 收紧响应数据公开边界：四种广告通用竞价数据仅保留 `bidInfo.price/dealId`，创意与素材白名单仅由自渲染信息流 `adData` 暴露；新增 `appName`、`ctaText`，重做 `templateId/materialType` 归一枚举和多图规则。Demo 同步仅曝光/未知行为的空点击区、复用解绑及视频生命周期；移除 SDK 自动添加的自渲染摇一摇提示 UI。SwiftPM 新增资源包装 target，自动投递 `YSAdvSDK.bundle` 与隐私清单。YS 仍仅含开屏 / Banner / 插屏 / 自渲染信息流，不含激励视频。 |
 | 6.0.14 | 2026-07-20 | 最低系统版本由 iOS 13.0 下调为 iOS 11.0，device / simulator 静态 XCFramework 重新构建并通过最低版本门禁；插屏视频在服务端同时下发图片时于视频完播后展示图片完播页（开屏保持原关闭语义）；请求字段 `lts` 移入 `device`，并补齐客户端竞价时间戳、曝光宏和设备调试状态字段。公开 API 签名、无激励能力边界和静态交付形态不变。 |
 | 6.0.13 | 2026-07-09 | 自渲染信息流（NativeFeed）新增摇一摇提示控件：交互类型为「点击+摇一摇」的广告绑定成功后，由 SDK 自动在容器右下角添加「摇一摇查看详情」提示（避让关闭按钮、放不下则不添加、非独立点击区域，普通点击广告不展示）；自渲染素材校验失败（71501）新增 error 级诊断日志。公开 API 签名不变（随上游 6.0.13），能力与交付形态与 6.0.13 一致。 |
 | 6.0.12 | 2026-07-08 | **交付形态由动态 framework 切换为静态 framework**（应媒体要求）：`YSIFLYADLib.xcframework` 内为静态归档，随 app 静态链接，**无需 Embed**、少一个动态库加载；资源包 `YSAdvSDK.bundle`（含隐私清单 `PrivacyInfo.xcprivacy`）改为**外置随包分发**——CocoaPods 经 podspec `s.resources` 自动拷入 app，SPM / 手动集成需把 bundle 加入 app target（见接入方式）。与已下线的早期 1.0.0 不同：1.0.0 是「静态包 + 资源仍内嵌」导致资源不投递；6.0.12 资源外置交付，广告图片、摇一摇图标等资源加载正常。公开 API 与能力与 6.0.11 一致。 |
@@ -64,9 +65,9 @@
 ## 环境要求
 
 - **iOS 11.0** 及以上（从 `6.0.14` 起；历史 `6.0.13` 及更早二进制不追溯扩大支持范围）。
-- **Xcode 14.1** 及以上，建议使用较新 Xcode 构建。
+- **Xcode 15.0** 及以上（`Package.swift` 使用 Swift tools 5.9）；6.1.0 正式二进制使用 Xcode 26.2 构建。
 - **交付形态**（6.0.12 起）：单一 `YSIFLYADLib.xcframework`（**静态 framework**），含 **真机 `arm64` + 模拟器 `arm64`/`x86_64`** 切片，**可直接在模拟器调试**；代码随 app 静态链接，**无需 Embed & Sign**。
-- 资源包 `YSAdvSDK.bundle`（内含隐私清单 `PrivacyInfo.xcprivacy`）**外置随包分发**：CocoaPods 接入自动投递；SPM / 手动集成需把 bundle 加入 app target 的 Copy Bundle Resources。
+- 资源包 `YSAdvSDK.bundle`（内含隐私清单 `PrivacyInfo.xcprivacy`）**外置随包分发**：CocoaPods 与 SwiftPM 接入自动投递；手动集成需把 bundle 加入 app target 的 Copy Bundle Resources。
 - **无需配置 `-ObjC`**：SDK 无独立 category 编译单元（category 均随宿主类目标文件链入）。
 - 统一入口头：`#import <YSIFLYADLib/YSIFLYADLib.h>`。
 
@@ -79,7 +80,7 @@
 | 资产 | 内容 | 适用 |
 | --- | --- | --- |
 | `YSIFLYADLib-<版本>.zip`（合并 zip） | `YSIFLYADLib.xcframework` + `YSAdvSDK.bundle` + `LICENSE` | CocoaPods（podspec 指向它）、手动集成 |
-| `YSIFLYADLib.xcframework.zip` | 仅 `YSIFLYADLib.xcframework` | Swift Package Manager（binaryTarget） |
+| `YSIFLYADLib.xcframework.zip` | 仅 `YSIFLYADLib.xcframework`；资源由仓库 tag 中的 SwiftPM 包装 target 提供 | Swift Package Manager |
 
 推荐 **CocoaPods** 接入：资源包投递全自动，升级只改一处 tag。
 
@@ -94,7 +95,7 @@ platform :ios, '11.0'
 target 'YourApp' do
   use_frameworks!
 
-  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.0.14/YSIFLYADLib.podspec'
+  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.1.0/YSIFLYADLib.podspec'
 end
 ```
 
@@ -106,13 +107,13 @@ open YourApp.xcworkspace
 ```
 
 > 说明：
-> - `:podspec` 指向 tag `6.0.14` 的 raw podspec，其 `s.source` 是 Release 的合并 zip（`YSIFLYADLib-6.0.14.zip`），CocoaPods 会自动下载解包、链接其中的静态 `YSIFLYADLib.xcframework`，并把 `YSAdvSDK.bundle`（含隐私清单）**自动拷入 app 主包**（podspec 已声明 `s.resources`）。
-> - **请把 URL 钉死到具体 tag（如 `6.0.14`），不要指向分支**；升级版本时同步改 URL 里的 tag。
+> - `:podspec` 指向 tag `6.1.0` 的 raw podspec，其 `s.source` 是 Release 的合并 zip（`YSIFLYADLib-6.1.0.zip`），CocoaPods 会自动下载解包、链接其中的静态 `YSIFLYADLib.xcframework`，并把 `YSAdvSDK.bundle`（含隐私清单）**自动拷入 app 主包**（podspec 已声明 `s.resources`）。
+> - **请把 URL 钉死到具体 tag（如 `6.1.0`），不要指向分支**；升级版本时同步改 URL 里的 tag。
 > - 静态 framework 随 app 链接，pod 不会（也不需要）Embed；**无需手动加 `-ObjC`**、无需手动拷贝 `.bundle`。
 
 ### Swift Package Manager
 
-在 Xcode「**File → Add Packages…**」填入仓库地址，选择版本 `6.0.14`：
+在 Xcode「**File → Add Packages…**」填入仓库地址，选择版本 `6.1.0`：
 
 ```
 https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
@@ -122,22 +123,21 @@ https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS.git", from: "6.0.14"),
+    .package(url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS.git", from: "6.1.0"),
 ],
 targets: [
     .target(name: "YourApp", dependencies: ["YSIFLYADLib"]),
 ]
 ```
 
-> **SPM 接入须额外手动加资源包**（SwiftPM 的 `binaryTarget` 无法携带资源）：
-> 1. 从 Release 下载同版本合并 zip（`YSIFLYADLib-6.0.14.zip`）并解压；
-> 2. 把其中的 `YSAdvSDK.bundle` 拖入 Xcode 工程，勾选 **Copy items if needed** 并加入 app target（确认出现在 Build Phases → Copy Bundle Resources）。
->
-> 缺少该步骤时 SDK 可正常编译链接，但广告图片、摇一摇图标等资源会缺失，且 app 缺 SDK 隐私清单。代码链接无需 `-ObjC`。
+`6.1.0` 起，SwiftPM product 同时包含二进制 target 与
+`YSIFLYADLibResources` 包装 target，后者会自动把 `YSAdvSDK.bundle`
+（含 `PrivacyInfo.xcprivacy`）复制到 App。接入方不再需要从合并 zip
+手工复制资源；代码链接仍无需 `-ObjC`。
 
 ### 手动集成
 
-不便使用包管理器时，直接集成 Release 合并 zip（`YSIFLYADLib-6.0.14.zip`）内容：
+不便使用包管理器时，直接集成 Release 合并 zip（`YSIFLYADLib-6.1.0.zip`）内容：
 
 1. 解压得到 `YSIFLYADLib.xcframework` 与 `YSAdvSDK.bundle`；
 2. 把 `YSIFLYADLib.xcframework` 拖入工程，General → Frameworks, Libraries, and Embedded Content 中 Embed 选 **Do Not Embed**（静态库随 app 链接，无需嵌入）；
@@ -150,9 +150,9 @@ targets: [
 
 ### 隐私清单（PrivacyInfo.xcprivacy）
 
-SDK 的 Apple 隐私清单 `PrivacyInfo.xcprivacy` 随 `YSAdvSDK.bundle` 交付（CocoaPods 接入自动带入；SPM / 手动集成在把 bundle 加入 app target 后即带入，Apple 会扫描 app 内 bundle 中的隐私清单）。**接入方仍须在 App Store Connect 的隐私「营养标签」中如实合并声明以下数据收集，并据 `NSPrivacyTracking = YES` 提供 ATT 授权（见下）。**
+SDK 的 Apple 隐私清单 `PrivacyInfo.xcprivacy` 随 `YSAdvSDK.bundle` 交付（CocoaPods / SwiftPM 自动带入；手动集成在把 bundle 加入 app target 后带入，Apple 会扫描 app 内 bundle 中的隐私清单）。**接入方仍须在 App Store Connect 的隐私「营养标签」中如实合并声明以下数据收集，并据 `NSPrivacyTracking = YES` 提供 ATT 授权（见下）。**
 
-- **追踪**：`NSPrivacyTracking = YES`；追踪域名：`voiceads.cn`、`bjimp.voiceads.cn`、`ai.voiceads.cn`、`msdk.voiceads.cn`、`caid-api.adn-plus.com.cn`。
+- **追踪**：`NSPrivacyTracking = YES`；追踪域名：`voiceads.cn`、`bjimp.voiceads.cn`、`ai.voiceads.cn`、`msdk.voiceads.cn`、`sdk-adx.voiceads.cn`、`caid-api.adn-plus.com.cn`。
 - **收集的数据类型**：设备 ID（DeviceID）、产品交互（ProductInteraction）、广告数据（AdvertisingData）——均关联用户且用于追踪，用途为第三方广告与分析；其他诊断数据（OtherDiagnosticData）——不关联、不用于追踪，用途为 App 功能与分析。
 - **Required Reason API**：UserDefaults（`CA92.1`）、文件时间戳（`C617.1`）、系统启动时间（`35F9.1`）、磁盘可用空间（`E174.1`）。
 
@@ -424,7 +424,10 @@ iOS 14 及以上读取 IDFA 前必须先请求 App Tracking Transparency 权限�
 
 ## 自渲染信息流广告
 
-信息流广告由媒体侧根据 `ad.adData` 自行渲染 UI，再通过 `YSIFLYNativeFeedAdViewBinder` 把容器、点击视图、关闭按钮、视频承载视图交给 SDK。SDK 负责曝光检测、点击/摇一摇响应、关闭与视频播放控制及监测上报，**不向媒体容器添加广告 UI 子视图**。
+信息流广告由媒体侧根据 `ad.adData` 自行渲染 UI，再通过
+`YSIFLYNativeFeedAdViewBinder` 把容器、点击视图、关闭按钮和视频承载视图交给
+SDK。SDK 负责曝光检测、点击/摇一摇响应、关闭、播放器与监测上报；不会清空媒体
+已有的 layer 或子视图，也不会自动添加摇一摇提示控件。
 
 ```objc
 @interface NativeFeedViewController () <YSIFLYNativeFeedAdDelegate>
@@ -450,17 +453,30 @@ iOS 14 及以上读取 IDFA 前必须先请求 App Tracking Transparency 权限�
 
 - (void)ysifly_nativeFeedAdDidLoad:(YSIFLYNativeFeedAd *)ad {
     YSIFLYNativeFeedAdData *data = ad.adData;
-    self.titleLabel.text = data.title ?: @"广告标题";
-    self.descLabel.text = data.desc ?: data.content;
-    [self.ctaButton setTitle:data.actionText ?: @"查看详情" forState:UIControlStateNormal];
+    if (![data ysifly_isMaterialComplete] ||
+        data.materialType == YSIFLYNativeFeedAdMaterialTypeUnknown) {
+        return; // Unknown 不渲染、不绑定
+    }
 
-    // 图片素材请媒体侧自行下载并渲染到 imageView（URL 见 data.imageURLs）。
+    self.titleLabel.text = data.title ?: data.appName ?: data.brand ?: @"";
+    self.descLabel.text = data.desc ?: data.content;
+    BOOL clickable =
+        data.interactionType == YSIFLYNativeFeedAdInteractionTypeRedirect ||
+        data.interactionType == YSIFLYNativeFeedAdInteractionTypeDownload;
+    self.ctaButton.hidden = !clickable;
+    [self.ctaButton setTitle:(clickable ? (data.ctaText ?: @"查看详情") : nil)
+                    forState:UIControlStateNormal];
+
+    // 按 data.materialType / data.templateId 选择单图、多图或视频布局。
+    // 多图遍历 data.imageList（2～3 张），不要写死 3 张。
+    // 图片素材请媒体侧自行下载并渲染（URL 见 data.imageURLs）。
     // 视频素材请准备 videoView 容器，不要自行播放 videoURL。
 
     YSIFLYNativeFeedAdViewBinder *binder = [[YSIFLYNativeFeedAdViewBinder alloc] init];
     binder.containerView = self.adContainer;
     binder.renderViews = @[self.mediaContainer, self.titleLabel, self.descLabel, self.ctaButton];
-    binder.clickViews = @[self.mediaContainer, self.ctaButton];
+    // nil 会退化为整容器可点击。Exposure / Unknown 必须显式传空数组。
+    binder.clickViews = clickable ? @[self.mediaContainer, self.ctaButton] : @[];
     binder.closeView = self.closeButton;
     binder.videoView = ad.hasVideoTemplate ? self.mediaContainer : nil;
     binder.titleView = self.titleLabel;
@@ -474,21 +490,55 @@ iOS 14 及以上读取 IDFA 前必须先请求 App Tracking Transparency 权限�
         NSLog(@"Native bind failed: %d %@", error.errorCode, error.errorDescription);
     }
 }
-
-- (void)ysifly_nativeFeedAdDidRender:(YSIFLYNativeFeedAd *)ad {
-    if (ad.hasVideoTemplate) {
-        [ad ysifly_startPlay];
-    }
-}
 ```
+
+`templateId` 与 `materialType` 类型、数值一致，均为 SDK 按实际素材归一出的
+`YSIFLYNativeFeedAdMaterialType`，不是服务端原始模板号：
+
+| 枚举 | 值 | 归一规则 |
+| --- | ---: | --- |
+| `YSIFLYNativeFeedAdMaterialTypeUnknown` | 0 | 无可用视频、多图、主图或 icon。 |
+| `YSIFLYNativeFeedAdMaterialTypeSingleImage` | 1 | 有 `img`，或在 `img` 缺失时有 `icon`。 |
+| `YSIFLYNativeFeedAdMaterialTypeVideo` | 2 | 有有效 `video` URL，优先级最高。 |
+| `YSIFLYNativeFeedAdMaterialTypeMultipleImages` | 3 | 无视频，且 `img1`、`img2` 有效；`img3` 可选。 |
+
+归一优先级固定为 `video → img1 + img2 → img 或 icon → Unknown`。行为类型为
+`Exposure(1)`、`Redirect(2)`、`Download(3)` 或 `Unknown(0)`；服务端
+`action_type=3/4` 均归一为 `Download`，`9` 及未知值归一为 `Unknown`。
+`interactType` 对应 `Click(1)`、`ClickAndShake(2)`、`ClickAndSlide(3)`、
+`ClickShakeAndSlide(4)`；当前 NativeFeed 只消费点击及其中的摇一摇分量，不自动实现
+上滑手势，`5/6/7` 及未知值归一为 `Unknown`。
+
+`6.1.0` 的响应数据对外采用严格白名单。四种广告通用对象只暴露
+`bidInfo.price` 和 `bidInfo.dealId`；只有 NativeFeed 额外提供只读 `adData`：
+
+- 标识与枚举：`creativeId`、`templateId`、`materialType`、`interactionType`、
+  `interactType`、`hasShakeInteraction`。
+- 文案与品牌：`title`、`desc`、`content`、`ctaText`、`brand`、`appName`、
+  `adSourceMark`、`adSourceIconURL`。
+- 图片：`mainImage`、`image1`、`image2`、`image3`、`imageList`、
+  `imageURLs`、`imageSize`、`icon`、`iconURL`、`closeIconURL`。
+- 视频：`videoURL`、`videoCoverURL`、`videoDuration`、`videoSize`。
+- 跳转与下载：`targetURL`、`deeplinkURL`、`marketURL`、`downloadURL`、
+  `packageName`。
+
+不再提供 `rawAdData`、`sponsored`、`actionText`、`ecpm` 或服务端原始
+`template_id`；请勿通过 KVC、反射或写死旧枚举数值继续读取。
 
 复用注意：
 
 - `containerView` 必填。
-- 视频素材必须传 `videoView`，由 SDK 创建播放器并完成播放监测（接入方不要自行播放 `videoURL`）。
-- `UITableViewCell` / `UICollectionViewCell` 复用前调用 `ysifly_unbindAd` 或 `ysifly_destroy`。
+- 视频素材必须传 `videoView`，由 SDK 只在该视图的 layer 中安装和移除自己的
+  `AVPlayerLayer`；接入方不要创建 `AVPlayer` 或自行播放 `videoURL`。
+- 视频在达到曝光条件后自动播放；SDK 管理前后台、静音、缓冲、暂停、恢复和完播。媒体
+  可按页面生命周期调用 `ysifly_pausePlay` / `ysifly_resumePlay`，离开或复用时调用
+  `ysifly_stopPlay` / `ysifly_unbindAd`。
+- `UITableViewCell` / `UICollectionViewCell` 的 `prepareForReuse` 中先调用
+  `ysifly_unbindAd`，再清空媒体图片和文案；页面销毁时置空 delegate 并调用
+  `ysifly_destroy`。绑定、解绑和复用均在主线程执行。
 - 绑定成功后该广告实例视为已消费；新的广告机会请创建新实例并重新 `ysifly_loadAd`。
-- 素材类型见 `ad.materialType`（单图 / 三图 / 视频 / 未知）；视频播放控制：`ysifly_startPlay`、`ysifly_pausePlay`、`ysifly_resumePlay`、`ysifly_stopPlay`。
+- 一个广告实例不能同时绑定多个容器。重新绑定前先解绑旧实例；不要在异步图片回调中
+  把旧广告内容写入已复用的 cell。
 
 ---
 
@@ -513,20 +563,26 @@ if (!sdkToken) {
 [nativeAd       ysifly_loadAdWithServerBiddingToken:rspToken];
 ```
 
-`rspToken` 为空会回调 `YSIFLYAdErrorCodeS2STokenEmpty`；无效、过期、重复使用或未竞胜会回调 `YSIFLYAdErrorCodeS2STokenInvalid`。S2S 加载成功后的 `ecpm` 固定返回 `0.0`。
+`rspToken` 为空会回调 `YSIFLYAdErrorCodeS2STokenEmpty`；无效、过期、重复使用或未竞胜会回调 `YSIFLYAdErrorCodeS2STokenInvalid`。S2S 加载成功后的 `bidInfo.price` 固定返回 `0`。
 
 ---
 
 ## Header Bidding 结果通知
 
-广告加载成功后，可通过 `bidInfo` 或 `ecpm` 获取竞价信息。媒体侧完成竞价决策后，可通过基类方法通知结果：
+广告加载成功后，通过 `bidInfo` 获取严格白名单竞价信息：
 
 ```objc
-if (ad.bidInfo.winNoticeAvailable) {
-    [ad ysifly_sendBidResultWithType:YSIFLYAdBidResultTypeWin reason:@"win"];
-} else {
-    [ad ysifly_sendBidResultWithType:YSIFLYAdBidResultTypeLoseBidLower reason:@"loss"];
-}
+NSNumber *price = ad.bidInfo.price;
+NSString *dealId = ad.bidInfo.dealId;
+```
+
+`price` 或 `dealId` 未下发时可能为 `nil`。媒体侧完成竞价决策后，按实际竞价结果
+调用基类通知方法：
+
+```objc
+[ad ysifly_sendBidResultWithType:YSIFLYAdBidResultTypeWin reason:@"win"];
+// 或失败场景：
+[ad ysifly_sendBidResultWithType:YSIFLYAdBidResultTypeLoseBidLower reason:@"loss"];
 ```
 
 结果类型见 `YSIFLYAdBidResultType`（`Win` / `LoseBidLower` / `LoseCreativePending` / `LoseCreativeRejected` / `LosePriorityLower` / `Error` / `Timeout`）。具体是否需要通知、通知时机和价格字段请以业务接入约定为准。
@@ -549,9 +605,9 @@ if (ad.bidInfo.winNoticeAvailable) {
 
 | 现象 | 排查建议 |
 | --- | --- |
-| `pod install` 找不到 SDK | 确认 `Podfile` 用的是 `:podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.0.14/YSIFLYADLib.podspec'`（钉到 tag）。 |
-| 广告图片缺失 | **6.0.12 及以上（静态交付）**：确认 `YSAdvSDK.bundle` 已进入 app（CocoaPods 自动；SPM / 手动集成须把 bundle 加入 Copy Bundle Resources，见接入方式）。**6.0.11 及以前（动态交付）**：请使用 1.0.2 及以上（动态 framework 才会投递内嵌 bundle）；早期 1.0.0「静态包 + 资源内嵌不投递」已下线，与 6.0.12 的「静态包 + 资源外置」不是一回事。 |
-| 开屏「摇一摇或点击」图标显示为白色文件占位 | 1.0.2/1.0.3 的已知缺陷（改名误改资源名致内嵌图标失配），自 1.0.4 起已修复，**请升级到最新版 6.0.14**。 |
+| `pod install` 找不到 SDK | 确认 `Podfile` 用的是 `:podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.1.0/YSIFLYADLib.podspec'`（钉到 tag）。 |
+| 广告图片缺失 | **6.1.0**：CocoaPods / SwiftPM 都会自动投递 `YSAdvSDK.bundle`，请确认最终 App 中存在该 bundle 及 `PrivacyInfo.xcprivacy`；手动接入须加入 Copy Bundle Resources。**6.0.12～6.0.14**：CocoaPods 自动，SPM / 手动接入须手工复制。**6.0.11 及以前**为历史动态交付。 |
+| 开屏「摇一摇或点击」图标显示为白色文件占位 | 1.0.2/1.0.3 的已知缺陷（改名误改资源名致内嵌图标失配），自 1.0.4 起已修复，**请升级到最新版 6.1.0**。 |
 | 真机启动崩溃 | 1.0.1 有悬空依赖缺陷，已下线；请升级到 **1.0.2 及以上**。 |
 | 模拟器无法运行 | 本定制版含模拟器切片，可直接在模拟器调试；若报架构缺失，确认拉取的是 1.0.2+ 的 zip。 |
 | IDFA 为空 | 确认 `NSUserTrackingUsageDescription` 已配置、用户已允许 ATT、在授权完成后再读取 `ASIdentifierManager`、过滤全零 UUID。 |
@@ -571,12 +627,12 @@ if (ad.bidInfo.winNoticeAvailable) {
 | 基类 | `YSIFLYAdBase`（请求配置、状态、竞价通知、DeepLink 开关） |
 | 展示配置 | `YSIFLYSplashAdConfig` / `YSIFLYInterstitialAdConfig`（继承 `YSIFLYAdShowConfig`） |
 | 请求配置 | `YSIFLYAdRequestConfig` |
-| 数据模型 | `YSIFLYAdData` / `YSIFLYNativeFeedAdData` / `YSIFLYAdBidInfo` |
+| 数据模型 | `YSIFLYNativeFeedAdData`（仅自渲染白名单素材）/ `YSIFLYAdBidInfo`（四种广告通用 `price/dealId`） |
 | 信息流绑定 | `YSIFLYNativeFeedAdViewBinder` |
 | 全局配置 | `YSIFLYAdConfig`（`ysifly_setLogEnabled:` / `ysifly_setPersonalizedEnabled:`） |
 | SDK 能力 | `YSIFLYAdSDK`（`ysifly_getSdkTokenWithAdUnitId:error:`）、`YSIFLYAdTool`（`ysifly_sdkVersion`） |
 | 错误 | `YSIFLYAdError` / `YSIFLYAdErrorCode` |
-| 加载/展示方法 | `ysifly_loadAd`、`ysifly_loadAdWithRequestConfig:`、`ysifly_loadAdWithServerBiddingToken:`、`ysifly_showInView:`、`ysifly_showAdFromRootViewController:config:`、`ysifly_bindAdWithViewBinder:error:`、`ysifly_unbindAd`、`ysifly_destroy`、`ysifly_isAdValid`、`ecpm` |
+| 加载/展示方法 | `ysifly_loadAd`、`ysifly_loadAdWithRequestConfig:`、`ysifly_loadAdWithServerBiddingToken:`、`ysifly_showInView:`、`ysifly_showAdFromRootViewController:config:`、`ysifly_bindAdWithViewBinder:error:`、`ysifly_unbindAd`、`ysifly_destroy`、`ysifly_isAdValid` |
 | 命名约定 | 入口类 `YS` 前缀；公开方法 / delegate 回调 `ysifly_` 前缀；初始化与属性保持系统风格（不加前缀） |
 
 > 完整 API 以 framework 公开头 `<YSIFLYADLib/YSIFLYADLib.h>` 及其汇总的各头文件为准。

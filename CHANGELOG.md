@@ -4,6 +4,22 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [6.1.0] - 2026-07-31
+
+### 不兼容变更
+
+- 广告响应数据改为严格白名单：开屏、Banner、插屏与 NativeFeed 的通用竞价信息仅通过 `bidInfo.price` / `bidInfo.dealId` 暴露；移除广告对象 `ecpm`，`creativeId` 只保留在 NativeFeed 的 `adData`。
+- NativeFeed 移除 `rawAdData`、`sponsored`、`actionText` 等旧字段，新增服务端 `ctatext` 对应的 `ctaText` 和下载类应用名称 `appName`。
+- `templateId` 不再透传服务端原始值，改为与 `materialType` 相同的归一枚举：`Unknown=0`、`SingleImage=1`、`Video=2`、`MultipleImages=3`。素材优先级为 `video → img1+img2 → img/icon → Unknown`，多图由固定三图改为两至三图。
+- `interactionType` 归一为 `Unknown`、`Exposure`、`Redirect`、`Download`；仅曝光和未知广告绑定时必须显式传空 `clickViews`，不能用 `nil` 触发整容器点击兜底。
+
+### 变更
+
+- 自渲染信息流不再由 SDK 自动向媒体容器添加摇一摇提示 UI；点击、摇一摇/扭一扭触发、曝光与监测能力不变。
+- 完善播放器容器管理、尺寸同步、解绑和视图复用清理；Demo 补齐单图/多图/视频分支、`appName` / `ctaText` 渲染、竞价字段、仅曝光绑定和视频生命周期示例。
+- SwiftPM 新增 `YSIFLYADLibResources` 包装 target，随 package 自动投递外置 `YSAdvSDK.bundle` 与 `PrivacyInfo.xcprivacy`；CocoaPods 和手动集成的合并 zip 结构不变。
+- 继续保持 YS 定制能力边界：开屏 / Banner / 插屏 / 自渲染信息流（含视频），无激励视频；静态 XCFramework 同时提供真机 `arm64` 和模拟器 `arm64/x86_64` 切片，最低支持 iOS 11。
+
 ## [6.0.14] - 2026-07-20
 
 ### 新增
@@ -129,6 +145,7 @@
 - YS 媒体定制广告 SDK 首版（model B 单包）：类型名统一前缀 `YS`（如 `YSIFLYSplashAd`）、公开方法统一前缀 `ysifly_`、资源包 `YSAdvSDK.bundle`、日志前缀 `[YSAd]`。
 - 缺陷：静态 framework 不投递内嵌资源包，广告图片缺失，已由后续版本修复。
 
+[6.1.0]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.1.0
 [6.0.14]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.14
 [6.0.13]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.13
 [6.0.12]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.12

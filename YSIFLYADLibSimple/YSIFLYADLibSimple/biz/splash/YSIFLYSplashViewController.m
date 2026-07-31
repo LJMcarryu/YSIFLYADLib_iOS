@@ -143,9 +143,9 @@
 }
 
 - (void)checkStatus {
-    [self log:[NSString stringWithFormat:@"状态 ysifly_isAdValid=%@ ecpm=%.2f",
+    [self log:[NSString stringWithFormat:@"状态 ysifly_isAdValid=%@ %@",
                                       (self.splashAd && [self.splashAd ysifly_isAdValid]) ? @"YES" : @"NO",
-                                      self.splashAd ? [self.splashAd ecpm] : -1.0]];
+                                      [YSIFLYADUtil bidInfoSummaryForAd:self.splashAd]]];
 }
 
 - (void)destroyAdSilently {
@@ -176,10 +176,10 @@
 #pragma mark - YSIFLYSplashAdDelegate
 
 - (void)ysifly_splashAdDidLoad:(YSIFLYSplashAd *)ad {
-    [self log:[NSString stringWithFormat:@"splashAdDidLoad video=%@ landscape=%@ ecpm=%.2f",
+    [self log:[NSString stringWithFormat:@"splashAdDidLoad video=%@ landscape=%@ %@",
                                       ad.hasVideoTemplate ? @"YES" : @"NO",
                                       ad.isLandscapeTemplate ? @"YES" : @"NO",
-                                      [ad ecpm]]];
+                                      [YSIFLYADUtil bidInfoSummaryForAd:ad]]];
     [self updateStatus:@"已加载，等待素材 ready" color:[YSIFLYADUtil demoIndigoColor]];
 }
 
