@@ -24,6 +24,16 @@ jobs:
           plutil -lint spm/YSIFLYADLibResources/YSAdvSDK.bundle/PrivacyInfo.xcprivacy
           grep -q 'name: "YSIFLYADLibResources"' Package.swift
           grep -q '\.copy("YSAdvSDK.bundle")' Package.swift
+          python3 - <<'PY'
+          from pathlib import Path
+
+          executable_resources = [
+              path
+              for path in Path("spm/YSIFLYADLibResources/YSAdvSDK.bundle").rglob("*")
+              if path.is_file() and path.stat().st_mode & 0o111
+          ]
+          assert not executable_resources, executable_resources
+          PY
 
       - name: 校验 SPM binaryTarget 的 url + checksum 一致
         run: |
