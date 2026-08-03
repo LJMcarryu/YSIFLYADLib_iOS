@@ -1,6 +1,7 @@
 # 更新日志
 
-本项目遵循语义化版本。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)。
+本日志按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 格式维护。
+`6.1.0` 包含经产品批准的不兼容公开契约变更，升级时不能仅根据次版本号判断兼容性。
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
@@ -156,4 +157,6 @@
 [6.0.7]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.7
 [6.0.6]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.6
 [6.0.5]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.5
+[1.0.4]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/1.0.4
+[1.0.3]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/1.0.3
 [1.0.2]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/1.0.2
