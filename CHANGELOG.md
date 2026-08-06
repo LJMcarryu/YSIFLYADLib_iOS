@@ -5,6 +5,23 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [6.2.1] - 2026-08-07
+
+### 新增
+
+- NativeFeed 新增可恢复列表展示契约：`YSIFLYNativeFeedDisplaySession` 表示稳定逻辑广告条目，`YSIFLYNativeFeedAdBinding` 表示一次可见 Cell 绑定；对应公开方法为 `ysifly_beginDisplaySessionWithError:`、`ysifly_attachWithViewBinder:error:`、`ysifly_detach` 和 `ysifly_endDisplaySession`。
+- 同一 DisplaySession 在曝光前后均可于 Cell detach 后重新 attach 到新 Cell。曝光前重新累计连续可见时长；已曝光会话恢复原广告，但曝光回调、曝光监测、点击监测 URL 和视频节点监测仍按广告会话去重。
+
+### 变更
+
+- 明确列表所有权：稳定 ID 的数据模型长期持有 `Ad + DisplaySession`，复用 Cell 只持当前 `Binding`；迟到的旧 Cell detach 通过绑定代次隔离，不会误清后来挂载的新 Cell。一次性 `ysifly_bindAdWithViewBinder:error:` / `ysifly_unbindAd` 语义保持不变，不得与 DisplaySession 混用。
+- 明确有效期边界：TTL 或视频 `end_time` 在活动 Binding 期间到期只会令会话不可再次挂载，不会中途强拆当前 Cell；当前 Binding 正常 detach 后，下一次 attach 返回 `YSIFLYAdErrorCodeNativeFeedAdExpired`（`71506`），媒体再结束会话、淘汰模型并请求新广告。
+- NativeFeed 示例改为可滚动的 `UITableView` 复用场景，覆盖稳定条目持有、异步素材 generation 校验、UIKit 新旧 Cell 回调乱序、曝光前后恢复和过期替换流程。
+
+### 发布说明
+
+- 正式资产由私有源码提交 `3fcc0007b47a66d82f3134fab2a1eac58b35c94d` 使用 Xcode 26.2 构建；`Package.swift` 已回填正式签名 zip 的 checksum。二进制分发完成不代表最终宿主 App 的真机、监测入库、隐私披露或审核合规证据已经闭环。
+
 ## [6.2.0] - 2026-08-06
 
 ### 新增
@@ -160,6 +177,7 @@
 - YS 媒体定制广告 SDK 首版（model B 单包）：类型名统一前缀 `YS`（如 `YSIFLYSplashAd`）、公开方法统一前缀 `ysifly_`、资源包 `YSAdvSDK.bundle`、日志前缀 `[YSAd]`。
 - 缺陷：静态 framework 不投递内嵌资源包，广告图片缺失，已由后续版本修复。
 
+[6.2.1]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.1
 [6.2.0]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.0
 [6.1.0]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.1.0
 [6.0.14]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.14
