@@ -25,20 +25,26 @@ open YSIFLYADLibSimple.xcworkspace
 
 ## 接入要点
 
-`Podfile` 通过 GitHub Releases 上的 `YSIFLYADLib.podspec` 集成公开发布的 `6.1.0` 版本，示例工程最低支持 iOS 11.0：
+`Podfile` 通过 GitHub Releases 上的 `YSIFLYADLib.podspec` 集成公开发布的 `6.2.0` 版本，示例工程最低支持 iOS 11.0：
 
 ```ruby
-pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.1.0/YSIFLYADLib.podspec'
+pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.2.0/YSIFLYADLib.podspec'
 ```
 
-`6.1.0` 为**静态 framework**：代码随 App 静态链接、无需 Embed；`YSAdvSDK.bundle`（含 `PrivacyInfo.xcprivacy`）由 CocoaPods podspec 或 SwiftPM 资源包装 target 自动拷入 App，且无需在 App target 配置 `-ObjC`。只有手动接入时需要自行把该 bundle 加入 Copy Bundle Resources。
+`6.2.0` 延续**静态 framework**交付：代码随 App 静态链接、无需 Embed；`YSAdvSDK.bundle`（含 `PrivacyInfo.xcprivacy`）由 CocoaPods podspec 或 SwiftPM 资源包装 target 自动拷入 App。最终 App 链接需要 `-ObjC`：CocoaPods podspec 同时向 pod target 与 aggregate/user target 注入，SwiftPM 和手动接入需在 App target 的 `OTHER_LDFLAGS` 添加。只有手动接入时需要自行把该 bundle 加入 Copy Bundle Resources。CocoaPods podspec 显式链接 `AdSupport`、弱链接 `AppTrackingTransparency`；SwiftPM 与手动接入依靠 XCFramework 目标文件携带的 linker options，最低 iOS 11.0 不变。
 
-自渲染示例已按 `6.1.0` 公开契约更新：
+自渲染示例延续 `6.1.0` 的严格响应数据公开契约：
 
 - 通用竞价信息从 `ad.bidInfo.price/dealId` 获取，不再调用 `ecpm`。
 - NativeFeed 使用 `ctaText`、`appName` 和归一后的 `templateId/materialType`；多图按两至三张处理。
 - `Exposure` / `Unknown` 显式传空 `clickViews`，避免 `nil` 回退为整容器可点击。
 - 复用或离开页面前先解绑并销毁旧实例；视频容器交给 SDK，不自行创建 `AVPlayer`。
+
+从 `6.1.0` 升级到 `6.2.0` 时还需注意：
+
+- `jumpDirectly` 已成为兼容 no-op；SDK 不再使用 `canOpenURL:` 预检，DeepLink 以 `openURL` 完成回调判定，失败时仍回退 landing page。
+- iOS 14 及以上只有 ATT 已授权时才接受系统或媒体显式 IDFA；授权前设置的显式值会被丢弃，授权后必须重新设置。
+- NativeFeed 公开白标方法为 `ysifly_reportMediaShakeTriggeredWithError:`；YS 变体未启用优酷媒体摇一摇能力，调用返回 `NO` 和 `71512`，示例不把该方法作为摇一摇入口。
 
 ## API 命名约定
 

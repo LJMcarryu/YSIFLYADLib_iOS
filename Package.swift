@@ -12,7 +12,7 @@ import PackageDescription
 
 let package = Package(
     name: "YSIFLYADLib",
-    // 6.1.0 的静态 binaryTarget 按 iOS 11 重新构建；发布前须把最终资源包同步到资源 target。
+    // 6.2.0 的静态 binaryTarget 已按 iOS 11 重新构建，最终资源包已同步到资源 target。
     platforms: [
         .iOS("11.0"),
     ],
@@ -22,8 +22,9 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "YSIFLYADLib",
-            url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.1.0/YSIFLYADLib.xcframework.zip",
-            checksum: "25c985c8876c1d45ffd352d78c5a164e787045226f8ad4fe1b21081b17609280"
+            // checksum 来自 6.2.0 正式签名 zip，并已与 Release 清单核对。
+            url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.2.0/YSIFLYADLib.xcframework.zip",
+            checksum: "e09dae72512e99ada35c35f55eee0b295bb443fc3d40f3cc2b4ea266cb0a4467"
         ),
         .target(
             name: "YSIFLYADLibResources",

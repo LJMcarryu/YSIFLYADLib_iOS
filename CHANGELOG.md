@@ -5,6 +5,20 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [6.2.0] - 2026-08-06
+
+### 新增
+
+- NativeFeed 公开头新增白标方法 `ysifly_reportMediaShakeTriggeredWithError:`，并同步公开 `71512`～`71515` 错误码。该方法用于统一不同分发变体的公开契约；YS `YSNoReward` 变体未启用优酷媒体摇一摇采样能力，调用固定返回 `YSIFLYAdErrorCodeNativeFeedMediaShakeUnavailable`（`71512`），不改变 YS 既有广告能力边界。
+
+### 变更
+
+- 外部 URL 跳转不再使用 `canOpenURL:` 预检，统一直接调用 `openURL:options:completionHandler:` 并以系统完成回调判定成功；DeepLink 失败继续回退 landing page，非法 HTTP URL、携带凭据的 URL 和危险 scheme 仍在打开前拒绝。
+- `jumpDirectly` 保留为源码兼容字段，但已成为 no-op；不再影响 DeepLink 跳转路径。
+- iOS 14 及以上的系统 IDFA 与媒体显式 IDFA 统一受 ATT `Authorized` 门控；IDFA 写入普通请求和 S2S 请求载荷时遵循同一规则。未授权时显式 IDFA 会被丢弃且不缓存，授权后须重新设置；撤权或回到前台发现未授权时清除缓存。
+- CocoaPods 清单显式链接 `AdSupport`、弱链接 `AppTrackingTransparency`，使 ATT 类型安全调用与 iOS 11～13 启动兼容同时成立。
+- 继续保持静态 XCFramework、外置 `YSAdvSDK.bundle`、开屏 / Banner / 插屏 / 自渲染信息流（含视频、无激励）交付边界。
+
 ## [6.1.0] - 2026-07-31
 
 ### 不兼容变更
@@ -146,6 +160,7 @@
 - YS 媒体定制广告 SDK 首版（model B 单包）：类型名统一前缀 `YS`（如 `YSIFLYSplashAd`）、公开方法统一前缀 `ysifly_`、资源包 `YSAdvSDK.bundle`、日志前缀 `[YSAd]`。
 - 缺陷：静态 framework 不投递内嵌资源包，广告图片缺失，已由后续版本修复。
 
+[6.2.0]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.0
 [6.1.0]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.1.0
 [6.0.14]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.14
 [6.0.13]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.0.13

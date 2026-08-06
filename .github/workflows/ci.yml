@@ -9,7 +9,8 @@ on:
 jobs:
   verify-distribution:
     name: 校验分发清单与产物（model B 单包）
-    runs-on: macos-14
+    # Demo 工程由 Xcode 16.2 创建（objectVersion 77），需使用 Xcode 16+ runner。
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
@@ -74,14 +75,107 @@ jobs:
       - name: 校验 podspec / Package.swift / README 版本一致
         run: |
           python3 - <<'PY'
-          import re, sys
+          import json, re, shlex, subprocess, sys
+
           spec = open("YSIFLYADLib.podspec", encoding="utf-8").read()
           pkg = open("Package.swift", encoding="utf-8").read()
           sv = re.search(r"s\.version\s*=\s*'([^']+)'", spec).group(1)
           urls = set(re.findall(r"/releases/download/([0-9.]+)/", spec + pkg))
-          ok = urls == {sv}
-          print(f"podspec version={sv}，下载 URL 版本集={sorted(urls)}，一致={ok}")
+
+          evaluated = json.loads(
+              subprocess.check_output(
+                  ["pod", "ipc", "spec", "YSIFLYADLib.podspec"],
+                  text=True,
+              )
+          )
+
+          def has_objc_flag(config):
+              flags = (config or {}).get("OTHER_LDFLAGS", "")
+              return "-ObjC" in shlex.split(flags)
+
+          def as_set(value):
+              if isinstance(value, str):
+                  return {value}
+              return set(value or [])
+
+          pod_target_objc = has_objc_flag(evaluated.get("pod_target_xcconfig"))
+          user_target_objc = has_objc_flag(evaluated.get("user_target_xcconfig"))
+          ad_support = "AdSupport" in as_set(evaluated.get("frameworks"))
+          weak_att = "AppTrackingTransparency" in as_set(
+              evaluated.get("weak_frameworks")
+          )
+          link_contract = all(
+              (pod_target_objc, user_target_objc, ad_support, weak_att)
+          )
+          ok = urls == {sv} and link_contract
+          print(
+              f"podspec version={sv}，下载 URL 版本集={sorted(urls)}，"
+              f"pod target -ObjC={pod_target_objc}，"
+              f"user target -ObjC={user_target_objc}，"
+              f"AdSupport={ad_support}，ATT 弱链接={weak_att}，一致={ok}"
+          )
           sys.exit(0 if ok else 1)
+          PY
+
+      - name: 真实校验 CocoaPods 将 -ObjC 传播到最终 App
+        run: |
+          (
+            cd YSIFLYADLibSimple
+            pod install
+          )
+
+          python3 - <<'PY'
+          import shlex
+          from pathlib import Path
+
+          support_root = Path("YSIFLYADLibSimple/Pods/Target Support Files")
+          configs = {
+              "pod target": support_root / "YSIFLYADLib/YSIFLYADLib.debug.xcconfig",
+              "aggregate target": (
+                  support_root
+                  / "Pods-YSIFLYADLibSimple/Pods-YSIFLYADLibSimple.debug.xcconfig"
+              ),
+          }
+          for label, path in configs.items():
+              if not path.is_file():
+                  raise SystemExit(f"缺少 {label} xcconfig: {path}")
+              lines = [
+                  line.split("=", 1)[1].strip()
+                  for line in path.read_text(encoding="utf-8").splitlines()
+                  if line.strip().startswith("OTHER_LDFLAGS") and "=" in line
+              ]
+              if not any("-ObjC" in shlex.split(value) for value in lines):
+                  raise SystemExit(f"{label} 未传播 -ObjC: {path}")
+              print(f"OK {label}: {path}")
+          PY
+
+          xcodebuild \
+            -workspace YSIFLYADLibSimple/YSIFLYADLibSimple.xcworkspace \
+            -scheme YSIFLYADLibSimple \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -showBuildSettings \
+            -json > "${RUNNER_TEMP}/ys-build-settings.json"
+
+          python3 - <<'PY'
+          import json
+          import os
+          import shlex
+          from pathlib import Path
+
+          settings_path = Path(os.environ["RUNNER_TEMP"]) / "ys-build-settings.json"
+          records = json.loads(settings_path.read_text(encoding="utf-8"))
+          app_records = [
+              item for item in records if item.get("target") == "YSIFLYADLibSimple"
+          ]
+          if len(app_records) != 1:
+              raise SystemExit(
+                  f"无法唯一定位最终 App build settings: {len(app_records)}"
+              )
+          flags = app_records[0].get("buildSettings", {}).get("OTHER_LDFLAGS", "")
+          if "-ObjC" not in shlex.split(flags):
+              raise SystemExit(f"最终 App OTHER_LDFLAGS 未包含 -ObjC: {flags}")
+          print(f"OK 最终 App OTHER_LDFLAGS: {flags}")
           PY
 
   lint-podspec:
@@ -92,5 +186,5 @@ jobs:
       - name: pod spec lint
         run: pod spec lint YSIFLYADLib.podspec --quick --allow-warnings
 
-# 说明：以上为只读校验门禁（无需任何密钥）。
-# 更重的检查（全量 pod spec lint 真实编译、示例工程 pod install + xcodebuild build）耗时较长，可按需另加 workflow。
+# 说明：以上为只读校验门禁（无需任何密钥），包含真实 pod install 与最终 App build settings 检查。
+# 更重的检查（全量 pod spec lint 真实编译、示例工程 xcodebuild build）耗时较长，可按需另加 workflow。
