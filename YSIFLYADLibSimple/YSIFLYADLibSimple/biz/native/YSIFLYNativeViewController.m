@@ -11,13 +11,12 @@ static NSString *const YSNativeFeedDemoAdItemIdentifier = @"ys-native-feed-stabl
 
 typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable failureReason);
 
-/// 列表数据层中的逻辑广告条目。stableIdentifier 不随 Cell 复用变化；Ad 与 DisplaySession
-/// 只在条目被永久淘汰、页面退出或用户主动销毁时释放。
+/// 列表数据层中的逻辑广告条目。stableIdentifier 不随 Cell 复用变化；媒体只持有 Ad，
+/// SDK 在 Ad 内部托管展示会话、绑定句柄和复用代次。
 @interface YSNativeFeedDemoItem : NSObject
 
 @property (nonatomic, copy) NSString *stableIdentifier;
 @property (nonatomic, strong, nullable) YSIFLYNativeFeedAd *ad;
-@property (nonatomic, strong, nullable) YSIFLYNativeFeedDisplaySession *displaySession;
 @property (nonatomic, assign) NSUInteger generation;
 
 - (instancetype)initWithStableIdentifier:(NSString *)stableIdentifier;
@@ -36,26 +35,19 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
 
 @end
 
-/// 可复用的广告 Cell。Cell 不持有广告对象，只持有当前可见代次的 Binding；迟到的旧 Binding
-/// detach 由 SDK 的代次校验隔离，不会误清后来挂载的新 Cell。
+/// 可复用的广告 Cell。Cell 只负责渲染 UI、生成 Binder，并在离屏/复用时按容器反注册；
+/// 不保存 Session、Binding 或首次/复用状态。
 @interface YSNativeFeedDemoTableViewCell : UITableViewCell
-
-@property (nonatomic, strong, readonly, nullable) YSIFLYNativeFeedAdBinding *binding;
-@property (nonatomic, weak, readonly, nullable) YSIFLYNativeFeedAd *renderingAd;
-@property (nonatomic, weak, readonly, nullable) YSIFLYNativeFeedAd *boundAd;
 
 - (void)renderAd:(YSIFLYNativeFeedAd *)ad completion:(YSNativeFeedDemoRenderCompletion)completion;
 - (YSIFLYNativeFeedAdViewBinder *)viewBinderForAd:(YSIFLYNativeFeedAd *)ad;
-- (void)installBinding:(YSIFLYNativeFeedAdBinding *)binding;
-- (void)detachBinding;
+- (void)detachAdFromContainer;
 - (void)updateVideoMessage:(NSString *)message visible:(BOOL)visible;
 
 @end
 
 @interface YSNativeFeedDemoTableViewCell ()
 
-@property (nonatomic, strong, readwrite, nullable) YSIFLYNativeFeedAdBinding *binding;
-@property (nonatomic, weak, readwrite, nullable) YSIFLYNativeFeedAd *renderingAd;
 @property (nonatomic, assign) NSUInteger renderGeneration;
 @property (nonatomic, strong) UIView *adContainer;
 @property (nonatomic, strong) UIView *videoView;
@@ -224,15 +216,11 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
     self.descLabel.frame = CGRectMake(descX, rowY, MAX(0, descRight - gap - descX), rowHeight);
 }
 
-- (YSIFLYNativeFeedAd *)boundAd {
-    return self.binding.displaySession.ad;
-}
-
 - (void)renderAd:(YSIFLYNativeFeedAd *)ad completion:(YSNativeFeedDemoRenderCompletion)completion {
-    self.renderGeneration += 1;
+    // 可见行 reload 可能不会先触发 prepareForReuse。必须在改写媒体子视图前按容器反注册，
+    // 避免上一条广告的手势、曝光或播放器继续作用于新 UI。
+    [self detachAdFromContainer];
     NSUInteger generation = self.renderGeneration;
-    self.renderingAd = ad;
-    [self ys_demoResetVisuals];
 
     YSIFLYNativeFeedAdData *data = ad.adData;
     if (!data || ![data ysifly_isMaterialComplete] ||
@@ -280,7 +268,7 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
         [YSIFLYADUtil loadImageWithURLString:imageURL
                                   completion:^(UIImage *image, NSError *error) {
                                       __strong typeof(weakSelf) self = weakSelf;
-                                      if (!self || self.renderGeneration != generation || self.renderingAd != ad) {
+                                      if (!self || self.renderGeneration != generation) {
                                           return;
                                       }
                                       if (!image) {
@@ -320,7 +308,7 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
                                   completion:^(UIImage *image, NSError *error) {
                                       (void)error;
                                       __strong typeof(weakSelf) self = weakSelf;
-                                      if (self && self.renderGeneration == generation && self.renderingAd == ad && image) {
+                                      if (self && self.renderGeneration == generation && image) {
                                           UIImageView *imageView = self.multipleImageViews[index];
                                           imageView.image = image;
                                           imageView.hidden = NO;
@@ -331,7 +319,7 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
     }
     dispatch_group_notify(group, dispatch_get_main_queue(), ^{
         __strong typeof(weakSelf) self = weakSelf;
-        if (!self || self.renderGeneration != generation || self.renderingAd != ad) {
+        if (!self || self.renderGeneration != generation) {
             return;
         }
         if (loadedCount < 2) {
@@ -392,28 +380,15 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
     return binder;
 }
 
-- (void)installBinding:(YSIFLYNativeFeedAdBinding *)binding {
-    if (self.binding == binding) {
-        return;
-    }
-    if (self.binding) {
-        [self.binding ysifly_detach];
-    }
-    self.binding = binding;
-}
-
-- (void)detachBinding {
+- (void)detachAdFromContainer {
     self.renderGeneration += 1;
-    self.renderingAd = nil;
-    YSIFLYNativeFeedAdBinding *binding = self.binding;
-    self.binding = nil;
-    [binding ysifly_detach];
+    [YSIFLYNativeFeedAd ysifly_detachAdFromContainerView:self.adContainer];
     [self ys_demoResetVisuals];
 }
 
 - (void)prepareForReuse {
     [super prepareForReuse];
-    [self detachBinding];
+    [self detachAdFromContainer];
 }
 
 - (void)updateVideoMessage:(NSString *)message visible:(BOOL)visible {
@@ -428,12 +403,11 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
 
 - (void)ys_demoResetCard {
     self.renderGeneration += 1;
-    self.renderingAd = nil;
     [self ys_demoResetVisuals];
 }
 
 - (void)ys_demoResetVisuals {
-    // SDK 的透明播放器宿主由 Binding detach 清理；媒体只清自己的图片和文案。
+    // SDK 的透明播放器宿主由容器级 detach 清理；媒体只清自己的图片和文案。
     self.videoView.hidden = NO;
     self.placeholderLabel.hidden = NO;
     self.placeholderLabel.text = @"等待加载广告";
@@ -465,11 +439,12 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
 @property (nonatomic, strong) YSNativeFeedDemoItem *adItem;
 @property (nonatomic, assign) NSUInteger loadGeneration;
 @property (nonatomic, weak, nullable) YSNativeFeedDemoTableViewCell *visibleAdCell;
+@property (nonatomic, weak, nullable) YSNativeFeedDemoTableViewCell *attachedAdCell;
 @property (nonatomic, copy, nullable) NSString *visibleAdItemIdentifier;
 
 - (void)startLoadingAdItem;
-- (BOOL)attachCurrentSessionToCell:(YSNativeFeedDemoTableViewCell *)cell;
-- (void)continueDisplayingAdItemAfterCellDetached:(NSString *)itemIdentifier;
+- (BOOL)attachCurrentAdToCell:(YSNativeFeedDemoTableViewCell *)cell;
+- (void)continueDisplayingAdItemAfterCellDetached;
 - (void)retireCurrentAdItem;
 
 @end
@@ -483,7 +458,7 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
     self.view.backgroundColor = UIColor.whiteColor;
     self.adItem = [[YSNativeFeedDemoItem alloc] initWithStableIdentifier:YSNativeFeedDemoAdItemIdentifier];
     [self setupUI];
-    [self log:@"稳定广告条目：数据层持有 Ad + DisplaySession，Cell 只持有 Binding"];
+    [self log:@"稳定广告条目：数据层只持有 Ad，SDK 托管 Session / Binding 与复用代次"];
 }
 
 - (void)dealloc {
@@ -499,7 +474,7 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    if (self.adItem.ad.hasVideoTemplate && self.visibleAdCell.boundAd == self.adItem.ad) {
+    if (self.adItem.ad.hasVideoTemplate && self.visibleAdCell) {
         [self.adItem.ad ysifly_resumePlay];
     }
 }
@@ -566,7 +541,7 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
 - (void)destroyAdItem {
     [self retireCurrentAdItem];
     [self updateStatus:@"逻辑广告条目已永久淘汰" color:[YSIFLYADUtil demoTealColor]];
-    [self log:@"Cell ysifly_detach → ysifly_endDisplaySession → ysifly_destroy"];
+    [self log:@"容器 ysifly_detachAdFromContainerView: → 释放最后一个 Ad 强引用（ysifly_destroy 可选）"];
 }
 
 #pragma mark - UITableViewDataSource
@@ -607,23 +582,14 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
     self.visibleAdCell = adCell;
     self.visibleAdItemIdentifier = self.adItem.stableIdentifier;
 
-    YSIFLYNativeFeedDisplaySession *session = self.adItem.displaySession;
-    if (session) {
-        if (adCell.binding.isActive && adCell.binding.displaySession == session) {
-            return;
-        }
-        // UIKit 可能先让新 Cell willDisplay，再让旧 Cell didEndDisplaying。旧 Binding 未 detach
-        // 前不抢占；旧 Cell 正常结束后由 continueDisplaying... 恢复到新 Cell。
-        if (session.isAttached) {
-            return;
-        }
-        // 即使 isValid 已因 TTL / end_time 变为 NO，也让下一次 attach 返回 71506，再淘汰条目；
-        // 活动 Binding 到期时不会在这里被中途强拆。
-        [self attachCurrentSessionToCell:adCell];
+    YSIFLYNativeFeedAd *ad = self.adItem.ad;
+    if (ad.adData) {
+        // SDK 处理同 Ad 迁移、同容器幂等和 UIKit 新旧 Cell 回调乱序；媒体无需判断首次/复用。
+        [self attachCurrentAdToCell:adCell];
         return;
     }
 
-    if (!self.adItem.ad) {
+    if (!ad) {
         [self startLoadingAdItem];
     }
 }
@@ -636,15 +602,18 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
     }
 
     YSNativeFeedDemoTableViewCell *adCell = (YSNativeFeedDemoTableViewCell *)cell;
-    [adCell detachBinding];
+    [adCell detachAdFromContainer];
+    if (self.attachedAdCell == adCell) {
+        self.attachedAdCell = nil;
+    }
     if (self.visibleAdCell == adCell) {
         self.visibleAdCell = nil;
         self.visibleAdItemIdentifier = nil;
     }
 
-    // didEndDisplaying 的 indexPath 在数据源变化后可能过时；固定 stableIdentifier 才代表
-    // Demo 中的同一个逻辑广告条目。Binding generation 会隔离迟到 detach。
-    [self continueDisplayingAdItemAfterCellDetached:YSNativeFeedDemoAdItemIdentifier];
+    // UIKit 可能先回调新 Cell 的 willDisplay，再回调旧 Cell 的 didEndDisplaying。
+    // 旧容器真正反注册后，再对仍可见的新 Cell 重试；媒体不保存 Binding 或首次/复用状态。
+    [self continueDisplayingAdItemAfterCellDetached];
 }
 
 #pragma mark - Logical ad item lifecycle
@@ -676,32 +645,27 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
     [ad ysifly_loadAdWithRequestConfig:[YSIFLYADUtil mediaSampleRequestConfig]];
 }
 
-- (BOOL)attachCurrentSessionToCell:(YSNativeFeedDemoTableViewCell *)cell {
+- (BOOL)attachCurrentAdToCell:(YSNativeFeedDemoTableViewCell *)cell {
     YSNativeFeedDemoItem *item = self.adItem;
     YSIFLYNativeFeedAd *ad = item.ad;
-    YSIFLYNativeFeedDisplaySession *session = item.displaySession;
-    if (!cell || !ad || !session || session.ad != ad) {
+    if (!cell || !ad || !ad.adData) {
         return NO;
     }
-    if (cell.binding.isActive && cell.binding.displaySession == session) {
+    if (self.attachedAdCell == cell) {
         return YES;
-    }
-    if (session.isAttached) {
-        return NO;
-    }
-    if (cell.binding) {
-        [cell detachBinding];
     }
 
     NSUInteger generation = item.generation;
     __weak typeof(self) weakSelf = self;
     __weak typeof(cell) weakCell = cell;
+    __weak YSIFLYNativeFeedAd *weakAd = ad;
     [cell renderAd:ad
         completion:^(BOOL ready, NSString *failureReason) {
             __strong typeof(weakSelf) self = weakSelf;
             __strong typeof(weakCell) cell = weakCell;
+            YSIFLYNativeFeedAd *ad = weakAd;
             if (!self || !cell || self.adItem != item || self.adItem.ad != ad ||
-                self.adItem.displaySession != session || self.adItem.generation != generation ||
+                self.adItem.generation != generation ||
                 self.visibleAdCell != cell ||
                 ![self.visibleAdItemIdentifier isEqualToString:item.stableIdentifier]) {
                 return;
@@ -709,30 +673,36 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
 
             if (!ready) {
                 [self log:[NSString stringWithFormat:@"媒体渲染失败：%@", failureReason ?: @"未知"]];
+                [cell detachAdFromContainer];
+                if (self.attachedAdCell && self.attachedAdCell != cell) {
+                    [self updateStatus:@"等待旧广告容器离屏" color:[YSIFLYADUtil demoIndigoColor]];
+                    return;
+                }
                 [self updateStatus:@"素材渲染失败" color:UIColor.systemRedColor];
                 [self retireCurrentAdItem];
                 return;
             }
-            if (session.isAttached) {
-                return;
-            }
 
             YSIFLYAdError *error = nil;
-            YSIFLYNativeFeedAdBinding *binding =
-                [session ysifly_attachWithViewBinder:[cell viewBinderForAd:ad] error:&error];
-            if (!binding) {
+            BOOL attached = [ad ysifly_attachWithViewBinder:[cell viewBinderForAd:ad]
+                                                      error:&error];
+            if (!attached) {
                 // attach 可能同步触发 delegate；先确认失败仍属于当前代次，再处理。
-                if (self.adItem != item || self.adItem.ad != ad ||
-                    self.adItem.displaySession != session || self.adItem.generation != generation) {
+                if (self.adItem != item || self.adItem.ad != ad || self.adItem.generation != generation) {
                     return;
                 }
                 [self log:[NSString stringWithFormat:@"attach 失败 %@",
                                                    [YSIFLYADUtil summaryForError:error]]];
+                [cell detachAdFromContainer];
+                if (self.attachedAdCell && self.attachedAdCell != cell) {
+                    [self updateStatus:@"等待旧广告容器离屏" color:[YSIFLYADUtil demoIndigoColor]];
+                    return;
+                }
                 BOOL expired = error.errorCode == YSIFLYAdErrorCodeNativeFeedAdExpired;
-                BOOL invalidSession = !session.isValid || session.isEnded;
+                BOOL invalidAd = ![ad ysifly_isAdValid];
                 [self retireCurrentAdItem];
-                if ((expired || invalidSession) && self.visibleAdCell == cell) {
-                    [self log:@"旧 Binding 已自然 detach；过期会话淘汰后请求替换广告"];
+                if ((expired || invalidAd) && self.visibleAdCell == cell) {
+                    [self log:@"旧容器已反注册；过期广告释放后请求替换广告"];
                     [self startLoadingAdItem];
                 } else {
                     [self updateStatus:@"信息流挂载失败" color:UIColor.systemRedColor];
@@ -740,56 +710,50 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
                 return;
             }
 
-            if (self.visibleAdCell != cell || self.adItem != item ||
-                self.adItem.displaySession != session || self.adItem.generation != generation) {
-                [binding ysifly_detach];
+            if (self.visibleAdCell != cell || self.adItem != item || self.adItem.ad != ad ||
+                self.adItem.generation != generation) {
+                [cell detachAdFromContainer];
                 return;
             }
-            [cell installBinding:binding];
-            NSString *exposureState = session.hasExposed ? @"已曝光，恢复原广告（不重复曝光）"
-                                                         : @"未曝光，重新累计可见时长";
-            [self updateStatus:exposureState color:UIColor.systemGreenColor];
-            [self log:[NSString stringWithFormat:@"attach success generation=%lu hasExposed=%@",
-                                               (unsigned long)generation,
-                                               session.hasExposed ? @"YES" : @"NO"]];
+            self.attachedAdCell = cell;
+            [self updateStatus:@"SDK 托管挂载成功" color:UIColor.systemGreenColor];
+            [self log:[NSString stringWithFormat:@"attach success generation=%lu（首次/复用无需媒体判断）",
+                                               (unsigned long)generation]];
         }];
     return YES;
 }
 
-- (void)continueDisplayingAdItemAfterCellDetached:(NSString *)itemIdentifier {
+- (void)continueDisplayingAdItemAfterCellDetached {
     YSNativeFeedDemoTableViewCell *visibleCell = self.visibleAdCell;
-    if (!visibleCell || visibleCell.binding ||
-        ![self.visibleAdItemIdentifier isEqualToString:itemIdentifier]) {
+    YSNativeFeedDemoItem *item = self.adItem;
+    if (!visibleCell || !item.ad || !item.ad.adData ||
+        ![self.visibleAdItemIdentifier isEqualToString:item.stableIdentifier]) {
         return;
     }
-
-    YSIFLYNativeFeedDisplaySession *session = self.adItem.displaySession;
-    if (!session || session.isAttached) {
-        return;
-    }
-    [self attachCurrentSessionToCell:visibleCell];
+    [self attachCurrentAdToCell:visibleCell];
 }
 
 - (void)retireCurrentAdItem {
     YSIFLYNativeFeedAd *ad = self.adItem.ad;
-    YSIFLYNativeFeedDisplaySession *session = self.adItem.displaySession;
-    if (!ad && !session) {
+    if (!ad) {
         return;
     }
 
     self.loadGeneration += 1;
     self.adItem.generation = self.loadGeneration;
     self.adItem.ad = nil;
-    self.adItem.displaySession = nil;
 
+    YSNativeFeedDemoTableViewCell *attachedCell = self.attachedAdCell;
     YSNativeFeedDemoTableViewCell *visibleCell = self.visibleAdCell;
-    if ((session && visibleCell.binding.displaySession == session) ||
-        (ad && (visibleCell.boundAd == ad || visibleCell.renderingAd == ad))) {
-        [visibleCell detachBinding];
+    self.attachedAdCell = nil;
+    if (attachedCell) {
+        [attachedCell detachAdFromContainer];
     }
-    [session ysifly_endDisplaySession];
+    if (visibleCell && visibleCell != attachedCell) {
+        [visibleCell detachAdFromContainer];
+    }
     ad.delegate = nil;
-    [ad ysifly_destroy];
+    // 正常永久淘汰只需释放最后一个 Ad 强引用；仍要暂存 Ad 却需提前终止时才调用 ysifly_destroy。
 }
 
 #pragma mark - Status and logs
@@ -815,21 +779,10 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
                                          (unsigned long)self.adItem.generation,
                                          (long)ad.materialType,
                                          [YSIFLYADUtil bidInfoSummaryForAd:ad]]];
-    YSIFLYAdError *error = nil;
-    YSIFLYNativeFeedDisplaySession *session = [ad ysifly_beginDisplaySessionWithError:&error];
-    if (!session) {
-        [self log:[NSString stringWithFormat:@"beginDisplaySession 失败 %@",
-                                               [YSIFLYADUtil summaryForError:error]]];
-        [self updateStatus:@"创建展示会话失败" color:UIColor.systemRedColor];
-        [self retireCurrentAdItem];
-        return;
-    }
-
-    self.adItem.displaySession = session;
-    [self updateStatus:@"会话已创建，等待广告 Cell" color:[YSIFLYADUtil demoIndigoColor]];
+    [self updateStatus:@"广告已加载，等待广告 Cell" color:[YSIFLYADUtil demoIndigoColor]];
     YSNativeFeedDemoTableViewCell *visibleCell = self.visibleAdCell;
-    if (visibleCell && !visibleCell.binding) {
-        [self attachCurrentSessionToCell:visibleCell];
+    if (visibleCell) {
+        [self attachCurrentAdToCell:visibleCell];
     }
 }
 
@@ -841,7 +794,7 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
 
 - (void)ysifly_nativeFeedAdDidExpose:(YSIFLYNativeFeedAd *)ad {
     if (ad == self.adItem.ad) {
-        [self log:@"nativeFeedAdDidExpose（同一 DisplaySession 仅一次）"];
+        [self log:@"nativeFeedAdDidExpose（同一逻辑广告仅一次）"];
         [self updateStatus:@"信息流已曝光" color:UIColor.systemGreenColor];
     }
 }
@@ -880,28 +833,28 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
 }
 
 - (void)ysifly_nativeFeedAdDidStartPlay:(YSIFLYNativeFeedAd *)ad {
-    if (ad == self.adItem.ad && self.visibleAdCell.boundAd == ad) {
+    if (ad == self.adItem.ad && self.visibleAdCell) {
         [self.visibleAdCell updateVideoMessage:@"视频播放中" visible:NO];
         [self log:@"nativeFeedAdDidStartPlay"];
     }
 }
 
 - (void)ysifly_nativeFeedAdDidPausePlay:(YSIFLYNativeFeedAd *)ad {
-    if (ad == self.adItem.ad && self.visibleAdCell.boundAd == ad) {
+    if (ad == self.adItem.ad && self.visibleAdCell) {
         [self.visibleAdCell updateVideoMessage:@"视频已暂停" visible:YES];
         [self log:@"nativeFeedAdDidPausePlay"];
     }
 }
 
 - (void)ysifly_nativeFeedAdDidResumePlay:(YSIFLYNativeFeedAd *)ad {
-    if (ad == self.adItem.ad && self.visibleAdCell.boundAd == ad) {
+    if (ad == self.adItem.ad && self.visibleAdCell) {
         [self.visibleAdCell updateVideoMessage:@"视频播放中" visible:NO];
         [self log:@"nativeFeedAdDidResumePlay"];
     }
 }
 
 - (void)ysifly_nativeFeedAdDidPlayFinish:(YSIFLYNativeFeedAd *)ad {
-    if (ad == self.adItem.ad && self.visibleAdCell.boundAd == ad) {
+    if (ad == self.adItem.ad && self.visibleAdCell) {
         [self.visibleAdCell updateVideoMessage:@"视频播放完成" visible:YES];
         [self log:@"nativeFeedAdDidPlayFinish"];
     }
@@ -909,7 +862,7 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
 
 - (void)ysifly_nativeFeedAd:(YSIFLYNativeFeedAd *)ad
  didFailToPlayWithError:(YSIFLYAdError *)error {
-    if (ad == self.adItem.ad && self.visibleAdCell.boundAd == ad) {
+    if (ad == self.adItem.ad && self.visibleAdCell) {
         [self.visibleAdCell updateVideoMessage:@"视频播放失败" visible:YES];
         [self log:[NSString stringWithFormat:@"nativeFeedAd didFailToPlay %@",
                                                [YSIFLYADUtil summaryForError:error]]];

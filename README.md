@@ -2,7 +2,15 @@
 
 `YSIFLYADLib` 是面向 YS 媒体定制的 iOS 广告 SDK，提供**开屏、Banner、插屏、自渲染信息流**广告能力（**含视频素材**，**不含激励视频**）。
 
-当前文档覆盖 `YSIFLYADLib 6.2.1`，最低支持 iOS 11.0；可运行示例工程见 [YSIFLYADLibSimple](./YSIFLYADLibSimple)（执行 `pod install` 后打开 `YSIFLYADLibSimple.xcworkspace`；示例演示开屏 / Banner / 插屏 / 自渲染信息流的加载、展示、列表复用、回调和销毁）。
+最新正式发布版本为 `YSIFLYADLib 6.2.2`，最低支持 iOS 11.0。本仓源码、清单、文档和
+示例已固化为 NativeFeed SDK 托管 API；正式签名资产由唯一源码提交构建并完成本地发布门禁。
+
+GitHub [Release](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2)、资产上传、
+匿名下载、远程依赖解析和 Actions 结果以发布平台实际记录为准；本文不将这些外部步骤记为已完成。
+本版发布溯源为：
+
+- `binarySourceCommit`（SDK 二进制源码提交）：`a8ec925d3731d7d11734647aa02ca7d91d674965`
+- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`eff78263c2d3f65b029f4114de1a9ed00f3827f3`
 
 仓库地址：[https://github.com/LJMcarryu/YSIFLYADLib_iOS](https://github.com/LJMcarryu/YSIFLYADLib_iOS)
 
@@ -41,34 +49,38 @@
 
 ## 版本记录
 
-当前正式发布版本为 **6.2.1**。本版为 NativeFeed 新增可恢复的
-`DisplaySession + Binding` 列表复用契约，使同一逻辑广告
-条目滚出再回来时，无论曝光前后都能恢复原广告；详细变更与历史版本记录见
-[CHANGELOG.md](./CHANGELOG.md)。
+当前正式发布版本为 **6.2.2**。本版将 NativeFeed 列表生命周期改为 SDK 托管：数据层只持有
+`YSIFLYNativeFeedAd`，Cell 不持有 Session、Binding 或首次/复用状态；媒体只需在展示时
+attach、离屏或复用时按容器 detach。同一逻辑广告条目滚出再回来时，无论曝光前后都能
+恢复原广告。详细变更与历史版本记录见 [CHANGELOG.md](./CHANGELOG.md)。
 
-从 `6.1.0` 升级时，请重点确认：`jumpDirectly` 已成为兼容 no-op；SDK 不再调用
+从 `6.2.1` 升级到 `6.2.2` 时须删除 `YSIFLYNativeFeedDisplaySession`、
+`YSIFLYNativeFeedAdBinding` 以及旧 bind/unbind/end 调用，改用
+`ysifly_attachWithViewBinder:error:` 与 `ysifly_detachAdFromContainerView:`。从 `6.1.0`
+或更早版本升级时，还请重点确认：`jumpDirectly` 已成为兼容 no-op；SDK 不再调用
 `canOpenURL:` 预检；ATT 未授权时预先设置的显式 IDFA 会被丢弃，授权后须重新设置；
 YS 白标方法 `ysifly_reportMediaShakeTriggeredWithError:` 虽然进入公开头，但 YS 变体
 未启用优酷媒体摇一摇能力，调用固定返回 `71512`。从 `6.0.14` 或更早版本升级时，
-还须处理 `6.1.0` 引入的响应数据白名单变更。新增接入统一使用 `6.2.1`。
+还须处理 `6.1.0` 引入的响应数据白名单变更。新增接入统一使用 `6.2.2` 的公开契约。
 
 ---
 
 ## 环境要求
 
 - **iOS 11.0** 及以上（从 `6.0.14` 起；历史 `6.0.13` 及更早二进制不追溯扩大支持范围）。
-- **Xcode 15.0** 及以上（`Package.swift` 使用 Swift tools 5.9）；`6.2.1` 正式二进制使用 Xcode 26.2 构建。
+- **Xcode 15.0** 及以上（`Package.swift` 使用 Swift tools 5.9）；`6.2.2` 正式二进制由唯一冻结源码提交使用 Xcode 26.2 构建。
 - **交付形态**（6.0.12 起）：单一 `YSIFLYADLib.xcframework`（**静态 framework**），含 **真机 `arm64` + 模拟器 `arm64`/`x86_64`** 切片，**可直接在模拟器调试**；代码随 app 静态链接，**无需 Embed & Sign**。
 - 资源包 `YSAdvSDK.bundle`（内含隐私清单 `PrivacyInfo.xcprivacy`）**外置随包分发**：CocoaPods 与 SwiftPM 接入自动投递；手动集成需把 bundle 加入 app target 的 Copy Bundle Resources。
 - **最终 App 链接需 `-ObjC`**：CocoaPods podspec 同时向 pod target 与 aggregate/user target 注入，确保参数传播到最终 App；SwiftPM 与手动接入需在 App target 的 `OTHER_LDFLAGS` 添加。
-- 系统依赖中，CocoaPods podspec 显式链接 `AdSupport`、弱链接 `AppTrackingTransparency`；SwiftPM 与手动接入依靠 XCFramework 目标文件携带的 linker options。正式产物已复核 ATT 仍为弱链接，保证 iOS 11～13 启动时不要求该框架存在。
+- 系统依赖中，CocoaPods podspec 显式链接 `AdSupport`、弱链接 `AppTrackingTransparency`；SwiftPM 与手动接入依靠 XCFramework 目标文件携带的 linker options。`6.2.2` 正式冻结产物已复核 ATT 仍为弱链接，保证 iOS 11～13 启动时不要求该框架存在。
 - 统一入口头：`#import <YSIFLYADLib/YSIFLYADLib.h>`。
 
 ---
 
 ## 接入方式
 
-二进制托管在本仓 **GitHub Releases**（公开可匿名下载），每个版本发布三个文件：
+二进制通过本仓 **GitHub Releases** 分发；Release 资产对外可见时支持公开匿名下载，
+每个版本固定发布三个文件：
 
 | 资产 | 内容 | 适用 |
 | --- | --- | --- |
@@ -80,7 +92,8 @@ YS 白标方法 `ysifly_reportMediaShakeTriggeredWithError:` 虽然进入公开�
 
 ### CocoaPods
 
-在 `Podfile` 中通过 Release 上的 `YSIFLYADLib.podspec`（raw URL）直连接入：
+tag 与 Release 资产对外可见后，在 `Podfile` 中通过对应 tag 上的
+`YSIFLYADLib.podspec`（raw URL）直连接入：
 
 ```ruby
 source 'https://cdn.cocoapods.org/'
@@ -89,7 +102,7 @@ platform :ios, '11.0'
 target 'YourApp' do
   use_frameworks!
 
-  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.2.1/YSIFLYADLib.podspec'
+  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.2.2/YSIFLYADLib.podspec'
 end
 ```
 
@@ -101,13 +114,14 @@ open YourApp.xcworkspace
 ```
 
 > 说明：
-> - `:podspec` 会从 `6.2.1` Release 下载、解包并链接合并 zip 中的静态 `YSIFLYADLib.xcframework`，同时把 `YSAdvSDK.bundle`（含隐私清单）**自动拷入 app 主包**（podspec 已声明 `s.resources`）。
-> - **请把 URL 钉死到具体 tag（如 `6.2.1`），不要指向分支**；升级版本时同步改 URL 里的 tag。
+> - `:podspec` 的二进制源固定指向 `6.2.2` Release 合并 zip；CocoaPods 解包并链接其中的静态 `YSIFLYADLib.xcframework`，同时把 `YSAdvSDK.bundle`（含隐私清单）**自动拷入 app 主包**（podspec 已声明 `s.resources`）。
+> - **请把 URL 钉死到具体 tag（当前为 `6.2.2`），不要指向分支**；升级版本时同步改 URL 里的 tag。
 > - 静态 framework 随 app 链接，pod 不会（也不需要）Embed；podspec 会同时向 pod target 与 aggregate/user target 注入 `-ObjC`，并复制 `.bundle`，CocoaPods 接入无需手工处理这两项。
 
 ### Swift Package Manager
 
-在 Xcode「**File → Add Packages…**」填入仓库地址并选择版本 `6.2.1`：
+tag 与 Release 资产对外可见后，在 Xcode「**File → Add Packages…**」填入仓库地址并
+选择当前正式版本 `6.2.2`：
 
 ```
 https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
@@ -117,7 +131,7 @@ https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS.git", from: "6.2.1"),
+    .package(url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS.git", from: "6.2.2"),
 ],
 targets: [
     .target(name: "YourApp", dependencies: ["YSIFLYADLib"]),
@@ -129,11 +143,14 @@ targets: [
 （含 `PrivacyInfo.xcprivacy`）复制到 App。接入方不再需要从合并 zip
 手工复制资源；接入方仍须在 App target 的 `OTHER_LDFLAGS` 添加 `-ObjC`。
 
-> 仓库根 `Package.swift` 的 URL 与 checksum 来自 `6.2.1` 正式签名 zip；不要改用分支 URL 或复用其他版本的 checksum。
+> 当前仓库根 `Package.swift` 已固定到 `6.2.2`，checksum
+> `757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d`
+> 来自正式冻结的签名 zip。安装结果仍以 GitHub tag、Release 资产和依赖解析器的实际状态为准。
 
 ### 手动集成
 
-不便使用包管理器时，直接集成 Release 合并 zip（`YSIFLYADLib-6.2.1.zip`）内容：
+不便使用包管理器时，在 Release 资产对外可见后下载正式合并 zip
+（`YSIFLYADLib-6.2.2.zip`）并集成其中内容：
 
 1. 解压得到 `YSIFLYADLib.xcframework` 与 `YSAdvSDK.bundle`；
 2. 把 `YSIFLYADLib.xcframework` 拖入工程，General → Frameworks, Libraries, and Embedded Content 中 Embed 选 **Do Not Embed**（静态库随 app 链接，无需嵌入）；
@@ -431,11 +448,8 @@ iOS 14 及以上读取 IDFA 前必须先请求 App Tracking Transparency 权限�
 SDK。SDK 负责曝光检测、点击/摇一摇响应、关闭、播放器与监测上报；不会清空媒体
 已有的 layer 或子视图，也不会自动添加摇一摇提示控件。
 
-`6.2.1` 同时提供两套生命周期：普通一次性页面继续使用
-`ysifly_bindAdWithViewBinder:error:` / `ysifly_unbindAd`；
-`UITableView` / `UICollectionView` 等复用列表必须使用
-`YSIFLYNativeFeedDisplaySession` / `YSIFLYNativeFeedAdBinding`。两套 API 不能在同一
-广告实例上混用。
+`6.2.2` 统一为 SDK 托管生命周期。普通页面和 `UITableView` / `UICollectionView`
+复用列表都使用同一组 Ad attach 与容器 detach API；媒体不创建或维护 SDK 生命周期对象。
 
 ```objc
 @interface NativeFeedViewController () <YSIFLYNativeFeedAdDelegate>
@@ -493,10 +507,14 @@ SDK。SDK 负责曝光检测、点击/摇一摇响应、关闭、播放器与监
     binder.ctaView = self.ctaButton;
 
     YSIFLYAdError *error = nil;
-    BOOL success = [ad ysifly_bindAdWithViewBinder:binder error:&error];
+    BOOL success = [ad ysifly_attachWithViewBinder:binder error:&error];
     if (!success) {
-        NSLog(@"Native bind failed: %d %@", error.errorCode, error.errorDescription);
+        NSLog(@"Native attach failed: %d %@", error.errorCode, error.errorDescription);
     }
+}
+
+- (void)adContainerDidLeaveScreenOrPrepareForReuse {
+    [YSIFLYNativeFeedAd ysifly_detachAdFromContainerView:self.adContainer];
 }
 ```
 
@@ -533,99 +551,28 @@ SDK。SDK 负责曝光检测、点击/摇一摇响应、关闭、播放器与监
 不再提供 `rawAdData`、`sponsored`、`actionText`、`ecpm` 或服务端原始
 `template_id`；请勿通过 KVC、反射或写死旧枚举数值继续读取。
 
-### 列表复用：稳定条目持有会话，Cell 只持 Binding
+### 列表复用：数据项只持 Ad，Cell 只注册和反注册容器
 
-列表数据源必须以稳定 ID 表示逻辑广告条目，并由该条目长期持有同一个
-`YSIFLYNativeFeedAd + YSIFLYNativeFeedDisplaySession`。Cell 是临时视图，只持有本次
-可见代次返回的 `YSIFLYNativeFeedAdBinding`：
+列表数据源用稳定 ID 表示逻辑广告条目，并长期持有同一个 `YSIFLYNativeFeedAd`。
+Cell 是临时视图，只负责媒体 UI 和 Binder，不保存 Session、Binding、广告集合或
+“第一次展示/复用展示”状态：
 
 ```objc
 @interface FeedAdItem : NSObject
 @property (nonatomic, copy) NSString *stableIdentifier;
 @property (nonatomic, strong) YSIFLYNativeFeedAd *ad;
-@property (nonatomic, strong) YSIFLYNativeFeedDisplaySession *displaySession;
-@property (nonatomic, assign) NSUInteger generation;
 @end
-
-@interface FeedAdCell : UICollectionViewCell
-@property (nonatomic, strong) YSIFLYNativeFeedAdBinding *binding;
-@property (nonatomic, copy) NSString *representedStableIdentifier;
-@property (nonatomic, copy) NSString *lastDetachedStableIdentifier;
-@property (nonatomic, assign) NSUInteger representedGeneration;
-@property (nonatomic, assign) NSUInteger lastDetachedGeneration;
-- (YSIFLYNativeFeedAdViewBinder *)currentViewBinder;
-@end
-
-@interface FeedViewController ()
-// strong key + weak Cell，等待关系不会额外持有复用 Cell。
-@property (nonatomic, strong) NSMapTable<NSString *, FeedAdCell *> *pendingCellsByIdentifier;
-@property (nonatomic, assign) NSUInteger nextRepresentationGeneration;
-@end
-
-@implementation FeedAdCell
-- (void)prepareForReuse {
-    [super prepareForReuse];
-    self.lastDetachedStableIdentifier = self.representedStableIdentifier;
-    self.lastDetachedGeneration = self.representedGeneration;
-    [self.binding ysifly_detach]; // 幂等；旧代次不会误清后来的新 Binding
-    self.binding = nil;
-    [self resetMediaViews];       // 同时让异步图片回调的 generation 失效
-    self.representedStableIdentifier = nil;
-    self.representedGeneration = 0;
-}
-@end
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    self.pendingCellsByIdentifier = [NSMapTable strongToWeakObjectsMapTable];
-}
-
-- (void)ysifly_nativeFeedAdDidLoad:(YSIFLYNativeFeedAd *)ad {
-    if (ad != self.item.ad) {
-        return;
-    }
-    YSIFLYAdError *error = nil;
-    self.item.displaySession = [ad ysifly_beginDisplaySessionWithError:&error];
-}
 
 - (void)attachItem:(FeedAdItem *)item toCell:(FeedAdCell *)cell {
-    // 即使广告仍在加载，也先写入 Cell owner，离屏回调才能归到正确稳定条目。
-    if (cell.representedGeneration == 0 ||
-        ![cell.representedStableIdentifier isEqualToString:item.stableIdentifier]) {
-        cell.representedStableIdentifier = item.stableIdentifier;
-        cell.representedGeneration = ++self.nextRepresentationGeneration;
-    }
-    YSIFLYNativeFeedDisplaySession *session = item.displaySession;
-    if (!session) {
-        return;
-    }
-    if (cell.binding.isActive && cell.binding.displaySession == session) {
-        return; // 重复 willDisplay 不把当前已绑定 Cell 误记为 pending
-    }
-    if (cell.binding) {
-        [cell.binding ysifly_detach];
-        cell.binding = nil;
-    }
-    if (session.isAttached) {
-        [self.pendingCellsByIdentifier setObject:cell forKey:item.stableIdentifier];
-        return; // 旧 Cell didEndDisplaying 后会按 stableIdentifier 显式重试
-    }
+    [cell renderAdData:item.ad.adData];
 
     YSIFLYAdError *error = nil;
-    YSIFLYNativeFeedAdBinding *binding =
-        [session ysifly_attachWithViewBinder:[cell currentViewBinder] error:&error];
-    if (!binding) {
-        if (error.errorCode == YSIFLYAdErrorCodeNativeFeedAdExpired) { // 71506
-            if ([self.pendingCellsByIdentifier objectForKey:item.stableIdentifier] == cell) {
-                [self.pendingCellsByIdentifier removeObjectForKey:item.stableIdentifier];
-            }
-            [self evictItemAndLoadReplacement:item];
-        }
-        return;
-    }
-    cell.binding = binding;
-    if ([self.pendingCellsByIdentifier objectForKey:item.stableIdentifier] == cell) {
-        [self.pendingCellsByIdentifier removeObjectForKey:item.stableIdentifier];
+    BOOL attached = [item.ad ysifly_attachWithViewBinder:[cell currentViewBinder]
+                                                   error:&error];
+    if (!attached && error.errorCode == YSIFLYAdErrorCodeNativeFeedAdExpired) {
+        item.ad.delegate = nil;
+        item.ad = nil;
+        [self loadReplacementForStableIdentifier:item.stableIdentifier];
     }
 }
 
@@ -633,82 +580,37 @@ SDK。SDK 负责曝光检测、点击/摇一摇响应、关闭、播放器与监
 didEndDisplayingCell:(UICollectionViewCell *)rawCell
      forItemAtIndexPath:(NSIndexPath *)indexPath {
     if (![rawCell isKindOfClass:FeedAdCell.class]) {
-        return; // 混合信息流中的普通内容 Cell
-    }
-    FeedAdCell *cell = (FeedAdCell *)rawCell;
-    NSString *currentIdentifier = cell.representedStableIdentifier;
-    NSString *lastDetachedIdentifier = cell.lastDetachedStableIdentifier;
-    BOOL delayedPreviousOwner =
-        cell.lastDetachedGeneration > 0 && cell.representedGeneration > 0 &&
-        cell.lastDetachedGeneration != cell.representedGeneration;
-    NSString *stableIdentifier = delayedPreviousOwner
-                                     ? lastDetachedIdentifier
-                                     : (currentIdentifier.length > 0
-                                            ? currentIdentifier
-                                            : lastDetachedIdentifier);
-    YSIFLYNativeFeedDisplaySession *endedSession = nil;
-    if (!delayedPreviousOwner) {
-        // 正常 outgoing Cell：只 detach 该 Cell 当前代次自己的 Binding。
-        endedSession = cell.binding.displaySession;
-        [cell.binding ysifly_detach];
-        cell.binding = nil;
-    }
-    // 若同一 Cell 已开始表示新条目，当前回调属于 prepare 时保存的旧 owner；
-    // 旧 Binding 已经 detach，绝不能拆掉新条目的 Binding。
-    cell.lastDetachedStableIdentifier = nil;
-    cell.lastDetachedGeneration = 0;
-    if (stableIdentifier.length == 0) {
-        stableIdentifier = [self stableIdentifierForDisplaySession:endedSession];
-    }
-    if (stableIdentifier.length == 0) {
         return;
     }
-    if ([self.pendingCellsByIdentifier objectForKey:stableIdentifier] == cell) {
-        [self.pendingCellsByIdentifier removeObjectForKey:stableIdentifier];
-    }
-    // indexPath 可能已过时；按 stableIdentifier 找回等待中的新 Cell 并显式重试。
-    FeedAdItem *item = self.itemsByIdentifier[stableIdentifier];
-    FeedAdCell *pendingCell = [self.pendingCellsByIdentifier objectForKey:stableIdentifier];
-    if (item && pendingCell &&
-        [pendingCell.representedStableIdentifier isEqualToString:stableIdentifier] &&
-        [collectionView indexPathForCell:pendingCell] &&
-        !item.displaySession.isAttached) {
-        [self attachItem:item toCell:pendingCell];
-    } else if (pendingCell) {
-        // pending Cell 已离屏或复用于别的条目，不能把旧广告挂到它的新内容上。
-        [self.pendingCellsByIdentifier removeObjectForKey:stableIdentifier];
-    }
+    FeedAdCell *cell = (FeedAdCell *)rawCell;
+    [YSIFLYNativeFeedAd ysifly_detachAdFromContainerView:cell.adContainer];
+    [cell resetMediaViews];
 }
 
-- (void)evictItemAndLoadReplacement:(FeedAdItem *)item {
-    [item.displaySession ysifly_endDisplaySession];
-    item.ad.delegate = nil;
-    [item.ad ysifly_destroy];
-    item.displaySession = nil;
-    item.ad = nil;
-    [self loadReplacementForStableIdentifier:item.stableIdentifier];
+@implementation FeedAdCell
+- (void)prepareForReuse {
+    [super prepareForReuse];
+    [YSIFLYNativeFeedAd ysifly_detachAdFromContainerView:self.adContainer];
+    [self resetMediaViews];
 }
+@end
 ```
 
 完整时序与边界：
 
-- `ysifly_beginDisplaySessionWithError:` 建议在 `ysifly_nativeFeedAdDidLoad:` 中调用；
-  `Ad + DisplaySession` 跟随稳定数据条目，不跟随 `indexPath` 或 Cell。
-- `ysifly_attachWithViewBinder:error:` 必须在主线程调用，且同一会话同时只能有一个活动
-  Binding。UIKit 可能先回调新 Cell 的 `willDisplay`，再回调旧 Cell 的
-  `didEndDisplaying`；此时等待旧 Binding `ysifly_detach`，再按稳定 ID 挂载新 Cell。
-- Cell 的 `didEndDisplaying` 和 `prepareForReuse` 都可以调用 `ysifly_detach`；该方法幂等且
-  带绑定代次校验。异步图片回调也必须同时校验稳定 ID、数据 generation 和当前 Cell，
-  不能把旧素材写进已复用的 Cell。
-- `session.hasExposed` 只表示是否已经曝光，不决定能否恢复。只要 `session.isValid`，曝光前
-  或曝光后都可在 detach 后重新 attach；曝光前会重新累计连续可见 500ms，曝光后恢复展示
-  但不重复曝光、曝光回调和曝光监测。
-- TTL 或视频 `end_time` 在活动 Binding 期间到期时，`session.isValid` 会变为 `NO`，但 SDK
-  不会中途强拆当前 Cell；当前 Binding 仍可完成曝光、点击和视频交互。Cell 正常 detach 后，
-  下一次 attach 返回 `71506`，此时才结束会话、销毁旧广告并为同一稳定 ID 请求新广告。
-- 条目永久删除、缓存淘汰或页面退出时，按“Cell `ysifly_detach` → Session
-  `ysifly_endDisplaySession` → `delegate = nil` → Ad `ysifly_destroy`”收口。
-  `ysifly_unbindAd` 只用于一次性绑定；存在未结束 DisplaySession 时调用会被忽略。
+- `ysifly_attachWithViewBinder:error:` 必须在主线程调用。SDK 内部处理同 Ad 向新容器串行迁移、
+  同 Ad/同容器幂等，以及目标容器由新 Ad 原子接管；媒体不需要先查询或保存绑定状态。
+- `ysifly_detachAdFromContainerView:` 可在 `didEndDisplaying`、`prepareForReuse` 或切换为普通内容
+  时重复调用。它只反注册当前视图，不结束逻辑广告；数据项继续持有同一 Ad 时，回屏可再次 attach。
+- 异步图片回调仍须校验稳定 ID、数据 generation 和当前 Cell，避免旧素材写进已复用 Cell；
+  这属于媒体渲染状态，不是 SDK 生命周期状态。
+- 曝光前 detach 后重新 attach 会重新累计连续可见 500ms；已曝光后恢复不会重复曝光、
+  曝光回调或曝光监测。点击监测和视频节点监测也按同一逻辑广告去重。
+- TTL 或视频 `end_time` 在活动挂载期间到期不会中途强拆当前 Cell；detach 后再次 attach
+  返回 `71506`，此时释放旧 Ad，并为同一稳定 ID 请求新广告。
+- 条目永久删除、缓存淘汰或页面退出时，先反注册容器、置空 delegate，再释放最后一个 Ad
+  强引用即可。`ysifly_destroy` 不是必调项；只有仍需持有 Ad、但希望提前取消请求或立即终止
+  恢复能力时才调用。
 - `containerView` 必填；视频素材必须传 `videoView`。播放器由 SDK 管理，接入方不要创建
   `AVPlayer` 或自行播放 `videoURL`。
 - 视频在 detach/attach 之间保留内容进度与既有播放意图；显式调用 `ysifly_pausePlay` 或
@@ -795,9 +697,9 @@ NSString *dealId = ad.bidInfo.dealId;
 
 | 现象 | 排查建议 |
 | --- | --- |
-| `pod install` 找不到 SDK | 确认 `Podfile` 使用 `:podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.2.1/YSIFLYADLib.podspec'`（钉到 tag），并检查网络能否访问对应 Release 资产。 |
+| `pod install` 找不到 SDK | 当前正式接入请确认 `Podfile` 使用 `:podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.2.2/YSIFLYADLib.podspec'`（钉到具体 tag），并检查 GitHub tag 与对应 Release 资产是否已经对外可见。 |
 | 广告图片缺失 | **6.1.0 及以上**：CocoaPods / SwiftPM 都会自动投递 `YSAdvSDK.bundle`，请确认最终 App 中存在该 bundle 及 `PrivacyInfo.xcprivacy`；手动接入须加入 Copy Bundle Resources。**6.0.12～6.0.14**：CocoaPods 自动，SPM / 手动接入须手工复制。**6.0.11 及以前**为历史动态交付。 |
-| 开屏「摇一摇或点击」图标显示为白色文件占位 | 1.0.2/1.0.3 的已知缺陷（改名误改资源名致内嵌图标失配），自 1.0.4 起已修复；请升级到当前正式版本 `6.2.1`。 |
+| 开屏「摇一摇或点击」图标显示为白色文件占位 | 1.0.2/1.0.3 的已知缺陷（改名误改资源名致内嵌图标失配），自 1.0.4 起已修复；请升级到当前正式版本 `6.2.2`。 |
 | 真机启动崩溃 | 1.0.1 有悬空依赖缺陷，已下线；请升级到 **1.0.2 及以上**。 |
 | 模拟器无法运行 | 本定制版含模拟器切片，可直接在模拟器调试；若报架构缺失，确认拉取的是 1.0.2+ 的 zip。 |
 | IDFA 为空 | 确认 `NSUserTrackingUsageDescription` 已配置、用户已允许 ATT、在授权完成后再读取 `ASIdentifierManager`、过滤全零 UUID；授权前设置的显式值已被丢弃，须在授权后重新设置。 |
@@ -805,8 +707,8 @@ NSString *dealId = ad.bidInfo.dealId;
 | 展示失败 | 确认 `rootViewController` 已在 window 上，当前没有正在 present 的控制器。 |
 | Banner 不展示 | 确认容器宽度大于 0，布局完成后再调用 `ysifly_showInView:`。 |
 | 信息流绑定失败 | 确认 `containerView` 非空；视频素材传入 `videoView`；绑定在主线程执行。 |
-| 信息流条目滚回后为空或变成另一条广告 | `6.2.1` 起让稳定 ID 的数据模型持有原 `Ad + DisplaySession`，Cell 只持 `Binding`；复用时调用 `ysifly_detach`，不要销毁或重新请求原条目。 |
-| 信息流重新挂载返回 `71506` | 会话已超过 TTL 或视频 `end_time`；结束并淘汰旧会话，为相同稳定 ID 请求新广告。活动 Binding 到期时不应被中途拆除。 |
+| 信息流条目滚回后为空或变成另一条广告 | `6.2.2` 起让稳定 ID 的数据模型只持原 Ad；Cell 展示时调用 `ysifly_attachWithViewBinder:error:`，离屏/复用时按容器调用 `ysifly_detachAdFromContainerView:`，不要因回屏重新请求广告。 |
+| 信息流重新挂载返回 `71506` | Ad 已超过 TTL 或视频 `end_time`；释放旧 Ad，为相同稳定 ID 请求新广告。活动挂载到期时不会被中途拆除。 |
 | 找不到 `YSIFLYRewardVideoAd` | **本定制版不含激励视频**（变体已关闭 Reward）；如需激励能力请联系商务。 |
 
 ---
@@ -820,11 +722,11 @@ NSString *dealId = ad.bidInfo.dealId;
 | 展示配置 | `YSIFLYSplashAdConfig` / `YSIFLYInterstitialAdConfig`（继承 `YSIFLYAdShowConfig`） |
 | 请求配置 | `YSIFLYAdRequestConfig` |
 | 数据模型 | `YSIFLYNativeFeedAdData`（仅自渲染白名单素材）/ `YSIFLYAdBidInfo`（四种广告通用 `price/dealId`） |
-| 信息流绑定 | 一次性页面：`YSIFLYNativeFeedAdViewBinder`；列表复用：`YSIFLYNativeFeedDisplaySession` / `YSIFLYNativeFeedAdBinding` |
+| 信息流挂载 | `YSIFLYNativeFeedAdViewBinder`；Ad `ysifly_attachWithViewBinder:error:`；容器 `ysifly_detachAdFromContainerView:` |
 | 全局配置 | `YSIFLYAdConfig`（`ysifly_setLogEnabled:` / `ysifly_setPersonalizedEnabled:`） |
 | SDK 能力 | `YSIFLYAdSDK`（`ysifly_getSdkTokenWithAdUnitId:error:`）、`YSIFLYAdTool`（`ysifly_sdkVersion`） |
 | 错误 | `YSIFLYAdError` / `YSIFLYAdErrorCode` |
-| 加载/展示方法 | `ysifly_loadAd`、`ysifly_loadAdWithRequestConfig:`、`ysifly_loadAdWithServerBiddingToken:`、`ysifly_showInView:`、`ysifly_showAdFromRootViewController:config:`、`ysifly_bindAdWithViewBinder:error:`、`ysifly_beginDisplaySessionWithError:`、`ysifly_attachWithViewBinder:error:`、`ysifly_detach`、`ysifly_endDisplaySession`、`ysifly_reportMediaShakeTriggeredWithError:`（YS 返回 `71512`）、`ysifly_unbindAd`、`ysifly_destroy`、`ysifly_isAdValid` |
+| 加载/展示方法 | `ysifly_loadAd`、`ysifly_loadAdWithRequestConfig:`、`ysifly_loadAdWithServerBiddingToken:`、`ysifly_showInView:`、`ysifly_showAdFromRootViewController:config:`、`ysifly_attachWithViewBinder:error:`、`ysifly_detachAdFromContainerView:`、`ysifly_reportMediaShakeTriggeredWithError:`（YS 返回 `71512`）、`ysifly_destroy`、`ysifly_isAdValid` |
 | 命名约定 | 入口类 `YS` 前缀；公开方法 / delegate 回调 `ysifly_` 前缀；初始化与属性保持系统风格（不加前缀） |
 
 > 完整 API 以 framework 公开头 `<YSIFLYADLib/YSIFLYADLib.h>` 及其汇总的各头文件为准。
@@ -834,10 +736,10 @@ NSString *dealId = ad.bidInfo.dealId;
 ## 接入建议
 
 - 广告对象请由页面或管理对象**强持有**，避免请求过程中提前释放。
-- `delegate` 回调均按广告实例生命周期触发，页面销毁时建议置空 delegate 并调用 `ysifly_destroy`。
+- `delegate` 回调均按广告实例生命周期触发；页面结束时置空 delegate、反注册活动容器并释放广告强引用。`ysifly_destroy` 仅用于主动提前终止。
 - 展示类广告通常在 `DidReady` 后再展示，不要在 `DidLoad` 里直接展示。
-- 一次性页面中的单个广告实例仍为一次性消费；列表中的逻辑广告条目则由数据层持有同一
-  `Ad + DisplaySession`，仅在条目永久删除、会话失效或页面退出时销毁。
+- 一次性页面中的单个广告实例仍为一次性消费；列表中的逻辑广告条目由数据层持有同一 Ad，
+  Cell 复用只做容器 detach，不销毁或重新请求；条目永久删除、Ad 失效或页面退出时释放强引用。
 - 正式上线前请替换为平台分配的真实广告位 ID，并关闭排查用日志（`[YSIFLYAdConfig ysifly_setLogEnabled:NO]`）。
 
 ---

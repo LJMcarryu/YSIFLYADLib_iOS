@@ -5,6 +5,31 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## [6.2.2] - 2026-08-10
+
+### 发布事实
+
+- 正式签名资产由唯一源码提交构建并完成本地发布门禁，SwiftPM checksum 为 `757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d`。
+- GitHub tag、[Release](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2)、资产上传、匿名下载、远程依赖解析和 Actions 结果以发布平台实际记录为准；本日志不将这些外部步骤记为已完成。
+- `binarySourceCommit`（SDK 二进制源码提交）：`a8ec925d3731d7d11734647aa02ca7d91d674965`
+- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`eff78263c2d3f65b029f4114de1a9ed00f3827f3`
+
+### 变更
+
+- NativeFeed 统一改为 SDK 托管挂载。媒体数据项只持 `YSIFLYNativeFeedAd`；Cell 不再持有 `YSIFLYNativeFeedDisplaySession`、`YSIFLYNativeFeedAdBinding`、绑定集合或首次/复用状态。
+- 展示时统一调用 Ad 级 `ysifly_attachWithViewBinder:error:`；Cell 离屏、复用或切换普通内容时调用容器级 `ysifly_detachAdFromContainerView:`。SDK 内部处理同 Ad 串行迁移、同容器幂等、新 Ad 原子接管和迟到回调隔离。
+- detach 只反注册视图，不结束逻辑广告条目；数据层继续持有同一 Ad 时，条目回屏可恢复原广告。曝光前重新累计连续可见 500ms，已曝光条目不重复曝光，点击与视频节点监测继续按逻辑广告去重。
+- 条目永久结束时，媒体置空 delegate 并释放最后一个 Ad 强引用即可触发终态清理；`ysifly_destroy` 保留为仍持有 Ad 时可选的主动提前取消/终止入口，不再是正常列表生命周期必调项。
+
+### 不兼容调整
+
+- `YSIFLYNativeFeedDisplaySession`、`YSIFLYNativeFeedAdBinding`、`ysifly_beginDisplaySessionWithError:`、`ysifly_endDisplaySession`、`ysifly_bindAdWithViewBinder:error:`、`ysifly_unbindAd` 和 Binding `ysifly_detach` 退出公开 API。升级方须删除这些类型和调用，改为 Ad attach 与容器 detach。
+
+### 分发边界
+
+- 继续保持 YS 三资产契约：`YSIFLYADLib-6.2.2.zip`、`YSIFLYADLib.xcframework.zip`、`checksums.txt`；能力仍为开屏 / Banner / 插屏 / 自渲染信息流（含视频、无激励），最低支持 iOS 11.0。
+- 正式资产已从 `binarySourceCommit` 构建并签名；`releaseMetadataCommit` 仅修改 `Package.swift`、`README.md`、`CONTEXT.md` 或 `docs/**` 下的发布元数据，没有改变二进制输入。公开仓必须使用冻结资产，不得以本地重打包产物替换。
+
 ## [6.2.1] - 2026-08-07
 
 ### 新增
@@ -177,6 +202,7 @@
 - YS 媒体定制广告 SDK 首版（model B 单包）：类型名统一前缀 `YS`（如 `YSIFLYSplashAd`）、公开方法统一前缀 `ysifly_`、资源包 `YSAdvSDK.bundle`、日志前缀 `[YSAd]`。
 - 缺陷：静态 framework 不投递内嵌资源包，广告图片缺失，已由后续版本修复。
 
+[6.2.2]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2
 [6.2.1]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.1
 [6.2.0]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.0
 [6.1.0]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.1.0

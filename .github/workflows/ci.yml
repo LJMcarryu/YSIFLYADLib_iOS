@@ -3,19 +3,398 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ['*.*.*']
   pull_request:
     branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 已发布且需要复验的正式 Release tag；留空时只执行本地准备门禁
+        required: false
+        default: ''
+        type: string
+
+env:
+  VALIDATION_REF: ${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
 
 jobs:
-  verify-distribution:
-    name: 校验分发清单与产物（model B 单包）
-    # Demo 工程由 Xcode 16.2 创建（objectVersion 77），需使用 Xcode 16+ runner。
+  verify-repository:
+    name: 本地校验发布清单、文档与 Demo 生命周期
+    # Demo 工程由 Xcode 16.2 创建（objectVersion 77），正式消费构建需使用 Xcode 16+ runner。
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.VALIDATION_REF }}
+          fetch-depth: 0
+          fetch-tags: true
 
-      - name: Package.swift 解析
-        run: swift package dump-package > /dev/null
+      - name: 校验版本、准备态和本地分发清单
+        run: |
+          swift package dump-package > "${RUNNER_TEMP}/ys-package.json"
+          pod ipc spec YSIFLYADLib.podspec > "${RUNNER_TEMP}/ys-podspec.json"
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import shlex
+          import subprocess
+          from pathlib import Path
+
+          package = Path("Package.swift").read_text(encoding="utf-8")
+          podspec = Path("YSIFLYADLib.podspec").read_text(encoding="utf-8")
+          readme = Path("README.md").read_text(encoding="utf-8")
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          releasing = Path("RELEASING.md").read_text(encoding="utf-8")
+          release_state = re.findall(
+              r"^- `releaseState`：`(PENDING|FORMAL)`$", releasing, re.M
+          )
+          assert len(release_state) == 1, release_state
+          release_state = release_state[0]
+          demo_podfile = Path("YSIFLYADLibSimple/Podfile").read_text(encoding="utf-8")
+          demo_readme = Path("YSIFLYADLibSimple/README.md").read_text(encoding="utf-8")
+          podspec_json = json.loads(
+              (Path(os.environ["RUNNER_TEMP"]) / "ys-podspec.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+
+          target_version = re.search(
+              r"s\.version\s*=\s*['\"]([^'\"]+)", podspec
+          ).group(1)
+          package_version = re.search(
+              r"/releases/download/([^/]+)/YSIFLYADLib\.xcframework\.zip",
+              package,
+          ).group(1)
+          pod_url_version = re.search(
+              r"/releases/download/([^/]+)/YSIFLYADLib-([^/]+)\.zip",
+              podspec,
+          ).groups()
+          demo_pod_version = re.search(
+              r"YSIFLYADLib_iOS/([^/]+)/YSIFLYADLib\.podspec",
+              demo_podfile,
+          ).group(1)
+          assert target_version == "6.2.2", target_version
+          assert package_version == target_version
+          assert pod_url_version == (target_version, target_version)
+          assert demo_pod_version == target_version
+          assert re.search(
+              r"^## (?:6\.2\.2（待发布）|\[6\.2\.2\] - \d{4}-\d{2}-\d{2})$",
+              changelog,
+              re.M,
+          )
+
+          root_raw_tags = set(
+              re.findall(
+                  r"raw\.githubusercontent\.com/LJMcarryu/YSIFLYADLib_iOS/([^/]+)/",
+                  readme,
+              )
+          )
+          demo_raw_tags = set(
+              re.findall(
+                  r"raw\.githubusercontent\.com/LJMcarryu/YSIFLYADLib_iOS/([^/]+)/",
+                  demo_readme + demo_podfile,
+              )
+          )
+          checksum = re.search(r'checksum:\s*"([^"]+)"', package).group(1)
+          pending_checksum = "__YSIFLYADLIB_6_2_2_SWIFTPM_CHECKSUM_PENDING__"
+          previous_checksum = (
+              "d65b715b1fa5eaf1ae38c3a94f3eaf7e2289958f2b678aa0dccec1f66873627a"
+          )
+          pending_binary_source_commit = (
+              "__YSIFLYADLIB_6_2_2_BINARY_SOURCE_COMMIT_PENDING__"
+          )
+          pending_release_metadata_commit = (
+              "__YSIFLYADLIB_6_2_2_RELEASE_METADATA_COMMIT_PENDING__"
+          )
+
+          binary_pattern = re.compile(
+              r"^- `binarySourceCommit`（SDK 二进制源码提交）：`([^`]+)`$",
+              re.M,
+          )
+          metadata_pattern = re.compile(
+              r"^- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，"
+              r"不是 SDK 二进制源码提交）：`([^`]+)`$",
+              re.M,
+          )
+
+          def provenance(document, label):
+              binary = binary_pattern.findall(document)
+              metadata = metadata_pattern.findall(document)
+              assert len(binary) == 1, f"{label} binarySourceCommit 声明数量错误: {binary}"
+              assert len(metadata) == 1, (
+                  f"{label} releaseMetadataCommit 声明数量错误: {metadata}"
+              )
+              return binary[0], metadata[0]
+
+          release_state_match = re.findall(
+              r"^- `releaseState`：`(PENDING|FORMAL)`$",
+              releasing,
+              re.M,
+          )
+          assert len(release_state_match) == 1, release_state_match
+          release_state = release_state_match[0]
+          readme_provenance = provenance(readme, "README.md")
+          changelog_provenance = provenance(changelog, "CHANGELOG.md")
+          releasing_provenance = provenance(releasing, "RELEASING.md")
+          assert readme_provenance == changelog_provenance == releasing_provenance
+          binary_source_commit, release_metadata_commit = releasing_provenance
+          provenance_pending = (
+              binary_source_commit == pending_binary_source_commit
+              and release_metadata_commit == pending_release_metadata_commit
+          )
+          provenance_final = (
+              re.fullmatch(r"[0-9a-f]{40}", binary_source_commit) is not None
+              and re.fullmatch(r"[0-9a-f]{40}", release_metadata_commit) is not None
+              and binary_source_commit != release_metadata_commit
+          )
+          assert provenance_pending or provenance_final, (
+              "A/B 必须同时使用精确 PENDING，或同时使用两个不同的 40 位小写提交"
+          )
+          is_tag_ref = os.environ.get("GITHUB_REF_TYPE") == "tag"
+          is_tag_push = (
+              os.environ.get("GITHUB_EVENT_NAME") == "push" and is_tag_ref
+          )
+          if is_tag_ref:
+              assert os.environ.get("GITHUB_REF_NAME") == target_version, (
+                  os.environ.get("GITHUB_REF_NAME"),
+                  target_version,
+              )
+              tag_type = subprocess.check_output(
+                  ["git", "cat-file", "-t", f"refs/tags/{target_version}"],
+                  text=True,
+              ).strip()
+              assert tag_type == "tag", "正式版本 tag 必须是 annotated tag"
+
+          if checksum == pending_checksum:
+              assert not is_tag_push, "正式 tag 禁止保留 PENDING checksum"
+              assert release_state == "PENDING"
+              assert provenance_pending, "准备态必须保留精确 A/B PENDING"
+              assert root_raw_tags == {"6.2.1"}, root_raw_tags
+              assert demo_raw_tags == {target_version}, demo_raw_tags
+              assert "当前正式发布版本为 **6.2.1**" in readme
+              assert "当前清单目标版本为 **6.2.2（待发布）**" in readme
+              assert (
+                  "6.2.2` 的正式签名资产、checksum、tag 和 Release 尚未生成"
+                  in readme
+              )
+              assert "## 6.2.2（待发布）" in changelog
+              assert "[6.2.2]:" not in changelog
+              assert "最新正式发布版本仍为 `6.2.1`" in changelog
+              assert "发布准备版本" in demo_readme
+              checksum_state = "精确 PENDING（不可发布）"
+          else:
+              assert re.fullmatch(r"[0-9a-f]{64}", checksum), checksum
+              assert checksum != "0" * 64
+              assert checksum != previous_checksum, "6.2.2 不得沿用 6.2.1 checksum"
+              assert release_state == "FORMAL"
+              assert provenance_final, "正式态必须回填真实且不同的 A/B"
+              assert root_raw_tags == {target_version}, root_raw_tags
+              assert demo_raw_tags == {target_version}, demo_raw_tags
+              assert (
+                  f"最新正式发布版本为 `YSIFLYADLib {target_version}`" in readme
+              )
+              assert f"当前正式发布版本为 **{target_version}**" in readme
+              release_url = (
+                  f"https://github.com/LJMcarryu/YSIFLYADLib_iOS/"
+                  f"releases/tag/{target_version}"
+              )
+              for label, document in (
+                  ("README.md", readme),
+                  ("CHANGELOG.md", changelog),
+                  ("RELEASING.md", releasing),
+              ):
+                  assert release_url in document, f"{label} 缺少正式 Release 链接"
+
+              forbidden_state_markers = (
+                  "待发布",
+                  "发布准备",
+                  "正在准备",
+                  "尚未生成",
+                  "暂不可",
+                  "暂不能",
+                  "完成发布后",
+                  "发布完成后",
+                  "正式发布前",
+                  "目前尚无正式二进制",
+                  "尚未发布的 `6.2.2`",
+              )
+              for label, document in (
+                  ("README.md", readme),
+                  ("CHANGELOG.md", changelog),
+                  ("YSIFLYADLibSimple/README.md", demo_readme),
+              ):
+                  stale = [
+                      marker for marker in forbidden_state_markers if marker in document
+                  ]
+                  assert not stale, f"{label} 残留准备态文案: {stale}"
+
+              stale_formal_patterns = (
+                  r"最新正式发布版本[^\n]*6\.2\.1",
+                  r"当前正式发布版本[^\n]*6\.2\.1",
+                  r"最新正式版本仍为\s*`6\.2\.1`",
+                  r"当前正式版本\s*`6\.2\.1`",
+                  r"当前正式 Release[^\n]*6\.2\.1",
+                  r"当前正式接入[^\n]*6\.2\.1",
+              )
+              for label, document in (
+                  ("README.md", readme),
+                  ("CHANGELOG.md", changelog),
+                  ("YSIFLYADLibSimple/README.md", demo_readme),
+              ):
+                  stale = [
+                      pattern
+                      for pattern in stale_formal_patterns
+                      if re.search(pattern, document)
+                  ]
+                  assert not stale, f"{label} 仍把 6.2.1 写成当前正式版: {stale}"
+
+              assert "PENDING" not in readme
+              assert "PENDING" not in changelog
+              assert "PENDING" not in demo_readme
+              assert "/6.2.1/YSIFLYADLib.podspec" not in readme
+              assert "/6.2.1/YSIFLYADLib.podspec" not in demo_readme
+              assert re.search(
+                  rf"^## \[{re.escape(target_version)}\] - \d{{4}}-\d{{2}}-\d{{2}}$",
+                  changelog,
+                  re.M,
+              )
+              assert f"[{target_version}]:" in changelog
+              assert f"`Podfile` 已固定到 `{target_version}` tag" in demo_readme
+              checksum_state = "正式 checksum 已回填"
+
+          def has_objc_flag(config):
+              flags = (config or {}).get("OTHER_LDFLAGS", "")
+              return "-ObjC" in shlex.split(flags)
+
+          def as_set(value):
+              if isinstance(value, str):
+                  return {value}
+              return set(value or [])
+
+          assert has_objc_flag(podspec_json.get("pod_target_xcconfig"))
+          assert has_objc_flag(podspec_json.get("user_target_xcconfig"))
+          assert "AdSupport" in as_set(podspec_json.get("frameworks"))
+          assert "AppTrackingTransparency" in as_set(
+              podspec_json.get("weak_frameworks")
+          )
+          print(
+              f"target={target_version}, checksum={checksum_state}, "
+              f"正式文档 tag={sorted(root_raw_tags)}, "
+              f"Demo 目标 tag={sorted(demo_raw_tags)}"
+          )
+          PY
+
+      - name: 正式态校验 A/B 私有源码祖先关系与 B 变更范围
+        env:
+          IFLY_PRIVATE_SOURCE_TOKEN: ${{ secrets.IFLY_PRIVATE_SOURCE_TOKEN }}
+          PRIVATE_SOURCE_REPOSITORY: LJMcarryu/IFLYADLibDemo
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import urllib.request
+          from pathlib import Path
+
+          releasing = Path("RELEASING.md").read_text(encoding="utf-8")
+          release_state_match = re.findall(
+              r"^- `releaseState`：`(PENDING|FORMAL)`$", releasing, re.M
+          )
+          assert len(release_state_match) == 1, release_state_match
+          release_state = release_state_match[0]
+          binary = re.findall(
+              r"^- `binarySourceCommit`（SDK 二进制源码提交）：`([^`]+)`$",
+              releasing,
+              re.M,
+          )
+          metadata = re.findall(
+              r"^- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，"
+              r"不是 SDK 二进制源码提交）：`([^`]+)`$",
+              releasing,
+              re.M,
+          )
+          assert len(binary) == len(metadata) == 1
+          binary_source_commit = binary[0]
+          release_metadata_commit = metadata[0]
+          pending_binary = "__YSIFLYADLIB_6_2_2_BINARY_SOURCE_COMMIT_PENDING__"
+          pending_metadata = "__YSIFLYADLIB_6_2_2_RELEASE_METADATA_COMMIT_PENDING__"
+          if release_state == "PENDING":
+              assert (binary_source_commit, release_metadata_commit) == (
+                  pending_binary,
+                  pending_metadata,
+              ), "PENDING 状态必须保留精确 A/B 占位"
+              print("A/B 仍为精确 PENDING；准备态跳过私有仓 compare")
+              raise SystemExit(0)
+
+          assert release_state == "FORMAL"
+          assert re.fullmatch(r"[0-9a-f]{40}", binary_source_commit)
+          assert re.fullmatch(r"[0-9a-f]{40}", release_metadata_commit)
+          assert binary_source_commit != release_metadata_commit
+          token = os.environ.get("IFLY_PRIVATE_SOURCE_TOKEN", "").strip()
+          assert token, "正式态缺少 IFLY_PRIVATE_SOURCE_TOKEN，拒绝跳过 A/B 祖先校验"
+          repository = os.environ["PRIVATE_SOURCE_REPOSITORY"]
+          compare_url = (
+              f"https://api.github.com/repos/{repository}/compare/"
+              f"{binary_source_commit}...{release_metadata_commit}?per_page=100"
+          )
+          request = urllib.request.Request(
+              compare_url,
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {token}",
+                  "User-Agent": "YSIFLYADLib-provenance-gate",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          with urllib.request.urlopen(request, timeout=180) as response:
+              comparison = json.load(response)
+
+          assert comparison.get("status") == "ahead", comparison.get("status")
+          assert comparison.get("ahead_by", 0) > 0
+          assert comparison.get("behind_by") == 0
+          assert comparison["base_commit"]["sha"] == binary_source_commit
+          assert comparison["merge_base_commit"]["sha"] == binary_source_commit
+          assert comparison["head_commit"]["sha"] == release_metadata_commit
+          commits = comparison.get("commits", [])
+          assert len(commits) == comparison.get("total_commits"), (
+              "A/B compare 提交分页或截断，拒绝不完整校验"
+          )
+          assert commits and commits[-1]["sha"] == release_metadata_commit
+
+          def allowed(path):
+              return path in {
+                  "Package.swift",
+                  "README.md",
+                  "CONTEXT.md",
+              } or path.startswith("docs/")
+
+          files = comparison.get("files", [])
+          assert files and len(files) < 300, "A/B compare 文件列表为空或达到截断上限"
+          invalid = []
+          for item in files:
+              paths = [item.get("filename", "")]
+              if item.get("previous_filename"):
+                  paths.append(item["previous_filename"])
+              invalid.extend(path for path in paths if not allowed(path))
+          assert not invalid, f"提交 B 修改了非发布元数据路径: {sorted(set(invalid))}"
+          print(
+              "A/B provenance 通过："
+              f"binarySourceCommit={binary_source_commit}, "
+              f"releaseMetadataCommit={release_metadata_commit}"
+          )
+          PY
+
+      - name: Tag push 立即校验 annotated tag 与 checkout 绑定
+        if: github.ref_type == 'tag'
+        run: |
+          test "${GITHUB_REF_NAME}" = '6.2.2'
+          test -z "$(git status --porcelain)"
+          test "$(git cat-file -t "refs/tags/${GITHUB_REF_NAME}")" = 'tag'
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          test "$(git describe --tags --exact-match HEAD)" = "${GITHUB_REF_NAME}"
 
       - name: 校验 SwiftPM 资源包装 target
         run: |
@@ -36,93 +415,557 @@ jobs:
           assert not executable_resources, executable_resources
           PY
 
-      - name: 校验 SPM binaryTarget 的 url + checksum 一致
+      - name: 校验 NativeFeed 托管 API 与 Demo 复用乱序防护
         run: |
           python3 - <<'PY'
-          import re, sys, urllib.request, hashlib
-          src = open("Package.swift", encoding="utf-8").read()
-          pairs = re.findall(r'url:\s*"([^"]+)"\s*,\s*checksum:\s*"([0-9a-fA-F]{64})"', src)
-          if not pairs:
-              print("未在 Package.swift 找到 url+checksum 对"); sys.exit(1)
-          bad = 0
-          for url, declared in pairs:
-              data = urllib.request.urlopen(url, timeout=180).read()
-              actual = hashlib.sha256(data).hexdigest()
-              ok = actual.lower() == declared.lower()
-              print(("OK  " if ok else "FAIL") + f"  {url.split('/')[-1]}  declared={declared[:12]}.. actual={actual[:12]}..")
-              bad += 0 if ok else 1
-          print(f"共校验 {len(pairs)} 个二进制，失败 {bad}")
-          sys.exit(1 if bad else 0)
+          from pathlib import Path
+
+          native = Path(
+              "YSIFLYADLibSimple/YSIFLYADLibSimple/biz/native/"
+              "YSIFLYNativeViewController.m"
+          ).read_text(encoding="utf-8")
+
+          for required in (
+              "attachedAdCell",
+              "ysifly_attachWithViewBinder:",
+              "ysifly_detachAdFromContainerView:",
+              "detachAdFromContainer",
+              "continueDisplayingAdItemAfterCellDetached",
+              "renderAd:",
+              "didEndDisplayingCell:",
+          ):
+              assert required in native, required
+
+          for forbidden in (
+              "YSIFLYNativeFeedDisplaySession",
+              "YSIFLYNativeFeedAdBinding",
+              "ysifly_beginDisplaySessionWithError:",
+              "ysifly_bindAdWithViewBinder:",
+              "ysifly_unbindAd",
+              "ysifly_endDisplaySession",
+          ):
+              assert forbidden not in native, forbidden
+
+          render_at = native.index("- (void)renderAd:")
+          render_detach_at = native.index("[self detachAdFromContainer];", render_at)
+          render_data_at = native.index("YSIFLYNativeFeedAdData *data", render_at)
+          assert render_detach_at < render_data_at, "改写媒体 UI 前必须先按容器 detach"
+
+          did_end_at = native.index("didEndDisplayingCell:")
+          logical_lifecycle_at = native.index(
+              "#pragma mark - Logical ad item lifecycle", did_end_at
+          )
+          did_end = native[did_end_at:logical_lifecycle_at]
+          detach_at = did_end.index("[adCell detachAdFromContainer]")
+          clear_at = did_end.index("self.attachedAdCell = nil")
+          retry_at = did_end.index("[self continueDisplayingAdItemAfterCellDetached]")
+          assert detach_at < clear_at < retry_at, (
+              "旧 didEnd 必须先反注册旧容器，再清 attachedAdCell，最后重试仍可见新 Cell"
+          )
+
+          attach_at = native.index(
+              "- (BOOL)attachCurrentAdToCell:", logical_lifecycle_at
+          )
+          continue_at = native.index(
+              "- (void)continueDisplayingAdItemAfterCellDetached", attach_at
+          )
+          attach_method = native[attach_at:continue_at]
+          assert attach_method.index("if (self.attachedAdCell == cell)") < (
+              attach_method.index("[cell renderAd:ad")
+          )
+          old_mount_guard = "if (self.attachedAdCell && self.attachedAdCell != cell)"
+          assert attach_method.count(old_mount_guard) >= 2, (
+              "媒体渲染失败和 attach 失败都必须先保护仍活动的旧挂载"
+          )
+          assert attach_method.count("[self retireCurrentAdItem]") >= 2
+
+          retire_at = native.index("- (void)retireCurrentAdItem", continue_at)
+          retire_method = native[retire_at:]
+          release_at = retire_method.index("self.adItem.ad = nil")
+          detach_attached_at = retire_method.index("[attachedCell detachAdFromContainer]")
+          delegate_at = retire_method.index("ad.delegate = nil")
+          assert release_at < detach_attached_at < delegate_at
+          print("NativeFeed Demo 托管生命周期与 UIKit 新旧 Cell 乱序防护通过")
           PY
 
-      - name: 校验 podspec 的 zip 可下载且含 xcframework
+  lint-podspec-release:
+    name: 正式 Release 完整 podspec lint
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.VALIDATION_REF }}
+      - name: pod spec lint（下载并验证正式资产）
+        run: pod spec lint YSIFLYADLib.podspec --allow-warnings
+
+  verify-release:
+    name: 校验正式 Release 三资产与实际消费
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+    needs: [verify-repository, lint-podspec-release]
+    runs-on: macos-15
+    permissions:
+      contents: read
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: 校验 Xcode、tag checkout、版本与正式 checksum
         run: |
+          xcodebuild -version
+          swift package dump-package > /dev/null
+          pod ipc spec YSIFLYADLib.podspec > /dev/null
           python3 - <<'PY'
-          import re, sys, urllib.request, io, zipfile
-          src = open("YSIFLYADLib.podspec", encoding="utf-8").read()
-          m = re.search(r':http\s*=>\s*[\'"]([^\'"]+)[\'"]', src)
-          if not m:
-              print("podspec 未找到 :http source"); sys.exit(1)
-          data = urllib.request.urlopen(m.group(1), timeout=180).read()
-          z = zipfile.ZipFile(io.BytesIO(data))
-          names = z.namelist()
-          fw = [n for n in names if n.endswith(".xcframework/Info.plist")]
-          bundle = any("YSAdvSDK.bundle/" in n for n in names)
-          print(f"zip：{len(fw)} 个 xcframework，内嵌 YSAdvSDK.bundle={bundle}")
-          sys.exit(0 if fw and bundle else 1)
+          import os
+          import re
+          import subprocess
+          from pathlib import Path
+
+          tag = os.environ["RELEASE_TAG"]
+          assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", tag), tag
+          head = subprocess.check_output(
+              ["git", "rev-parse", "HEAD"], text=True
+          ).strip()
+          tag_commit = subprocess.check_output(
+              ["git", "rev-parse", f"refs/tags/{tag}^{{}}"], text=True
+          ).strip()
+          tag_object_type = subprocess.check_output(
+              ["git", "cat-file", "-t", f"refs/tags/{tag}"], text=True
+          ).strip()
+          assert tag_object_type == "tag", "正式发布必须使用 annotated tag"
+          assert head == tag_commit, f"checkout={head}, tag={tag_commit}"
+
+          package = Path("Package.swift").read_text(encoding="utf-8")
+          podspec = Path("YSIFLYADLib.podspec").read_text(encoding="utf-8")
+          readme = Path("README.md").read_text(encoding="utf-8")
+          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
+          releasing = Path("RELEASING.md").read_text(encoding="utf-8")
+          demo_podfile = Path("YSIFLYADLibSimple/Podfile").read_text(encoding="utf-8")
+          version = re.search(r"s\.version\s*=\s*'([^']+)'", podspec).group(1)
+          checksum = re.search(r'checksum:\s*"([^"]+)"', package).group(1)
+          previous_checksum = (
+              "d65b715b1fa5eaf1ae38c3a94f3eaf7e2289958f2b678aa0dccec1f66873627a"
+          )
+          assert version == tag
+          assert re.search(r"^- `releaseState`：`FORMAL`$", releasing, re.M), (
+              "正式 Release 必须声明 releaseState=FORMAL"
+          )
+          assert re.fullmatch(r"[0-9a-f]{64}", checksum), checksum
+          assert checksum != "0" * 64
+          assert checksum != previous_checksum, "正式 6.2.2 仍沿用 6.2.1 checksum"
+          assert "PENDING" not in package
+          assert f"/releases/download/{tag}/YSIFLYADLib.xcframework.zip" in package
+          assert f"/releases/download/{tag}/YSIFLYADLib-{tag}.zip" in podspec
+          assert f"YSIFLYADLib_iOS/{tag}/YSIFLYADLib.podspec" in demo_podfile
+          assert f"当前正式发布版本为 **{tag}**" in readme
+          assert "（待发布）" not in readme
+          assert re.search(
+              rf"^## \[{re.escape(tag)}\] - \d{{4}}-\d{{2}}-\d{{2}}$",
+              changelog,
+              re.M,
+          )
+
+          output = subprocess.check_output(["xcodebuild", "-version"], text=True)
+          xcode_major = re.search(r"Xcode\s+(\d+)", output)
+          assert xcode_major and int(xcode_major.group(1)) >= 16, output
+          print(f"tag={tag}, commit={head}, checksum={checksum}")
           PY
 
-      - name: 校验 podspec / Package.swift / README 版本一致
+      - name: 匿名查询、校验并下载本次 Release 三资产
         run: |
+          export RELEASE_DIR="${RUNNER_TEMP}/ys-release"
+          # 不给 GitHub API 或资源下载请求携带 Actions 注入的任何令牌。
+          # ACTIONS_RUNTIME_TOKEN 在部分 runner 上存在；保留它会让“匿名”
+          # 断言随 runner 实现变化而误失败，也不符合本门禁的验证意图。
+          unset GH_TOKEN GITHUB_TOKEN ACTIONS_RUNTIME_TOKEN
           python3 - <<'PY'
-          import json, re, shlex, subprocess, sys
+          import json
+          import os
+          import re
+          import urllib.request
+          from pathlib import Path
 
-          spec = open("YSIFLYADLib.podspec", encoding="utf-8").read()
-          pkg = open("Package.swift", encoding="utf-8").read()
-          sv = re.search(r"s\.version\s*=\s*'([^']+)'", spec).group(1)
-          urls = set(re.findall(r"/releases/download/([0-9.]+)/", spec + pkg))
-
-          evaluated = json.loads(
-              subprocess.check_output(
-                  ["pod", "ipc", "spec", "YSIFLYADLib.podspec"],
-                  text=True,
+          tag = os.environ["RELEASE_TAG"]
+          repository = os.environ["GITHUB_REPOSITORY"]
+          release_dir = Path(os.environ["RELEASE_DIR"])
+          release_dir.mkdir(parents=True, exist_ok=True)
+          for secret_name in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_RUNTIME_TOKEN"):
+              assert not os.environ.get(secret_name), (
+                  f"匿名 Release 复验禁止注入 {secret_name}"
               )
+          request = urllib.request.Request(
+              f"https://api.github.com/repos/{repository}/releases/tags/{tag}",
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "User-Agent": "YSIFLYADLib-anonymous-release-gate",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          with urllib.request.urlopen(request, timeout=180) as response:
+              release = json.load(response)
+
+          expected = sorted(
+              [
+                  f"YSIFLYADLib-{tag}.zip",
+                  "YSIFLYADLib.xcframework.zip",
+                  "checksums.txt",
+              ]
+          )
+          actual = sorted(asset["name"] for asset in release.get("assets", []))
+          assert release["tag_name"] == tag
+          assert release["draft"] is False
+          assert release["prerelease"] is False
+          assert actual == expected, f"actual={actual}, expected={expected}"
+
+          binary_pattern = re.compile(
+              r"^- `binarySourceCommit`（SDK 二进制源码提交）：`([0-9a-f]{40})`$",
+              re.M,
+          )
+          metadata_pattern = re.compile(
+              r"^- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，"
+              r"不是 SDK 二进制源码提交）：`([0-9a-f]{40})`$",
+              re.M,
+          )
+          release_body = release.get("body") or ""
+          release_binary = binary_pattern.findall(release_body)
+          release_metadata = metadata_pattern.findall(release_body)
+          assert len(release_binary) == len(release_metadata) == 1, (
+              "Release 正文必须各含一条规范 A/B 声明"
+          )
+          assert release_binary[0] != release_metadata[0]
+          assert release_body.count(release_binary[0]) == 1
+          assert release_body.count(release_metadata[0]) == 1, (
+              "Release 正文不得把 B 重复写作其他角色或二进制源码提交"
           )
 
-          def has_objc_flag(config):
-              flags = (config or {}).get("OTHER_LDFLAGS", "")
-              return "-ObjC" in shlex.split(flags)
+          releasing = Path("RELEASING.md").read_text(encoding="utf-8")
+          documented_binary = binary_pattern.findall(releasing)
+          documented_metadata = metadata_pattern.findall(releasing)
+          assert release_binary == documented_binary
+          assert release_metadata == documented_metadata
 
-          def as_set(value):
-              if isinstance(value, str):
-                  return {value}
-              return set(value or [])
+          assets = {asset["name"]: asset for asset in release["assets"]}
+          for name in expected:
+              download_request = urllib.request.Request(
+                  assets[name]["browser_download_url"],
+                  headers={
+                      "User-Agent": "YSIFLYADLib-anonymous-release-gate",
+                  },
+              )
+              with urllib.request.urlopen(download_request, timeout=300) as response:
+                  (release_dir / name).write_bytes(response.read())
 
-          pod_target_objc = has_objc_flag(evaluated.get("pod_target_xcconfig"))
-          user_target_objc = has_objc_flag(evaluated.get("user_target_xcconfig"))
-          ad_support = "AdSupport" in as_set(evaluated.get("frameworks"))
-          weak_att = "AppTrackingTransparency" in as_set(
-              evaluated.get("weak_frameworks")
-          )
-          link_contract = all(
-              (pod_target_objc, user_target_objc, ad_support, weak_att)
-          )
-          ok = urls == {sv} and link_contract
-          print(
-              f"podspec version={sv}，下载 URL 版本集={sorted(urls)}，"
-              f"pod target -ObjC={pod_target_objc}，"
-              f"user target -ObjC={user_target_objc}，"
-              f"AdSupport={ad_support}，ATT 弱链接={weak_att}，一致={ok}"
-          )
-          sys.exit(0 if ok else 1)
+          # 第二次独立匿名 GET，确保门禁不是依赖一次偶然的缓存或隐式凭据。
+          import hashlib
+          for name in expected:
+              retry_request = urllib.request.Request(
+                  assets[name]["browser_download_url"],
+                  headers={"User-Agent": "YSIFLYADLib-anonymous-release-retry"},
+              )
+              with urllib.request.urlopen(retry_request, timeout=300) as response:
+                  retry_bytes = response.read()
+              first_sha = hashlib.sha256((release_dir / name).read_bytes()).hexdigest()
+              retry_sha = hashlib.sha256(retry_bytes).hexdigest()
+              assert retry_sha == first_sha, f"匿名复验内容不一致: {name}"
+
+          print(f"Release {tag} 三资产已无 Token 匿名下载并完成复验：{actual}")
           PY
 
-      - name: 真实校验 CocoaPods 将 -ObjC 传播到最终 App
+      - name: 逐项校验 SHA-256、SwiftPM checksum、双包结构与公开 API
         run: |
-          (
-            cd YSIFLYADLibSimple
-            pod install
+          export RELEASE_DIR="${RUNNER_TEMP}/ys-release"
+          python3 - <<'PY'
+          import hashlib
+          import os
+          import plistlib
+          import re
+          import subprocess
+          import zipfile
+          from pathlib import Path, PurePosixPath
+
+          root = Path(os.environ["RELEASE_DIR"])
+          version = os.environ["RELEASE_TAG"]
+          spm_name = "YSIFLYADLib.xcframework.zip"
+          combined_name = f"YSIFLYADLib-{version}.zip"
+          expected_files = {spm_name, combined_name, "checksums.txt"}
+          actual_files = {path.name for path in root.iterdir() if path.is_file()}
+          assert actual_files == expected_files, (actual_files, expected_files)
+
+          lines = [
+              line
+              for line in (root / "checksums.txt").read_text(
+                  encoding="utf-8"
+              ).splitlines()
+              if line.strip()
+          ]
+          assert len(lines) == 2, lines
+          spm_line = re.fullmatch(
+              r"SPM\s+(\S+)\s+spm_checksum=([0-9a-f]{64})\s+"
+              r"sha256=([0-9a-f]{64})",
+              lines[0],
           )
+          combined_line = re.fullmatch(
+              r"Combined\s+(\S+)\s+sha256=([0-9a-f]{64})",
+              lines[1],
+          )
+          assert spm_line and combined_line, lines
+          assert spm_line.group(1) == spm_name
+          assert combined_line.group(1) == combined_name
+
+          def sha256(path):
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          spm_path = root / spm_name
+          combined_path = root / combined_name
+          spm_sha = sha256(spm_path)
+          combined_sha = sha256(combined_path)
+          computed_spm = subprocess.check_output(
+              ["swift", "package", "compute-checksum", str(spm_path)],
+              text=True,
+          ).strip()
+          package = Path("Package.swift").read_text(encoding="utf-8")
+          declared_spm = re.search(
+              r'checksum:\s*"([0-9a-f]{64})"', package
+          ).group(1)
+          assert spm_line.group(2) == spm_line.group(3) == spm_sha
+          assert computed_spm == declared_spm == spm_sha
+          assert combined_line.group(2) == combined_sha
+
+          def safe_extract(archive_path, output):
+              with zipfile.ZipFile(archive_path) as archive:
+                  for info in archive.infolist():
+                      name = PurePosixPath(info.filename)
+                      assert not name.is_absolute() and ".." not in name.parts, name
+                  archive.extractall(output)
+
+          spm_out = root / "spm"
+          combined_out = root / "combined"
+          safe_extract(spm_path, spm_out)
+          safe_extract(combined_path, combined_out)
+
+          def top_level_entries(path):
+              return {
+                  item.name
+                  for item in path.iterdir()
+                  if item.name != "__MACOSX" and not item.name.startswith("._")
+              }
+
+          assert top_level_entries(spm_out) == {"YSIFLYADLib.xcframework"}
+          assert top_level_entries(combined_out) == {
+              "YSIFLYADLib.xcframework",
+              "YSAdvSDK.bundle",
+              "LICENSE",
+          }
+
+          def tree_hashes(path):
+              return {
+                  file.relative_to(path).as_posix(): sha256(file)
+                  for file in path.rglob("*")
+                  if file.is_file()
+                  and not file.name.startswith("._")
+                  and file.name != ".DS_Store"
+              }
+
+          spm_framework = spm_out / "YSIFLYADLib.xcframework"
+          combined_framework = combined_out / "YSIFLYADLib.xcframework"
+          assert tree_hashes(spm_framework) == tree_hashes(combined_framework)
+          assert tree_hashes(Path("spm/YSIFLYADLibResources/YSAdvSDK.bundle")) == (
+              tree_hashes(combined_out / "YSAdvSDK.bundle")
+          )
+          bundle_privacy = combined_out / "YSAdvSDK.bundle/PrivacyInfo.xcprivacy"
+          assert bundle_privacy.is_file()
+          assert (combined_out / "LICENSE").is_file()
+
+          expected_headers = {
+              "IFLYAdBase.h",
+              "IFLYAdConfig.h",
+              "IFLYAdError.h",
+              "IFLYAdKeys.h",
+              "IFLYAdSDK.h",
+              "IFLYAdTool.h",
+              "IFLYAdTypes.h",
+              "IFLYBannerAd.h",
+              "IFLYInterstitialAd.h",
+              "IFLYNativeFeedAd.h",
+              "IFLYNativeFeedAdData.h",
+              "IFLYSplashAd.h",
+              "YSIFLYADLib.h",
+          }
+          headers = b"\n".join(
+              path.read_bytes() for path in spm_framework.rglob("Headers/*.h")
+          )
+          binaries = list(
+              spm_framework.rglob("YSIFLYADLib.framework/YSIFLYADLib")
+          )
+          assert headers and len(binaries) == 2, [str(path) for path in binaries]
+          for symbol in (
+              b"ysifly_attachWithViewBinder:",
+              b"ysifly_detachAdFromContainerView:",
+              b"ysifly_destroy",
+          ):
+              assert symbol in headers, symbol
+          for symbol in (
+              b"YSIFLYNativeFeedDisplaySession",
+              b"YSIFLYNativeFeedAdBinding",
+              b"ysifly_beginDisplaySessionWithError:",
+              b"ysifly_bindAdWithViewBinder:",
+              b"ysifly_unbindAd",
+              b"ysifly_endDisplaySession",
+          ):
+              assert symbol not in headers, symbol
+
+          team_ids = set()
+          device_arch_valid = False
+          simulator_arch_valid = False
+          for binary in binaries:
+              framework_dir = binary.parent
+              header_names = {
+                  path.name for path in (framework_dir / "Headers").glob("*.h")
+              }
+              assert header_names == expected_headers, (
+                  framework_dir,
+                  header_names,
+                  expected_headers,
+              )
+              native_header = framework_dir / "Headers/IFLYNativeFeedAd.h"
+              native_text = native_header.read_text(encoding="utf-8")
+              for managed_api in (
+                  "ysifly_attachWithViewBinder:",
+                  "ysifly_detachAdFromContainerView:",
+                  "ysifly_destroy",
+              ):
+                  assert managed_api in native_text, managed_api
+
+              subprocess.check_call(
+                  ["codesign", "--verify", "--strict", "--verbose=2", str(framework_dir)]
+              )
+              signature = subprocess.check_output(
+                  ["codesign", "-d", "--verbose=4", str(framework_dir)],
+                  text=True,
+                  stderr=subprocess.STDOUT,
+              )
+              assert "Signature=adhoc" not in signature
+              team_match = re.search(r"(?m)^TeamIdentifier=(.+)$", signature)
+              assert team_match, signature
+              team_ids.add(team_match.group(1).strip())
+
+              lines = set(
+                  subprocess.check_output(
+                      ["strings", str(binary)], text=True, errors="replace"
+                  ).splitlines()
+              )
+              for selector in (
+                  "ysifly_attachWithViewBinder:error:",
+                  "ysifly_detachAdFromContainerView:",
+              ):
+                  assert selector in lines, (selector, binary)
+              for selector in (
+                  "attachWithViewBinder:error:",
+                  "detachAdFromContainerView:",
+                  "ysifly_beginDisplaySessionWithError:",
+                  "ysifly_bindAdWithViewBinder:error:",
+                  "ysifly_unbindAd",
+                  "ysifly_endDisplaySession",
+              ):
+                  assert selector not in lines, (selector, binary)
+
+              symbols = subprocess.check_output(
+                  ["nm", "-g", str(binary)], text=True, errors="replace"
+              )
+              assert "_OBJC_CLASS_$_YSIFLYBannerAd" in symbols
+              assert "_OBJC_CLASS_$_YSIFLYInterstitialAd" in symbols
+              assert "_OBJC_CLASS_$_YSIFLYSplashAd" in symbols
+              assert "YSIFLYReward" not in symbols
+
+              architectures = set(
+                  subprocess.check_output(
+                      ["lipo", "-archs", str(binary)], text=True
+                  ).split()
+              )
+              if "simulator" in binary.as_posix():
+                  simulator_arch_valid |= architectures == {"arm64", "x86_64"}
+              else:
+                  device_arch_valid |= architectures == {"arm64"}
+
+              info = plistlib.loads((framework_dir / "Info.plist").read_bytes())
+              assert info["MinimumOSVersion"] == "11.0", (binary, info)
+              assert info["CFBundleShortVersionString"] == version, (binary, info)
+
+          assert team_ids == {"FM295M5CZ5"}, team_ids
+          assert device_arch_valid and simulator_arch_valid
+          privacy_paths = [
+              *spm_framework.rglob("PrivacyInfo.xcprivacy"),
+              bundle_privacy,
+          ]
+          assert len(privacy_paths) == 3, [str(path) for path in privacy_paths]
+          for privacy_path in privacy_paths:
+              privacy = plistlib.loads(privacy_path.read_bytes())
+              assert privacy.get("NSPrivacyTracking") is True, privacy_path
+              assert privacy.get("NSPrivacyTrackingDomains"), privacy_path
+
+          print(
+              f"SPM sha256/checksum={spm_sha}; Combined sha256={combined_sha}; "
+              "双包、YSNoReward 能力、签名/架构/版本与 NativeFeed API 契约通过"
+          )
+          PY
+
+      - name: 使用本次 Release 产物实际构建 SwiftPM 产品和最小消费端
+        run: |
+          export RELEASE_DIR="${RUNNER_TEMP}/ys-release"
+          mkdir -p "${RUNNER_TEMP}/ys-spm-package/spm"
+          cp .github/fixtures/swiftpm-local/Package.swift \
+            "${RUNNER_TEMP}/ys-spm-package/Package.swift"
+          cp -R "${RELEASE_DIR}/spm/YSIFLYADLib.xcframework" \
+            "${RUNNER_TEMP}/ys-spm-package/YSIFLYADLib.xcframework"
+          cp -R spm/YSIFLYADLibResources \
+            "${RUNNER_TEMP}/ys-spm-package/spm/YSIFLYADLibResources"
+
+          (
+            cd "${RUNNER_TEMP}/ys-spm-package"
+            xcodebuild build \
+              -scheme YSIFLYADLibReleaseValidation \
+              -configuration Debug \
+              -destination 'generic/platform=iOS Simulator' \
+              -derivedDataPath "${RUNNER_TEMP}/ys-spm-derived" \
+              CODE_SIGNING_ALLOWED=NO \
+              IPHONEOS_DEPLOYMENT_TARGET=11.0 \
+              OTHER_LDFLAGS='$(inherited) -ObjC'
+          )
+
+          test -d \
+            "${RUNNER_TEMP}/ys-spm-derived/Build/Products/Debug-iphonesimulator/YSIFLYADLibReleaseValidation_YSIFLYADLibResources.bundle/YSAdvSDK.bundle"
+          test -f \
+            "${RUNNER_TEMP}/ys-spm-derived/Build/Products/Debug-iphonesimulator/YSIFLYADLibReleaseValidation_YSIFLYADLibResources.bundle/YSAdvSDK.bundle/PrivacyInfo.xcprivacy"
+
+          spm_product_dir="${RUNNER_TEMP}/ys-spm-derived/Build/Products/Debug-iphonesimulator"
+          simulator_sdk="$(xcrun --sdk iphonesimulator --show-sdk-path)"
+          xcrun clang \
+            -ObjC \
+            -fobjc-arc \
+            -isysroot "${simulator_sdk}" \
+            -target arm64-apple-ios11.0-simulator \
+            -F "${spm_product_dir}" \
+            -framework YSIFLYADLib \
+            -framework Foundation \
+            -x objective-c - \
+            -o "${RUNNER_TEMP}/ys-spm-consumer" <<'EOF'
+          #import <YSIFLYADLib/YSIFLYADLib.h>
+          int main(void) {
+            @autoreleasepool {
+              NSLog(@"linked %@", [YSIFLYAdBase class]);
+            }
+            return 0;
+          }
+          EOF
+
+      - name: 使用本次正式 CocoaPods 资产编译 Demo 并校验最终 -ObjC
+        run: |
+          pod install --project-directory=YSIFLYADLibSimple
 
           python3 - <<'PY'
           import shlex
@@ -130,24 +973,29 @@ jobs:
 
           support_root = Path("YSIFLYADLibSimple/Pods/Target Support Files")
           configs = {
-              "pod target": support_root / "YSIFLYADLib/YSIFLYADLib.debug.xcconfig",
-              "aggregate target": (
-                  support_root
-                  / "Pods-YSIFLYADLibSimple/Pods-YSIFLYADLibSimple.debug.xcconfig"
-              ),
+              "pod target": support_root
+              / "YSIFLYADLib/YSIFLYADLib.debug.xcconfig",
+              "aggregate target": support_root
+              / "Pods-YSIFLYADLibSimple/Pods-YSIFLYADLibSimple.debug.xcconfig",
           }
           for label, path in configs.items():
-              if not path.is_file():
-                  raise SystemExit(f"缺少 {label} xcconfig: {path}")
-              lines = [
+              assert path.is_file(), f"缺少 {label} xcconfig: {path}"
+              values = [
                   line.split("=", 1)[1].strip()
                   for line in path.read_text(encoding="utf-8").splitlines()
                   if line.strip().startswith("OTHER_LDFLAGS") and "=" in line
               ]
-              if not any("-ObjC" in shlex.split(value) for value in lines):
-                  raise SystemExit(f"{label} 未传播 -ObjC: {path}")
+              assert any("-ObjC" in shlex.split(value) for value in values), path
               print(f"OK {label}: {path}")
           PY
+
+          xcodebuild build \
+            -workspace YSIFLYADLibSimple/YSIFLYADLibSimple.xcworkspace \
+            -scheme YSIFLYADLibSimple \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "${RUNNER_TEMP}/ys-pod-derived" \
+            CODE_SIGNING_ALLOWED=NO
 
           xcodebuild \
             -workspace YSIFLYADLibSimple/YSIFLYADLibSimple.xcworkspace \
@@ -163,28 +1011,15 @@ jobs:
           import shlex
           from pathlib import Path
 
-          settings_path = Path(os.environ["RUNNER_TEMP"]) / "ys-build-settings.json"
-          records = json.loads(settings_path.read_text(encoding="utf-8"))
-          app_records = [
-              item for item in records if item.get("target") == "YSIFLYADLibSimple"
-          ]
-          if len(app_records) != 1:
-              raise SystemExit(
-                  f"无法唯一定位最终 App build settings: {len(app_records)}"
-              )
-          flags = app_records[0].get("buildSettings", {}).get("OTHER_LDFLAGS", "")
-          if "-ObjC" not in shlex.split(flags):
-              raise SystemExit(f"最终 App OTHER_LDFLAGS 未包含 -ObjC: {flags}")
+          settings = Path(os.environ["RUNNER_TEMP"]) / "ys-build-settings.json"
+          records = json.loads(settings.read_text(encoding="utf-8"))
+          apps = [item for item in records if item.get("target") == "YSIFLYADLibSimple"]
+          assert len(apps) == 1, len(apps)
+          flags = apps[0].get("buildSettings", {}).get("OTHER_LDFLAGS", "")
+          assert "-ObjC" in shlex.split(flags), flags
           print(f"OK 最终 App OTHER_LDFLAGS: {flags}")
           PY
 
-  lint-podspec:
-    name: pod spec lint（结构）
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v4
-      - name: pod spec lint
-        run: pod spec lint YSIFLYADLib.podspec --quick --allow-warnings
-
-# 说明：以上为只读校验门禁（无需任何密钥），包含真实 pod install 与最终 App build settings 检查。
-# 更重的检查（全量 pod spec lint 真实编译、示例工程 xcodebuild build）耗时较长，可按需另加 workflow。
+# 普通 PR/main/tag push 只执行本地清单、pod ipc spec、资源与 Demo 源码门禁，不访问 Release 资产。
+# 只有 release published 或显式传入 release_tag 的手动复验才执行完整 pod spec lint，
+# 并查询、下载和实际消费正式三资产。
