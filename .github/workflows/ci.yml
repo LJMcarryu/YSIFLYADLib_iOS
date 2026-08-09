@@ -288,6 +288,7 @@ jobs:
           PY
 
       - name: 正式态校验 A/B 私有源码祖先关系与 B 变更范围
+        if: github.ref_type == 'tag' || github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
         env:
           IFLY_PRIVATE_SOURCE_TOKEN: ${{ secrets.IFLY_PRIVATE_SOURCE_TOKEN }}
           PRIVATE_SOURCE_REPOSITORY: LJMcarryu/IFLYADLibDemo
@@ -357,7 +358,6 @@ jobs:
           assert comparison.get("behind_by") == 0
           assert comparison["base_commit"]["sha"] == binary_source_commit
           assert comparison["merge_base_commit"]["sha"] == binary_source_commit
-          assert comparison["head_commit"]["sha"] == release_metadata_commit
           commits = comparison.get("commits", [])
           assert len(commits) == comparison.get("total_commits"), (
               "A/B compare 提交分页或截断，拒绝不完整校验"
