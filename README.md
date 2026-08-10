@@ -5,8 +5,15 @@
 最新正式发布版本为 `YSIFLYADLib 6.2.2`，最低支持 iOS 11.0。本仓源码、清单、文档和
 示例已固化为 NativeFeed SDK 托管 API；正式签名资产由唯一源码提交构建并完成本地发布门禁。
 
-GitHub [Release](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2)、资产上传、
-匿名下载、远程依赖解析和 Actions 结果以发布平台实际记录为准；本文不将这些外部步骤记为已完成。
+GitHub [Release 6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2)
+已于 2026 年 8 月 10 日正式公开，annotated tag 解引用后的提交为
+`b1bbaa5319335e027c560ab357c86cc6a732003e`，资产库存严格为 3 项。
+[published CI](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31347052226) 已成功完成
+三资产匿名下载、SHA-256 与双包同源校验，并实际构建 SwiftPM 产品、最小消费端和 CocoaPods Demo，
+同时通过完整 `pod spec lint`。该分发验收不代表最终宿主合规、`Validate App` 或 Apple 审核通过。
+本版按已确认范围原样归档 `SRC-004`、`SRC-008`、`SRC-009`、`SRC-011`、`NET-001`、
+`RRA-003`、`TRACK-001`、`TRACK-002`、`ADS-011`、`EXPORT-001` 启发式残余风险，并以
+`failOn=high`、`failOnWarning=false`、`strict=false`、`requireManual=false` 发布；该确认不适用于最终宿主。
 本版发布溯源为：
 
 - `binarySourceCommit`（SDK 二进制源码提交）：`a8ec925d3731d7d11734647aa02ca7d91d674965`
@@ -79,7 +86,7 @@ YS 白标方法 `ysifly_reportMediaShakeTriggeredWithError:` 虽然进入公开�
 
 ## 接入方式
 
-二进制通过本仓 **GitHub Releases** 分发；Release 资产对外可见时支持公开匿名下载，
+二进制通过本仓 **GitHub Releases** 分发；`6.2.2` Release 资产已对外可见并通过公开匿名下载验证，
 每个版本固定发布三个文件：
 
 | 资产 | 内容 | 适用 |
@@ -92,7 +99,7 @@ YS 白标方法 `ysifly_reportMediaShakeTriggeredWithError:` 虽然进入公开�
 
 ### CocoaPods
 
-tag 与 Release 资产对外可见后，在 `Podfile` 中通过对应 tag 上的
+`6.2.2` tag 与 Release 资产已对外可见，可在 `Podfile` 中通过对应 tag 上的
 `YSIFLYADLib.podspec`（raw URL）直连接入：
 
 ```ruby
@@ -120,7 +127,7 @@ open YourApp.xcworkspace
 
 ### Swift Package Manager
 
-tag 与 Release 资产对外可见后，在 Xcode「**File → Add Packages…**」填入仓库地址并
+`6.2.2` tag 与 Release 资产已对外可见，可在 Xcode「**File → Add Packages…**」填入仓库地址并
 选择当前正式版本 `6.2.2`：
 
 ```
@@ -145,11 +152,11 @@ targets: [
 
 > 当前仓库根 `Package.swift` 已固定到 `6.2.2`，checksum
 > `757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d`
-> 来自正式冻结的签名 zip。安装结果仍以 GitHub tag、Release 资产和依赖解析器的实际状态为准。
+> 来自正式冻结的签名 zip；上述 published CI 已对该 tag 的远程依赖解析和实际消费构建完成复验。
 
 ### 手动集成
 
-不便使用包管理器时，在 Release 资产对外可见后下载正式合并 zip
+不便使用包管理器时，可从已公开的 Release 下载正式合并 zip
 （`YSIFLYADLib-6.2.2.zip`）并集成其中内容：
 
 1. 解压得到 `YSIFLYADLib.xcframework` 与 `YSAdvSDK.bundle`；

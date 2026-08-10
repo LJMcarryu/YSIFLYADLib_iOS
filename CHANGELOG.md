@@ -10,7 +10,8 @@
 ### 发布事实
 
 - 正式签名资产由唯一源码提交构建并完成本地发布门禁，SwiftPM checksum 为 `757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d`。
-- GitHub tag、[Release](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2)、资产上传、匿名下载、远程依赖解析和 Actions 结果以发布平台实际记录为准；本日志不将这些外部步骤记为已完成。
+- [GitHub Release 6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2) 已正式公开，annotated tag 解引用后的提交为 `b1bbaa5319335e027c560ab357c86cc6a732003e`，资产库存严格为 3 项。[published CI](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31347052226) 成功完成无凭据匿名下载、SHA-256 与双包同源校验、SwiftPM/CocoaPods 实际消费构建和完整 `pod spec lint`；该分发验收不代表最终宿主合规、`Validate App` 或 Apple 审核通过。
+- 本版按确认范围保留并原样归档 `SRC-004`、`SRC-008`、`SRC-009`、`SRC-011`、`NET-001`、`RRA-003`、`TRACK-001`、`TRACK-002`、`ADS-011`、`EXPORT-001` 启发式残余风险，以 `failOn=high`、`failOnWarning=false`、`strict=false`、`requireManual=false` 发布；该确认不适用于最终宿主。
 - `binarySourceCommit`（SDK 二进制源码提交）：`a8ec925d3731d7d11734647aa02ca7d91d674965`
 - `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`eff78263c2d3f65b029f4114de1a9ed00f3827f3`
 
