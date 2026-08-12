@@ -796,6 +796,19 @@ class WorkflowStructureTests(unittest.TestCase):
             )
             self.assertIn("EXPECTED_SPM_SHA256", job["env"])
 
+    def test_job_level_env_does_not_use_runner_context(self) -> None:
+        for job_name, job in self.jobs.items():
+            for key, value in (job.get("env") or {}).items():
+                with self.subTest(job=job_name, key=key):
+                    self.assertNotIn("${{ runner.", str(value))
+        fixture = self.jobs["consume-cocoapods-release"]["env"][
+            "COCOAPODS_FIXTURE"
+        ]
+        self.assertEqual(
+            fixture,
+            "${{ github.workspace }}/.candidate-cocoapods-fixture",
+        )
+
     def test_control_scripts_are_pinned_to_workflow_commit_not_release_tag(self) -> None:
         self.assertNotIn("python3 .github/scripts/", self.source)
         expected_control_files = (

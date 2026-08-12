@@ -1211,7 +1211,9 @@ jobs:
       EXPECTED_SPM_SHA256: ${{ needs.validate-release-assets.outputs.spm_sha256 }}
       EXPECTED_COMBINED_SHA256: ${{ needs.validate-release-assets.outputs.combined_sha256 }}
       EXPECTED_CHECKSUMS_SHA256: ${{ needs.validate-release-assets.outputs.checksums_sha256 }}
-      COCOAPODS_FIXTURE: ${{ runner.temp }}/ys-cocoapods-fixture
+      # job 级 env 不能引用 runner context；github.workspace 在解析期可用，
+      # 实际目录仍由消费步骤先清理并只保存本次候选的本地 fixture。
+      COCOAPODS_FIXTURE: ${{ github.workspace }}/.candidate-cocoapods-fixture
       WORKFLOW_CONTROL_SHA: ${{ github.workflow_sha }}
     steps:
       - uses: actions/checkout@v4
