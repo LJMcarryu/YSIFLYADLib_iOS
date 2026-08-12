@@ -13,6 +13,10 @@ DerivedData/
 .codex-bridge/
 *.hmap
 
+# Python 本地/离线门禁缓存，不得污染正式候选工作树
+__pycache__/
+*.py[cod]
+
 # CocoaPods 示例工程产物（pod install 生成，不入仓）
 Pods/
 Podfile.lock

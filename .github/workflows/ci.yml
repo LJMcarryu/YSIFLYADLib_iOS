@@ -1,5 +1,8 @@
 name: CI
 
+run-name: >-
+  ${{ github.event_name == 'release' && format('formal-release:{0}:{1}', github.event.release.id, github.event.release.tag_name) || github.event_name == 'workflow_dispatch' && inputs.validation_mode == 'draft_candidate' && format('draft-candidate:{0}:{1}:{2}', inputs.candidate_id, inputs.candidate_release_id, inputs.dispatch_nonce) || format('ci:{0}:{1}', github.event_name, github.ref_name) }}
+
 on:
   push:
     branches: [main]
@@ -10,28 +13,249 @@ on:
     types: [published]
   workflow_dispatch:
     inputs:
+      validation_mode:
+        description: 验证模式；repository 兼容旧调用，非空 release_tag 自动推导 formal
+        required: false
+        default: repository
+        type: choice
+        options:
+          - repository
+          - draft_candidate
+          - formal_release
       release_tag:
-        description: 已发布且需要复验的正式 Release tag；留空时只执行本地准备门禁
+        description: formal_release 必填；repository 传入时按旧调用自动推导正式复验
+        required: false
+        default: ''
+        type: string
+      candidate_release_id:
+        description: draft_candidate 模式必填：同仓 draft Release 的十进制 ID（不是 tag）
+        required: false
+        default: ''
+        type: string
+      candidate_id:
+        description: draft_candidate 模式必填：64 位小写 candidateId
+        required: false
+        default: ''
+        type: string
+      dispatch_nonce:
+        description: draft_candidate 模式必填：32 位小写 dispatch nonce
         required: false
         default: ''
         type: string
 
-env:
-  VALIDATION_REF: ${{ github.event.release.tag_name || inputs.release_tag || github.ref }}
+permissions:
+  contents: read
+
+concurrency:
+  group: >-
+    ${{ github.event_name == 'release' && format('{0}:formal:{1}', github.workflow, github.event.release.tag_name) || github.event_name == 'workflow_dispatch' && inputs.validation_mode == 'draft_candidate' && format('{0}:candidate:{1}:{2}', github.workflow, inputs.candidate_id, inputs.candidate_release_id) || github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && format('{0}:formal:{1}', github.workflow, inputs.release_tag) || format('{0}:ci:{1}:{2}', github.workflow, github.event_name, github.ref) }}
+  # 同一候选的复验顺序排队，不取消既有证据；候选与正式 Release 使用不同分组。
+  cancel-in-progress: false
 
 jobs:
+  resolve-validation-mode:
+    name: 解析并限制发布验证模式
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      mode: ${{ steps.resolve.outputs.mode }}
+      checkout_ref: ${{ steps.resolve.outputs.checkout_ref }}
+      release_tag: ${{ steps.resolve.outputs.release_tag }}
+      candidate_release_id: ${{ steps.resolve.outputs.candidate_release_id }}
+      candidate_id: ${{ steps.resolve.outputs.candidate_id }}
+      candidate_branch: ${{ steps.resolve.outputs.candidate_branch }}
+      dispatch_nonce: ${{ steps.resolve.outputs.dispatch_nonce }}
+    steps:
+      - id: resolve
+        name: 校验事件、ref 与互斥输入（不 checkout、不注入 Token）
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          EVENT_REF_NAME: ${{ github.ref_name }}
+          RELEASE_EVENT_TAG: ${{ github.event.release.tag_name || '' }}
+          REQUESTED_MODE: ${{ inputs.validation_mode || '' }}
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag || '' }}
+          INPUT_CANDIDATE_RELEASE_ID: ${{ inputs.candidate_release_id || '' }}
+          INPUT_CANDIDATE_ID: ${{ inputs.candidate_id || '' }}
+          INPUT_DISPATCH_NONCE: ${{ inputs.dispatch_nonce || '' }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          event = os.environ["EVENT_NAME"]
+          event_ref = os.environ["EVENT_REF"]
+          event_ref_name = os.environ["EVENT_REF_NAME"]
+          requested = os.environ["REQUESTED_MODE"].strip() or "repository"
+          release_tag = os.environ["INPUT_RELEASE_TAG"].strip()
+          candidate_release_id = os.environ["INPUT_CANDIDATE_RELEASE_ID"].strip()
+          candidate_id = os.environ["INPUT_CANDIDATE_ID"].strip()
+          dispatch_nonce = os.environ["INPUT_DISPATCH_NONCE"].strip()
+          candidate_branch = ""
+          version = "6.2.2"
+
+          if event == "release":
+              mode = "formal_release"
+              release_tag = os.environ["RELEASE_EVENT_TAG"].strip()
+              candidate_release_id = ""
+              candidate_id = ""
+              dispatch_nonce = ""
+              assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", release_tag)
+              checkout_ref = release_tag
+          elif event == "workflow_dispatch":
+              assert requested in {
+                  "repository",
+                  "draft_candidate",
+                  "formal_release",
+              }, requested
+              if requested == "draft_candidate":
+                  mode = "draft_candidate"
+                  assert not release_tag, "draft candidate 不得同时提供 release_tag"
+                  assert re.fullmatch(r"[1-9][0-9]*", candidate_release_id), (
+                      "draft candidate 必须提供十进制 candidate_release_id"
+                  )
+                  assert re.fullmatch(r"[0-9a-f]{64}", candidate_id), (
+                      "draft candidate 必须提供 64 位小写 candidate_id"
+                  )
+                  assert re.fullmatch(r"[0-9a-f]{32}", dispatch_nonce), (
+                      "draft candidate 必须提供 32 位小写 dispatch_nonce"
+                  )
+                  candidate_branch = f"release-candidate/{version}-{candidate_id}"
+                  assert event_ref == f"refs/heads/{candidate_branch}", (
+                      f"draft candidate 只允许从 {candidate_branch} 触发"
+                  )
+                  assert event_ref_name == candidate_branch, (
+                      "github.ref_name 与候选分支不一致"
+                  )
+                  checkout_ref = candidate_branch
+              elif requested == "formal_release":
+                  mode = "formal_release"
+                  assert not candidate_release_id, "正式复验不得提供 candidate_release_id"
+                  assert not candidate_id, "正式复验不得提供 candidate_id"
+                  assert not dispatch_nonce, "正式复验不得提供 dispatch_nonce"
+                  assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", release_tag), (
+                      "正式复验必须提供 x.y.z release_tag"
+                  )
+                  checkout_ref = release_tag
+              else:
+                  assert not candidate_release_id, (
+                      "repository 模式不得提供 candidate_release_id"
+                  )
+                  assert not candidate_id, "repository 模式不得提供 candidate_id"
+                  assert not dispatch_nonce, "repository 模式不得提供 dispatch_nonce"
+                  if release_tag:
+                      # 兼容旧 workflow_dispatch：仅传 release_tag 即正式复验。
+                      assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", release_tag), (
+                          "旧式 release_tag 必须为 x.y.z"
+                      )
+                      mode = "formal_release"
+                      checkout_ref = release_tag
+                  else:
+                      mode = "repository"
+                      checkout_ref = event_ref
+          else:
+              mode = "repository"
+              release_tag = ""
+              candidate_release_id = ""
+              candidate_id = ""
+              dispatch_nonce = ""
+              checkout_ref = event_ref
+
+          output = Path(os.environ["GITHUB_OUTPUT"])
+          with output.open("a", encoding="utf-8") as handle:
+              handle.write(f"mode={mode}\n")
+              handle.write(f"checkout_ref={checkout_ref}\n")
+              handle.write(f"release_tag={release_tag}\n")
+              handle.write(f"candidate_release_id={candidate_release_id}\n")
+              handle.write(f"candidate_id={candidate_id}\n")
+              handle.write(f"candidate_branch={candidate_branch}\n")
+              handle.write(f"dispatch_nonce={dispatch_nonce}\n")
+          print(
+              f"mode={mode}, checkout_ref={checkout_ref}, "
+              f"release_tag={release_tag or '<none>'}, "
+              f"candidate_release_id={candidate_release_id or '<none>'}, "
+              f"candidate_id={candidate_id or '<none>'}, "
+              f"candidate_branch={candidate_branch or '<none>'}"
+          )
+          PY
+
   verify-repository:
     name: 本地校验发布清单、文档与 Demo 生命周期
+    needs: resolve-validation-mode
     # Demo 工程由 Xcode 16.2 创建（objectVersion 77），正式消费构建需使用 Xcode 16+ runner。
     runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      # 控制面脚本始终取自本次 workflow 的确切提交；被验证的历史 tag
+      # 不需要回填新脚本，也不会因 checkout tag 而执行到过时脚本。
+      WORKFLOW_CONTROL_SHA: ${{ github.workflow_sha }}
+    outputs:
+      mode: ${{ steps.release-contract.outputs.mode }}
+      version: ${{ steps.release-contract.outputs.version }}
+      release_state: ${{ steps.release-contract.outputs.release_state }}
+      release_tag: ${{ steps.release-contract.outputs.release_tag }}
+      candidate_release_id: ${{ steps.release-contract.outputs.candidate_release_id }}
+      candidate_id: ${{ steps.release-contract.outputs.candidate_id }}
+      candidate_branch: ${{ steps.release-contract.outputs.candidate_branch }}
+      dispatch_nonce: ${{ steps.release-contract.outputs.dispatch_nonce }}
+      checkout_ref: ${{ steps.release-contract.outputs.checkout_ref }}
+      checkout_commit: ${{ steps.release-contract.outputs.checkout_commit }}
+      candidate_identity: ${{ steps.release-contract.outputs.candidate_identity }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout 本次 workflow 控制面
+        uses: actions/checkout@v4
         with:
-          ref: ${{ env.VALIDATION_REF }}
+          ref: ${{ github.workflow_sha }}
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
-      - name: 校验版本、准备态和本地分发清单
+      - name: 运行发布工作流离线回归测试
+        run: |
+          PYTHONDONTWRITEBYTECODE=1 \
+            python3 -B -m unittest discover \
+              -s .github/tests \
+              -p 'test_*.py'
+
+      - name: Checkout 被验证的发布 ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve-validation-mode.outputs.checkout_ref }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - id: release-contract
+        name: 优先校验 checkout、版本、最终 FORMAL 清单、A/B 与 candidate 身份
+        env:
+          VALIDATION_MODE: ${{ needs.resolve-validation-mode.outputs.mode }}
+          RELEASE_TAG: ${{ needs.resolve-validation-mode.outputs.release_tag }}
+          CANDIDATE_RELEASE_ID: ${{ needs.resolve-validation-mode.outputs.candidate_release_id }}
+          CANDIDATE_ID: ${{ needs.resolve-validation-mode.outputs.candidate_id }}
+          CANDIDATE_BRANCH: ${{ needs.resolve-validation-mode.outputs.candidate_branch }}
+          DISPATCH_NONCE: ${{ needs.resolve-validation-mode.outputs.dispatch_nonce }}
+        run: |
+          git cat-file -e "${WORKFLOW_CONTROL_SHA}^{commit}"
+          git show \
+            "${WORKFLOW_CONTROL_SHA}:.github/scripts/validate_release_mode.py" |
+            python3 - \
+              --mode "${VALIDATION_MODE}" \
+              --event-name "${GITHUB_EVENT_NAME}" \
+              --event-ref "${GITHUB_REF}" \
+              --event-ref-name "${GITHUB_REF_NAME}" \
+              --event-ref-type "${GITHUB_REF_TYPE}" \
+              --event-sha "${GITHUB_SHA}" \
+              --repository "${GITHUB_REPOSITORY}" \
+              --release-tag "${RELEASE_TAG}" \
+              --candidate-release-id "${CANDIDATE_RELEASE_ID}" \
+              --candidate-id "${CANDIDATE_ID}" \
+              --candidate-branch "${CANDIDATE_BRANCH}" \
+              --dispatch-nonce "${DISPATCH_NONCE}" \
+              --github-output "${GITHUB_OUTPUT}"
+
+      - name: 校验版本、发布状态和本地分发清单
         run: |
           swift package dump-package > "${RUNNER_TEMP}/ys-package.json"
           pod ipc spec YSIFLYADLib.podspec > "${RUNNER_TEMP}/ys-podspec.json"
@@ -287,8 +511,8 @@ jobs:
           )
           PY
 
-      - name: 正式态校验 A/B 私有源码祖先关系与 B 变更范围
-        if: github.ref_type == 'tag' || github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
+      - name: Candidate/正式态校验 A/B 私有源码祖先关系与 B 变更范围
+        if: github.ref_type == 'tag' || needs.resolve-validation-mode.outputs.mode != 'repository'
         env:
           IFLY_PRIVATE_SOURCE_TOKEN: ${{ secrets.IFLY_PRIVATE_SOURCE_TOKEN }}
           PRIVATE_SOURCE_REPOSITORY: LJMcarryu/IFLYADLibDemo
@@ -320,16 +544,6 @@ jobs:
           assert len(binary) == len(metadata) == 1
           binary_source_commit = binary[0]
           release_metadata_commit = metadata[0]
-          pending_binary = "__YSIFLYADLIB_6_2_2_BINARY_SOURCE_COMMIT_PENDING__"
-          pending_metadata = "__YSIFLYADLIB_6_2_2_RELEASE_METADATA_COMMIT_PENDING__"
-          if release_state == "PENDING":
-              assert (binary_source_commit, release_metadata_commit) == (
-                  pending_binary,
-                  pending_metadata,
-              ), "PENDING 状态必须保留精确 A/B 占位"
-              print("A/B 仍为精确 PENDING；准备态跳过私有仓 compare")
-              raise SystemExit(0)
-
           assert release_state == "FORMAL"
           assert re.fullmatch(r"[0-9a-f]{40}", binary_source_commit)
           assert re.fullmatch(r"[0-9a-f]{40}", release_metadata_commit)
@@ -488,195 +702,89 @@ jobs:
           print("NativeFeed Demo 托管生命周期与 UIKit 新旧 Cell 乱序防护通过")
           PY
 
-  lint-podspec-release:
-    name: 正式 Release 完整 podspec lint
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.VALIDATION_REF }}
-      - name: pod spec lint（下载并验证正式资产）
-        run: pod spec lint YSIFLYADLib.podspec --allow-warnings
-
-  verify-release:
-    name: 校验正式 Release 三资产与实际消费
-    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '')
-    needs: [verify-repository, lint-podspec-release]
+  validate-release-assets:
+    name: 前置校验 draft/formal Release 三资产
+    if: needs.resolve-validation-mode.outputs.mode != 'repository'
+    needs: [resolve-validation-mode, verify-repository]
     runs-on: macos-15
+    timeout-minutes: 55
     permissions:
       contents: read
+    outputs:
+      spm_sha256: ${{ steps.asset-contract.outputs.spm_sha256 }}
+      combined_sha256: ${{ steps.asset-contract.outputs.combined_sha256 }}
+      checksums_sha256: ${{ steps.asset-contract.outputs.checksums_sha256 }}
     env:
-      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag }}
+      RELEASE_MODE: ${{ needs.verify-repository.outputs.mode }}
+      RELEASE_TAG: ${{ needs.verify-repository.outputs.version }}
+      CANDIDATE_RELEASE_ID: ${{ needs.verify-repository.outputs.candidate_release_id }}
+      CANDIDATE_ID: ${{ needs.verify-repository.outputs.candidate_id }}
+      CANDIDATE_BRANCH: ${{ needs.verify-repository.outputs.candidate_branch }}
+      EXPECTED_CHECKOUT_COMMIT: ${{ needs.verify-repository.outputs.checkout_commit }}
+      WORKFLOW_CONTROL_SHA: ${{ github.workflow_sha }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.RELEASE_TAG }}
+          ref: ${{ needs.verify-repository.outputs.checkout_commit }}
           fetch-depth: 0
           fetch-tags: true
+          persist-credentials: false
 
-      - name: 校验 Xcode、tag checkout、版本与正式 checksum
+      - name: 校验资产 job checkout 与前置身份未漂移
         run: |
           xcodebuild -version
-          swift package dump-package > /dev/null
-          pod ipc spec YSIFLYADLib.podspec > /dev/null
-          python3 - <<'PY'
-          import os
-          import re
-          import subprocess
-          from pathlib import Path
+          test "$(git rev-parse HEAD)" = "${EXPECTED_CHECKOUT_COMMIT}"
+          test -z "$(git status --porcelain)"
 
-          tag = os.environ["RELEASE_TAG"]
-          assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", tag), tag
-          head = subprocess.check_output(
-              ["git", "rev-parse", "HEAD"], text=True
-          ).strip()
-          tag_commit = subprocess.check_output(
-              ["git", "rev-parse", f"refs/tags/{tag}^{{}}"], text=True
-          ).strip()
-          tag_object_type = subprocess.check_output(
-              ["git", "cat-file", "-t", f"refs/tags/{tag}"], text=True
-          ).strip()
-          assert tag_object_type == "tag", "正式发布必须使用 annotated tag"
-          assert head == tag_commit, f"checkout={head}, tag={tag_commit}"
-
-          package = Path("Package.swift").read_text(encoding="utf-8")
-          podspec = Path("YSIFLYADLib.podspec").read_text(encoding="utf-8")
-          readme = Path("README.md").read_text(encoding="utf-8")
-          changelog = Path("CHANGELOG.md").read_text(encoding="utf-8")
-          releasing = Path("RELEASING.md").read_text(encoding="utf-8")
-          demo_podfile = Path("YSIFLYADLibSimple/Podfile").read_text(encoding="utf-8")
-          version = re.search(r"s\.version\s*=\s*'([^']+)'", podspec).group(1)
-          checksum = re.search(r'checksum:\s*"([^"]+)"', package).group(1)
-          previous_checksum = (
-              "d65b715b1fa5eaf1ae38c3a94f3eaf7e2289958f2b678aa0dccec1f66873627a"
-          )
-          assert version == tag
-          assert re.search(r"^- `releaseState`：`FORMAL`$", releasing, re.M), (
-              "正式 Release 必须声明 releaseState=FORMAL"
-          )
-          assert re.fullmatch(r"[0-9a-f]{64}", checksum), checksum
-          assert checksum != "0" * 64
-          assert checksum != previous_checksum, "正式 6.2.2 仍沿用 6.2.1 checksum"
-          assert "PENDING" not in package
-          assert f"/releases/download/{tag}/YSIFLYADLib.xcframework.zip" in package
-          assert f"/releases/download/{tag}/YSIFLYADLib-{tag}.zip" in podspec
-          assert f"YSIFLYADLib_iOS/{tag}/YSIFLYADLib.podspec" in demo_podfile
-          assert f"当前正式发布版本为 **{tag}**" in readme
-          assert "（待发布）" not in readme
-          assert re.search(
-              rf"^## \[{re.escape(tag)}\] - \d{{4}}-\d{{2}}-\d{{2}}$",
-              changelog,
-              re.M,
-          )
-
-          output = subprocess.check_output(["xcodebuild", "-version"], text=True)
-          xcode_major = re.search(r"Xcode\s+(\d+)", output)
-          assert xcode_major and int(xcode_major.group(1)) >= 16, output
-          print(f"tag={tag}, commit={head}, checksum={checksum}")
-          PY
-
-      - name: 匿名查询、校验并下载本次 Release 三资产
+      - name: 正式匿名下载前清空 Release 目录与包管理器缓存
+        if: env.RELEASE_MODE == 'formal_release'
         run: |
-          export RELEASE_DIR="${RUNNER_TEMP}/ys-release"
-          # 不给 GitHub API 或资源下载请求携带 Actions 注入的任何令牌。
-          # ACTIONS_RUNTIME_TOKEN 在部分 runner 上存在；保留它会让“匿名”
-          # 断言随 runner 实现变化而误失败，也不符合本门禁的验证意图。
-          unset GH_TOKEN GITHUB_TOKEN ACTIONS_RUNTIME_TOKEN
-          python3 - <<'PY'
-          import json
-          import os
-          import re
-          import urllib.request
-          from pathlib import Path
+          rm -rf \
+            "${RUNNER_TEMP}/ys-release" \
+            "${HOME}/Library/Caches/org.swift.swiftpm" \
+            "${HOME}/.swiftpm/cache" \
+            "${HOME}/Library/Caches/CocoaPods/Pods"
 
-          tag = os.environ["RELEASE_TAG"]
-          repository = os.environ["GITHUB_REPOSITORY"]
-          release_dir = Path(os.environ["RELEASE_DIR"])
-          release_dir.mkdir(parents=True, exist_ok=True)
-          for secret_name in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_RUNTIME_TOKEN"):
-              assert not os.environ.get(secret_name), (
-                  f"匿名 Release 复验禁止注入 {secret_name}"
-              )
-          request = urllib.request.Request(
-              f"https://api.github.com/repos/{repository}/releases/tags/{tag}",
-              headers={
-                  "Accept": "application/vnd.github+json",
-                  "User-Agent": "YSIFLYADLib-anonymous-release-gate",
-                  "X-GitHub-Api-Version": "2022-11-28",
-              },
-          )
-          with urllib.request.urlopen(request, timeout=180) as response:
-              release = json.load(response)
+      - name: 使用 Token 从同仓 draft Release 下载精确三资产
+        if: env.RELEASE_MODE == 'draft_candidate'
+        env:
+          # draft Token 只在本步骤出现；checkout、本地门禁及后续消费均不注入。
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf "${RUNNER_TEMP}/ys-release"
+          git show \
+            "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" |
+            python3 - \
+              --mode draft_candidate \
+              --repository "${GITHUB_REPOSITORY}" \
+              --version "${RELEASE_TAG}" \
+              --expected-commit "${EXPECTED_CHECKOUT_COMMIT}" \
+              --candidate-release-id "${CANDIDATE_RELEASE_ID}" \
+              --candidate-id "${CANDIDATE_ID}" \
+              --target-branch "${CANDIDATE_BRANCH}" \
+              --destination "${RUNNER_TEMP}/ys-release"
 
-          expected = sorted(
-              [
-                  f"YSIFLYADLib-{tag}.zip",
-                  "YSIFLYADLib.xcframework.zip",
-                  "checksums.txt",
-              ]
-          )
-          actual = sorted(asset["name"] for asset in release.get("assets", []))
-          assert release["tag_name"] == tag
-          assert release["draft"] is False
-          assert release["prerelease"] is False
-          assert actual == expected, f"actual={actual}, expected={expected}"
+      - name: 无 Token 匿名下载已发布正式 Release 精确三资产
+        if: env.RELEASE_MODE == 'formal_release'
+        run: |
+          env \
+            -u GH_TOKEN \
+            -u GITHUB_TOKEN \
+            -u GITHUB_AUTH_TOKEN \
+            -u ACTIONS_RUNTIME_TOKEN \
+            bash -e -o pipefail -c '
+              git show \
+                "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" |
+                python3 - \
+                  --mode formal_release \
+                  --repository "${GITHUB_REPOSITORY}" \
+                  --version "${RELEASE_TAG}" \
+                  --expected-commit "${EXPECTED_CHECKOUT_COMMIT}" \
+                  --destination "${RUNNER_TEMP}/ys-release"
+            '
 
-          binary_pattern = re.compile(
-              r"^- `binarySourceCommit`（SDK 二进制源码提交）：`([0-9a-f]{40})`$",
-              re.M,
-          )
-          metadata_pattern = re.compile(
-              r"^- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，"
-              r"不是 SDK 二进制源码提交）：`([0-9a-f]{40})`$",
-              re.M,
-          )
-          release_body = release.get("body") or ""
-          release_binary = binary_pattern.findall(release_body)
-          release_metadata = metadata_pattern.findall(release_body)
-          assert len(release_binary) == len(release_metadata) == 1, (
-              "Release 正文必须各含一条规范 A/B 声明"
-          )
-          assert release_binary[0] != release_metadata[0]
-          assert release_body.count(release_binary[0]) == 1
-          assert release_body.count(release_metadata[0]) == 1, (
-              "Release 正文不得把 B 重复写作其他角色或二进制源码提交"
-          )
-
-          releasing = Path("RELEASING.md").read_text(encoding="utf-8")
-          documented_binary = binary_pattern.findall(releasing)
-          documented_metadata = metadata_pattern.findall(releasing)
-          assert release_binary == documented_binary
-          assert release_metadata == documented_metadata
-
-          assets = {asset["name"]: asset for asset in release["assets"]}
-          for name in expected:
-              download_request = urllib.request.Request(
-                  assets[name]["browser_download_url"],
-                  headers={
-                      "User-Agent": "YSIFLYADLib-anonymous-release-gate",
-                  },
-              )
-              with urllib.request.urlopen(download_request, timeout=300) as response:
-                  (release_dir / name).write_bytes(response.read())
-
-          # 第二次独立匿名 GET，确保门禁不是依赖一次偶然的缓存或隐式凭据。
-          import hashlib
-          for name in expected:
-              retry_request = urllib.request.Request(
-                  assets[name]["browser_download_url"],
-                  headers={"User-Agent": "YSIFLYADLib-anonymous-release-retry"},
-              )
-              with urllib.request.urlopen(retry_request, timeout=300) as response:
-                  retry_bytes = response.read()
-              first_sha = hashlib.sha256((release_dir / name).read_bytes()).hexdigest()
-              retry_sha = hashlib.sha256(retry_bytes).hexdigest()
-              assert retry_sha == first_sha, f"匿名复验内容不一致: {name}"
-
-          print(f"Release {tag} 三资产已无 Token 匿名下载并完成复验：{actual}")
-          PY
-
-      - name: 逐项校验 SHA-256、SwiftPM checksum、双包结构与公开 API
+      - id: asset-contract
+        name: 逐项校验 SHA-256、SwiftPM checksum、双包结构与公开 API
         run: |
           export RELEASE_DIR="${RUNNER_TEMP}/ys-release"
           python3 - <<'PY'
@@ -690,6 +798,7 @@ jobs:
 
           root = Path(os.environ["RELEASE_DIR"])
           version = os.environ["RELEASE_TAG"]
+          release_mode = os.environ["RELEASE_MODE"]
           spm_name = "YSIFLYADLib.xcframework.zip"
           combined_name = f"YSIFLYADLib-{version}.zip"
           expected_files = {spm_name, combined_name, "checksums.txt"}
@@ -724,16 +833,19 @@ jobs:
           combined_path = root / combined_name
           spm_sha = sha256(spm_path)
           combined_sha = sha256(combined_path)
+          checksums_sha = sha256(root / "checksums.txt")
           computed_spm = subprocess.check_output(
               ["swift", "package", "compute-checksum", str(spm_path)],
               text=True,
           ).strip()
           package = Path("Package.swift").read_text(encoding="utf-8")
-          declared_spm = re.search(
-              r'checksum:\s*"([0-9a-f]{64})"', package
-          ).group(1)
+          declared_spm = re.search(r'checksum:\s*"([^"]+)"', package).group(1)
           assert spm_line.group(2) == spm_line.group(3) == spm_sha
-          assert computed_spm == declared_spm == spm_sha
+          assert computed_spm == spm_sha
+          assert release_mode in {"draft_candidate", "formal_release"}
+          assert declared_spm == spm_sha, (
+              "Draft/正式清单 checksum 必须等于本次下载资产"
+          )
           assert combined_line.group(2) == combined_sha
 
           def safe_extract(archive_path, output):
@@ -908,18 +1020,136 @@ jobs:
               assert privacy.get("NSPrivacyTracking") is True, privacy_path
               assert privacy.get("NSPrivacyTrackingDomains"), privacy_path
 
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"spm_sha256={spm_sha}\n")
+              output.write(f"combined_sha256={combined_sha}\n")
+              output.write(f"checksums_sha256={checksums_sha}\n")
+
           print(
               f"SPM sha256/checksum={spm_sha}; Combined sha256={combined_sha}; "
               "双包、YSNoReward 能力、签名/架构/版本与 NativeFeed API 契约通过"
           )
           PY
 
+      - name: 仅固化已公开的正式资产供并行消费 jobs 使用
+        if: env.RELEASE_MODE == 'formal_release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ys-release-assets-${{ needs.verify-repository.outputs.candidate_identity }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/ys-release/YSIFLYADLib.xcframework.zip
+            ${{ runner.temp }}/ys-release/YSIFLYADLib-${{ needs.verify-repository.outputs.version }}.zip
+            ${{ runner.temp }}/ys-release/checksums.txt
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  consume-swiftpm-release:
+    name: 实际消费已验证 SwiftPM 资产
+    if: needs.resolve-validation-mode.outputs.mode != 'repository'
+    needs: [resolve-validation-mode, verify-repository, validate-release-assets]
+    runs-on: macos-15
+    timeout-minutes: 55
+    permissions:
+      contents: read
+    env:
+      RELEASE_MODE: ${{ needs.verify-repository.outputs.mode }}
+      RELEASE_TAG: ${{ needs.verify-repository.outputs.version }}
+      CANDIDATE_RELEASE_ID: ${{ needs.verify-repository.outputs.candidate_release_id }}
+      CANDIDATE_ID: ${{ needs.verify-repository.outputs.candidate_id }}
+      CANDIDATE_BRANCH: ${{ needs.verify-repository.outputs.candidate_branch }}
+      EXPECTED_CHECKOUT_COMMIT: ${{ needs.verify-repository.outputs.checkout_commit }}
+      EXPECTED_SPM_SHA256: ${{ needs.validate-release-assets.outputs.spm_sha256 }}
+      EXPECTED_COMBINED_SHA256: ${{ needs.validate-release-assets.outputs.combined_sha256 }}
+      EXPECTED_CHECKSUMS_SHA256: ${{ needs.validate-release-assets.outputs.checksums_sha256 }}
+      WORKFLOW_CONTROL_SHA: ${{ github.workflow_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify-repository.outputs.checkout_commit }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: 校验 SwiftPM 消费 checkout 与前置提交绑定
+        run: |
+          test "$(git rev-parse HEAD)" = "${EXPECTED_CHECKOUT_COMMIT}"
+          test -z "$(git status --porcelain)"
+
+      - name: 正式模式下载前置 job 固化的公开资产
+        if: env.RELEASE_MODE == 'formal_release'
+        uses: actions/download-artifact@v4
+        with:
+          name: ys-release-assets-${{ needs.verify-repository.outputs.candidate_identity }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ys-release
+
+      - name: Draft SwiftPM 消费端独立下载三资产
+        if: env.RELEASE_MODE == 'draft_candidate'
+        env:
+          # Token 只存在本下载步骤；后续哈希绑定与构建步骤均不注入。
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf "${RUNNER_TEMP}/ys-release"
+          git show \
+            "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" |
+            python3 - \
+              --mode draft_candidate \
+              --repository "${GITHUB_REPOSITORY}" \
+              --version "${RELEASE_TAG}" \
+              --expected-commit "${EXPECTED_CHECKOUT_COMMIT}" \
+              --candidate-release-id "${CANDIDATE_RELEASE_ID}" \
+              --candidate-id "${CANDIDATE_ID}" \
+              --target-branch "${CANDIDATE_BRANCH}" \
+              --destination "${RUNNER_TEMP}/ys-release"
+
+      - name: 无 Token 校验 SwiftPM 消费资产与前置哈希完全绑定
+        run: |
+          unset GH_TOKEN GITHUB_TOKEN GITHUB_AUTH_TOKEN ACTIONS_RUNTIME_TOKEN
+          python3 - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "ys-release"
+          version = os.environ["RELEASE_TAG"]
+          expected = {
+              "YSIFLYADLib.xcframework.zip": os.environ["EXPECTED_SPM_SHA256"],
+              f"YSIFLYADLib-{version}.zip": os.environ["EXPECTED_COMBINED_SHA256"],
+              "checksums.txt": os.environ["EXPECTED_CHECKSUMS_SHA256"],
+          }
+          actual = {path.name for path in root.iterdir()}
+          assert actual == set(expected), (actual, set(expected))
+          for name, expected_sha in expected.items():
+              assert len(expected_sha) == 64
+              actual_sha = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              assert actual_sha == expected_sha, (name, actual_sha, expected_sha)
+          print("SwiftPM 消费资产与前置 SHA-256 绑定通过")
+          PY
+
+      - name: 正式首次 SwiftPM 消费前显式清空缓存
+        if: env.RELEASE_MODE == 'formal_release'
+        run: |
+          rm -rf \
+            "${HOME}/Library/Caches/org.swift.swiftpm" \
+            "${HOME}/.swiftpm/cache" \
+            "${RUNNER_TEMP}/ys-spm-package" \
+            "${RUNNER_TEMP}/ys-spm-derived"
+
       - name: 使用本次 Release 产物实际构建 SwiftPM 产品和最小消费端
         run: |
+          unset GH_TOKEN GITHUB_TOKEN GITHUB_AUTH_TOKEN ACTIONS_RUNTIME_TOKEN
           export RELEASE_DIR="${RUNNER_TEMP}/ys-release"
+          rm -rf "${RELEASE_DIR}/spm"
+          mkdir -p "${RELEASE_DIR}/spm"
+          ditto -x -k \
+            "${RELEASE_DIR}/YSIFLYADLib.xcframework.zip" \
+            "${RELEASE_DIR}/spm"
+          test "$(find "${RELEASE_DIR}/spm" -mindepth 1 -maxdepth 1 -print | wc -l | tr -d '[:space:]')" = 1
+          test -d "${RELEASE_DIR}/spm/YSIFLYADLib.xcframework"
           mkdir -p "${RUNNER_TEMP}/ys-spm-package/spm"
-          cp .github/fixtures/swiftpm-local/Package.swift \
-            "${RUNNER_TEMP}/ys-spm-package/Package.swift"
+          git show \
+            "${WORKFLOW_CONTROL_SHA}:.github/fixtures/swiftpm-local/Package.swift" \
+            > "${RUNNER_TEMP}/ys-spm-package/Package.swift"
           cp -R "${RELEASE_DIR}/spm/YSIFLYADLib.xcframework" \
             "${RUNNER_TEMP}/ys-spm-package/YSIFLYADLib.xcframework"
           cp -R spm/YSIFLYADLibResources \
@@ -963,15 +1193,127 @@ jobs:
           }
           EOF
 
-      - name: 使用本次正式 CocoaPods 资产编译 Demo 并校验最终 -ObjC
+  consume-cocoapods-release:
+    name: lint 并实际消费已验证 CocoaPods/Demo 资产
+    if: needs.resolve-validation-mode.outputs.mode != 'repository'
+    needs: [resolve-validation-mode, verify-repository, validate-release-assets]
+    runs-on: macos-15
+    timeout-minutes: 55
+    permissions:
+      contents: read
+    env:
+      RELEASE_MODE: ${{ needs.verify-repository.outputs.mode }}
+      RELEASE_TAG: ${{ needs.verify-repository.outputs.version }}
+      CANDIDATE_RELEASE_ID: ${{ needs.verify-repository.outputs.candidate_release_id }}
+      CANDIDATE_ID: ${{ needs.verify-repository.outputs.candidate_id }}
+      CANDIDATE_BRANCH: ${{ needs.verify-repository.outputs.candidate_branch }}
+      EXPECTED_CHECKOUT_COMMIT: ${{ needs.verify-repository.outputs.checkout_commit }}
+      EXPECTED_SPM_SHA256: ${{ needs.validate-release-assets.outputs.spm_sha256 }}
+      EXPECTED_COMBINED_SHA256: ${{ needs.validate-release-assets.outputs.combined_sha256 }}
+      EXPECTED_CHECKSUMS_SHA256: ${{ needs.validate-release-assets.outputs.checksums_sha256 }}
+      COCOAPODS_FIXTURE: ${{ runner.temp }}/ys-cocoapods-fixture
+      WORKFLOW_CONTROL_SHA: ${{ github.workflow_sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify-repository.outputs.checkout_commit }}
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: false
+
+      - name: 校验 CocoaPods 消费 checkout 与前置提交绑定
         run: |
-          pod install --project-directory=YSIFLYADLibSimple
+          test "$(git rev-parse HEAD)" = "${EXPECTED_CHECKOUT_COMMIT}"
+          test -z "$(git status --porcelain)"
+
+      - name: 正式模式下载前置 job 固化的公开资产
+        if: env.RELEASE_MODE == 'formal_release'
+        uses: actions/download-artifact@v4
+        with:
+          name: ys-release-assets-${{ needs.verify-repository.outputs.candidate_identity }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ys-release
+
+      - name: Draft CocoaPods 消费端独立下载三资产
+        if: env.RELEASE_MODE == 'draft_candidate'
+        env:
+          # Token 只存在本下载步骤；后续哈希绑定、lint 与 Demo 构建均不注入。
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf "${RUNNER_TEMP}/ys-release"
+          git show \
+            "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" |
+            python3 - \
+              --mode draft_candidate \
+              --repository "${GITHUB_REPOSITORY}" \
+              --version "${RELEASE_TAG}" \
+              --expected-commit "${EXPECTED_CHECKOUT_COMMIT}" \
+              --candidate-release-id "${CANDIDATE_RELEASE_ID}" \
+              --candidate-id "${CANDIDATE_ID}" \
+              --target-branch "${CANDIDATE_BRANCH}" \
+              --destination "${RUNNER_TEMP}/ys-release"
+
+      - name: 无 Token 校验 CocoaPods 消费资产与前置哈希完全绑定
+        run: |
+          unset GH_TOKEN GITHUB_TOKEN GITHUB_AUTH_TOKEN ACTIONS_RUNTIME_TOKEN
+          python3 - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "ys-release"
+          version = os.environ["RELEASE_TAG"]
+          expected = {
+              "YSIFLYADLib.xcframework.zip": os.environ["EXPECTED_SPM_SHA256"],
+              f"YSIFLYADLib-{version}.zip": os.environ["EXPECTED_COMBINED_SHA256"],
+              "checksums.txt": os.environ["EXPECTED_CHECKSUMS_SHA256"],
+          }
+          actual = {path.name for path in root.iterdir()}
+          assert actual == set(expected), (actual, set(expected))
+          for name, expected_sha in expected.items():
+              assert len(expected_sha) == 64
+              actual_sha = hashlib.sha256((root / name).read_bytes()).hexdigest()
+              assert actual_sha == expected_sha, (name, actual_sha, expected_sha)
+          print("CocoaPods 消费资产与前置 SHA-256 绑定通过")
+          PY
+
+      - name: 正式首次 CocoaPods 消费前显式清空缓存
+        if: env.RELEASE_MODE == 'formal_release'
+        run: |
+          pod cache clean YSIFLYADLib --all || true
+          rm -rf \
+            "${HOME}/Library/Caches/CocoaPods/Pods" \
+            "${COCOAPODS_FIXTURE}" \
+            "${RUNNER_TEMP}/ys-pod-derived"
+
+      - name: 生成只引用已验证合并 zip 的本地 podspec 并执行 lint
+        run: |
+          unset GH_TOKEN GITHUB_TOKEN GITHUB_AUTH_TOKEN ACTIONS_RUNTIME_TOKEN
+          rm -rf "${COCOAPODS_FIXTURE}"
+          git show \
+            "${WORKFLOW_CONTROL_SHA}:.github/scripts/prepare_cocoapods_fixture.py" |
+            python3 - \
+              --release-dir "${RUNNER_TEMP}/ys-release" \
+              --output "${COCOAPODS_FIXTURE}" \
+              --version "${RELEASE_TAG}"
+          pod spec lint \
+            "${COCOAPODS_FIXTURE}/YSIFLYADLib.podspec" \
+            --allow-warnings
+
+      - name: 使用本次已验证 CocoaPods 资产编译 Demo 并校验最终 -ObjC
+        run: |
+          unset GH_TOKEN GITHUB_TOKEN GITHUB_AUTH_TOKEN ACTIONS_RUNTIME_TOKEN
+          demo_dir="${COCOAPODS_FIXTURE}/YSIFLYADLibSimple"
+          pod install --project-directory="${demo_dir}"
 
           python3 - <<'PY'
+          import os
           import shlex
           from pathlib import Path
 
-          support_root = Path("YSIFLYADLibSimple/Pods/Target Support Files")
+          support_root = (
+              Path(os.environ["COCOAPODS_FIXTURE"])
+              / "YSIFLYADLibSimple/Pods/Target Support Files"
+          )
           configs = {
               "pod target": support_root
               / "YSIFLYADLib/YSIFLYADLib.debug.xcconfig",
@@ -990,7 +1332,7 @@ jobs:
           PY
 
           xcodebuild build \
-            -workspace YSIFLYADLibSimple/YSIFLYADLibSimple.xcworkspace \
+            -workspace "${demo_dir}/YSIFLYADLibSimple.xcworkspace" \
             -scheme YSIFLYADLibSimple \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \
@@ -998,7 +1340,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO
 
           xcodebuild \
-            -workspace YSIFLYADLibSimple/YSIFLYADLibSimple.xcworkspace \
+            -workspace "${demo_dir}/YSIFLYADLibSimple.xcworkspace" \
             -scheme YSIFLYADLibSimple \
             -configuration Debug \
             -sdk iphonesimulator \
@@ -1020,6 +1362,88 @@ jobs:
           print(f"OK 最终 App OTHER_LDFLAGS: {flags}")
           PY
 
-# 普通 PR/main/tag push 只执行本地清单、pod ipc spec、资源与 Demo 源码门禁，不访问 Release 资产。
-# 只有 release published 或显式传入 release_tag 的手动复验才执行完整 pod spec lint，
-# 并查询、下载和实际消费正式三资产。
+  release-summary:
+    name: 发布验证只读汇总
+    if: ${{ always() }}
+    needs:
+      - resolve-validation-mode
+      - verify-repository
+      - validate-release-assets
+      - consume-swiftpm-release
+      - consume-cocoapods-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    env:
+      RELEASE_MODE: ${{ needs.verify-repository.outputs.mode || needs.resolve-validation-mode.outputs.mode }}
+      RELEASE_TAG: ${{ needs.verify-repository.outputs.version || needs.resolve-validation-mode.outputs.release_tag }}
+      RELEASE_ID: ${{ needs.verify-repository.outputs.candidate_release_id || github.event.release.id || '' }}
+      CANDIDATE_ID: ${{ needs.verify-repository.outputs.candidate_id }}
+      CANDIDATE_IDENTITY: ${{ needs.verify-repository.outputs.candidate_identity }}
+      CHECKOUT_COMMIT: ${{ needs.verify-repository.outputs.checkout_commit || github.sha }}
+      SPM_SHA256: ${{ needs.validate-release-assets.outputs.spm_sha256 }}
+      COMBINED_SHA256: ${{ needs.validate-release-assets.outputs.combined_sha256 }}
+      CHECKSUMS_SHA256: ${{ needs.validate-release-assets.outputs.checksums_sha256 }}
+      RESOLVE_RESULT: ${{ needs.resolve-validation-mode.result }}
+      REPOSITORY_RESULT: ${{ needs.verify-repository.result }}
+      ASSETS_RESULT: ${{ needs.validate-release-assets.result }}
+      SWIFTPM_RESULT: ${{ needs.consume-swiftpm-release.result }}
+      COCOAPODS_RESULT: ${{ needs.consume-cocoapods-release.result }}
+    steps:
+      - name: 写入身份、库存与 job 结论
+        shell: bash
+        run: |
+          set -euo pipefail
+          value_or_none() {
+            if [[ -n "$1" ]]; then
+              printf '%s' "$1"
+            else
+              printf '%s' '<无>'
+            fi
+          }
+          {
+            echo '## 发布验证汇总'
+            echo
+            echo '| 字段 | 值 |'
+            echo '| --- | --- |'
+            printf '| 模式 | `%s` |\n' "$(value_or_none "$RELEASE_MODE")"
+            printf '| Candidate ID | `%s` |\n' "$(value_or_none "$CANDIDATE_ID")"
+            printf '| Candidate 身份 | `%s` |\n' "$(value_or_none "$CANDIDATE_IDENTITY")"
+            printf '| Release ID | `%s` |\n' "$(value_or_none "$RELEASE_ID")"
+            printf '| Release tag | `%s` |\n' "$(value_or_none "$RELEASE_TAG")"
+            printf '| Checkout commit | `%s` |\n' "$(value_or_none "$CHECKOUT_COMMIT")"
+            printf '| SwiftPM 资产 SHA-256 | `%s` |\n' "$(value_or_none "$SPM_SHA256")"
+            printf '| 合并资产 SHA-256 | `%s` |\n' "$(value_or_none "$COMBINED_SHA256")"
+            printf '| checksums.txt SHA-256 | `%s` |\n' "$(value_or_none "$CHECKSUMS_SHA256")"
+            echo
+            echo '| Job | 结论 |'
+            echo '| --- | --- |'
+            printf '| resolve-validation-mode | `%s` |\n' "$RESOLVE_RESULT"
+            printf '| verify-repository | `%s` |\n' "$REPOSITORY_RESULT"
+            printf '| validate-release-assets | `%s` |\n' "$ASSETS_RESULT"
+            printf '| consume-swiftpm-release | `%s` |\n' "$SWIFTPM_RESULT"
+            printf '| consume-cocoapods-release | `%s` |\n' "$COCOAPODS_RESULT"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for result in \
+            "$RESOLVE_RESULT" "$REPOSITORY_RESULT" "$ASSETS_RESULT" \
+            "$SWIFTPM_RESULT" "$COCOAPODS_RESULT"; do
+            case "$result" in
+              failure|cancelled|timed_out|action_required) exit 1 ;;
+            esac
+          done
+          test "$RESOLVE_RESULT" = 'success'
+          test "$REPOSITORY_RESULT" = 'success'
+          if [[ "$RELEASE_MODE" != 'repository' ]]; then
+            test "$ASSETS_RESULT" = 'success'
+            test "$SWIFTPM_RESULT" = 'success'
+            test "$COCOAPODS_RESULT" = 'success'
+            [[ "$SPM_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            [[ "$COMBINED_SHA256" =~ ^[0-9a-f]{64}$ ]]
+            [[ "$CHECKSUMS_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          fi
+
+# 普通 PR/main/tag push 与空 release_tag 的 repository 模式只执行本地门禁。
+# repository + 非空 release_tag 兼容旧调用并推导 formal_release；正式资产始终无 Token 匿名下载。
+# draft candidate 仅允许从精确 release-candidate 分支手动触发，未公开二进制不上传 Actions artifact；前置 job
+# 只传递哈希，两个并行 consumer 各自在唯一 Token 步骤重新下载并绑定后消费。
