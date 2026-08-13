@@ -431,20 +431,25 @@ jobs:
               assert provenance_final, "正式态必须回填真实且不同的 A/B"
               assert root_raw_tags == {target_version}, root_raw_tags
               assert demo_raw_tags == {target_version}, demo_raw_tags
-              assert (
-                  f"最新正式发布版本为 `YSIFLYADLib {target_version}`" in readme
+              formal_state_marker = (
+                  "`releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B "
+                  "元数据已经冻结"
               )
-              assert f"当前正式发布版本为 **{target_version}**" in readme
-              release_url = (
-                  f"https://github.com/LJMcarryu/YSIFLYADLib_iOS/"
-                  f"releases/tag/{target_version}"
+              public_availability_marker = (
+                  "公开可用性以同版本 GitHub Release 和发布后 CI 为准"
               )
               for label, document in (
                   ("README.md", readme),
                   ("CHANGELOG.md", changelog),
                   ("RELEASING.md", releasing),
               ):
-                  assert release_url in document, f"{label} 缺少正式 Release 链接"
+                  assert formal_state_marker in document, (
+                      f"{label} 缺少时间稳定的 FORMAL 冻结语义"
+                  )
+                  assert public_availability_marker in document, (
+                      f"{label} 缺少公开可用性边界"
+                  )
+              assert f"本提交是 `{target_version}` 的不可变发布目标" in readme
 
               forbidden_state_markers = (
                   "待发布",
@@ -458,6 +463,8 @@ jobs:
                   "正式发布前",
                   "目前尚无正式二进制",
                   "尚未发布的 `6.2.3`",
+                  f"`{target_version}` 已正式发布",
+                  f"`{target_version}` 已完成匿名",
               )
               for label, document in (
                   ("README.md", readme),

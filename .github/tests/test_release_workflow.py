@@ -796,6 +796,26 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertIn("Draft/正式清单 checksum 必须等于本次下载资产", asset_contract["run"])
         self.assertNotIn("expected_pending", asset_contract["run"])
 
+    def test_formal_manifest_uses_time_stable_candidate_wording(self) -> None:
+        self.assertIn(
+            "releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B",
+            self.source,
+        )
+        self.assertIn(
+            "公开可用性以同版本 GitHub Release 和发布后 CI 为准",
+            self.source,
+        )
+        self.assertIn("不可变发布目标", self.source)
+        self.assertNotIn(
+            'f"最新正式发布版本为 `YSIFLYADLib {target_version}`"',
+            self.source,
+        )
+        self.assertNotIn(
+            'f"当前正式发布版本为 **{target_version}**"',
+            self.source,
+        )
+        self.assertNotIn("f\"releases/tag/{target_version}\"", self.source)
+
     def test_asset_gate_fans_out_to_parallel_isolated_consumers(self) -> None:
         swift = self.jobs["consume-swiftpm-release"]
         pods = self.jobs["consume-cocoapods-release"]
