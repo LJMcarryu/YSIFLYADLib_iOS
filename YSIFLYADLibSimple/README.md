@@ -29,7 +29,7 @@ open YSIFLYADLibSimple.xcworkspace
 
 ## 接入要点
 
-`Podfile` 已切换到 `6.2.3` tag，示例工程最低支持 iOS 11.0：
+`Podfile` 已固定到 `6.2.3` tag，示例工程最低支持 iOS 11.0：
 
 ```ruby
 pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.2.3/YSIFLYADLib.podspec'
