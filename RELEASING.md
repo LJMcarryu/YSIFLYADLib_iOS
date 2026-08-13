@@ -1,4 +1,4 @@
-# 6.2.2 发布维护说明
+# 6.2.3 发布维护说明
 
 本文件只维护 YS 公开分发仓的发布状态和可机器校验的私有源码溯源，不包含 SDK 私有源码。
 
@@ -17,16 +17,16 @@ job 结论；summary 对上游失败继续失败关闭。
 
 ## 当前状态
 
-- `releaseState`：`FORMAL`
-- `binarySourceCommit`（SDK 二进制源码提交）：`a8ec925d3731d7d11734647aa02ca7d91d674965`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`eff78263c2d3f65b029f4114de1a9ed00f3827f3`
-- 公开分发 tag 提交（annotated tag peeled commit）：`b1bbaa5319335e027c560ab357c86cc6a732003e`
+- `releaseState`：`PENDING`
+- `binarySourceCommit`（SDK 二进制源码提交）：`__YSIFLYADLIB_6_2_3_BINARY_SOURCE_COMMIT_PENDING__`
+- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`__YSIFLYADLIB_6_2_3_RELEASE_METADATA_COMMIT_PENDING__`
 
-`FORMAL` 表示二进制来源、签名资产和发布元数据已经固化。`6.2.2` 已于 2026 年 8 月 10 日
-通过 <https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2> 正式公开，
-Release 非草稿、非预发布，资产库存严格为以下 3 项。
+当前进入公开仓准备态；正式签名资产、checksum、A/B、tag、Release 和匿名消费验证尚未完成，
+不得作为正式发布证据。以下为 `6.2.2` 历史正式事实：该版本已于 2026 年 8 月 10 日通过
+<https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2> 正式公开，Release 非草稿、
+非预发布，资产库存严格为以下 3 项。
 
-本版冻结资产摘要：
+`6.2.2` 冻结资产摘要：
 
 - `YSIFLYADLib.xcframework.zip`：`757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d`
 - `YSIFLYADLib-6.2.2.zip`：`25812612d0e88115ad0db5ebdbf81bd533afdf1ee7bd828d4ae93d78bca26411`
@@ -38,11 +38,14 @@ SHA-256、SwiftPM checksum、双包同源和公开 API 校验，并实际构建 
 CocoaPods Demo，同时通过完整 `pod spec lint`。该分发验收不代表最终宿主合规、
 `Validate App` 或 Apple 审核通过。
 
-本版按已确认范围原样归档 `SRC-004`、`SRC-008`、`SRC-009`、`SRC-011`、`NET-001`、
+`6.2.2` 按当版已确认范围原样归档 `SRC-004`、`SRC-008`、`SRC-009`、`SRC-011`、`NET-001`、
 `RRA-003`、`TRACK-001`、`TRACK-002`、`ADS-011`、`EXPORT-001` 启发式残余风险，并以
-`failOn=high`、`failOnWarning=false`、`strict=false`、`requireManual=false` 发布。该确认不适用于最终宿主。
+`failOn=high`、`failOnWarning=false`、`strict=false`、`requireManual=false` 发布。该确认不适用于
+`6.2.3` 或最终宿主；`6.2.3` 不沿用历史风险授权。`6.2.3` 主动扫描策略固定为
+`failOn=high`、`failOnWarning=true`、`strict=true`、`requireManual=true` 且接受名单为空；扫描状态
+不改写正式发布状态，也不得把未扫描表述为通过。
 
-`releaseMetadataCommit` 是 `binarySourceCommit` 的后代；两者之间只允许修改
+正式态回填后，`releaseMetadataCommit` 必须是 `binarySourceCommit` 的后代；两者之间只允许修改
 `Package.swift`、`README.md`、`CONTEXT.md` 和 `docs/**`，不能改变 SDK 二进制输入。
 
 ## CI 凭据与 Release 正文
@@ -84,7 +87,7 @@ SwiftPM 消费 runner 和 CocoaPods 消费 runner。前置 job 只输出三个 S
 
 正式 Release 固定且只能包含以下三个资产：
 
-- `YSIFLYADLib-6.2.2.zip`
+- `YSIFLYADLib-6.2.3.zip`
 - `YSIFLYADLib.xcframework.zip`
 - `checksums.txt`
 
@@ -101,6 +104,10 @@ CocoaPods 消费 job 生成的临时 podspec 使用已验证 zip 的 `file://` U
 
 普通 main、PR 和 tag push 只执行 `pod ipc spec` 等本地门禁，不能依赖尚未对外可见的 Release
 资产。正式模式使用不带 `Authorization` 或 GitHub 凭据的公开 URL 下载全部三项，再执行完整复验。
+
+`6.2.3` 还必须验证 NativeFeed 外部 CTA 默认关闭、同 window/scene 与视图归属门禁、运行时
+71503 白标 delegate 拒绝回调，以及 `ysifly_detachFromCurrentContainer`；公开头、二进制 selector
+和文档必须保持一致。
 
 首次启用候选分支控制面前，必须把只包含 workflow、控制脚本和测试的 bootstrap 提交独立合入
 远端 `main`，且该提交不得同时修改版本、`Package.swift` 或 `YSIFLYADLib.podspec`。默认分支先具备

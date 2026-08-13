@@ -12,7 +12,7 @@ import PackageDescription
 
 let package = Package(
     name: "YSIFLYADLib",
-    // 6.2.2 正式二进制按 iOS 11 构建；资源由资源 target 同步投递。
+    // 6.2.3 目标二进制继续按 iOS 11 构建；资源由资源 target 同步投递。
     platforms: [
         .iOS("11.0"),
     ],
@@ -22,9 +22,9 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "YSIFLYADLib",
-            // checksum 来自 6.2.2 正式冻结的签名 zip，不得替换为本地重打包产物。
-            url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.2.2/YSIFLYADLib.xcframework.zip",
-            checksum: "757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d"
+            // 6.2.3 正式签名 zip 尚未冻结；本占位不得用于 candidate、tag 或 Release。
+            url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/download/6.2.3/YSIFLYADLib.xcframework.zip",
+            checksum: "__YSIFLYADLIB_6_2_3_SWIFTPM_CHECKSUM_PENDING__"
         ),
         .target(
             name: "YSIFLYADLibResources",

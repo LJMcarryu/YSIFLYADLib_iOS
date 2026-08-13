@@ -38,7 +38,7 @@ COCOAPODS = load_module(
     ROOT / ".github/scripts/prepare_cocoapods_fixture.py",
 )
 
-VERSION = "6.2.2"
+VERSION = "6.2.3"
 BINARY_COMMIT = "a" * 40
 METADATA_COMMIT = "b" * 40
 CANDIDATE_ID = "d" * 64
@@ -323,6 +323,48 @@ class ReleaseModeContractTests(unittest.TestCase):
                 )
                 with self.assertRaises(MODE.ContractError):
                     MODE.read_local_contract(root)
+
+    def test_repository_is_exact_623_pending_and_keeps_622_history_scoped(self) -> None:
+        contract = MODE.read_local_contract(ROOT)
+        self.assertEqual(contract["version"], VERSION)
+        MODE.validate_pending(contract)
+
+        documents = {
+            name: (ROOT / name).read_text(encoding="utf-8")
+            for name in ("README.md", "CHANGELOG.md", "RELEASING.md")
+        }
+        patterns = (
+            r"^- `releaseState`：`(PENDING|FORMAL)`$",
+            r"^- `binarySourceCommit`（SDK 二进制源码提交）：`([^`]+)`$",
+            r"^- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，"
+            r"不是 SDK 二进制源码提交）：`([^`]+)`$",
+        )
+        for name, contents in documents.items():
+            with self.subTest(document=name):
+                for pattern in patterns:
+                    self.assertEqual(len(re.findall(pattern, contents, re.M)), 1)
+                self.assertIn("`6.2.3` 不沿用历史风险授权", contents)
+
+        self.assertIn("## [6.2.2] - 2026-08-10", documents["CHANGELOG.md"])
+        self.assertIn(
+            "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2",
+            documents["README.md"],
+        )
+        self.assertIn(
+            "757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d",
+            documents["RELEASING.md"],
+        )
+        self.assertNotEqual(
+            contract["checksum"],
+            "757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d",
+        )
+        for marker in (
+            "`failOnWarning=true`",
+            "`strict=true`",
+            "`requireManual=true`",
+            "接受名单为空",
+        ):
+            self.assertIn(marker, documents["RELEASING.md"])
 
 
 class ReleaseDownloaderTests(unittest.TestCase):

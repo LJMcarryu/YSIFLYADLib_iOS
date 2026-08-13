@@ -2,8 +2,16 @@
 
 `YSIFLYADLib` 是面向 YS 媒体定制的 iOS 广告 SDK，提供**开屏、Banner、插屏、自渲染信息流**广告能力（**含视频素材**，**不含激励视频**）。
 
-最新正式发布版本为 `YSIFLYADLib 6.2.2`，最低支持 iOS 11.0。本仓源码、清单、文档和
-示例已固化为 NativeFeed SDK 托管 API；正式签名资产由唯一源码提交构建并完成本地发布门禁。
+最新正式发布版本仍为 `YSIFLYADLib 6.2.2`，最低支持 iOS 11.0；`main` 正在准备
+`6.2.3`。`6.2.3` 的正式签名资产、checksum、tag 和 Release 尚未生成，当前 URL
+不可用于生产依赖。
+
+<!-- 供发布 CI 机器校验的两提交 provenance；README、CHANGELOG、RELEASING 必须保持一致。 -->
+- `releaseState`：`PENDING`
+- `binarySourceCommit`（SDK 二进制源码提交）：`__YSIFLYADLIB_6_2_3_BINARY_SOURCE_COMMIT_PENDING__`
+- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`__YSIFLYADLIB_6_2_3_RELEASE_METADATA_COMMIT_PENDING__`
+
+以下为 `6.2.2` 历史正式事实：
 
 GitHub [Release 6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2)
 已于 2026 年 8 月 10 日正式公开，annotated tag 解引用后的提交为
@@ -11,13 +19,13 @@ GitHub [Release 6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag
 [published CI](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31347052226) 已成功完成
 三资产匿名下载、SHA-256 与双包同源校验，并实际构建 SwiftPM 产品、最小消费端和 CocoaPods Demo，
 同时通过完整 `pod spec lint`。该分发验收不代表最终宿主合规、`Validate App` 或 Apple 审核通过。
-本版按已确认范围原样归档 `SRC-004`、`SRC-008`、`SRC-009`、`SRC-011`、`NET-001`、
+`6.2.2` 按当版已确认范围原样归档 `SRC-004`、`SRC-008`、`SRC-009`、`SRC-011`、`NET-001`、
 `RRA-003`、`TRACK-001`、`TRACK-002`、`ADS-011`、`EXPORT-001` 启发式残余风险，并以
-`failOn=high`、`failOnWarning=false`、`strict=false`、`requireManual=false` 发布；该确认不适用于最终宿主。
-本版发布溯源为：
-
-- `binarySourceCommit`（SDK 二进制源码提交）：`a8ec925d3731d7d11734647aa02ca7d91d674965`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`eff78263c2d3f65b029f4114de1a9ed00f3827f3`
+`failOn=high`、`failOnWarning=false`、`strict=false`、`requireManual=false` 发布；该确认不适用于
+`6.2.3` 或最终宿主。`6.2.3` 不沿用历史风险授权；主动扫描策略固定为
+`failOn=high`、`failOnWarning=true`、`strict=true`、`requireManual=true` 且接受名单为空。
+其二进制源码提交为 `a8ec925d3731d7d11734647aa02ca7d91d674965`，发布元数据提交为
+`eff78263c2d3f65b029f4114de1a9ed00f3827f3`。
 
 仓库地址：[https://github.com/LJMcarryu/YSIFLYADLib_iOS](https://github.com/LJMcarryu/YSIFLYADLib_iOS)
 
@@ -56,7 +64,7 @@ GitHub [Release 6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag
 
 ## 版本记录
 
-当前正式发布版本为 **6.2.2**。本版将 NativeFeed 列表生命周期改为 SDK 托管：数据层只持有
+当前正式发布版本为 **6.2.2**；当前清单目标版本为 **6.2.3（待发布）**。`6.2.2` 将 NativeFeed 列表生命周期改为 SDK 托管：数据层只持有
 `YSIFLYNativeFeedAd`，Cell 不持有 Session、Binding 或首次/复用状态；媒体只需在展示时
 attach、离屏或复用时按容器 detach。同一逻辑广告条目滚出再回来时，无论曝光前后都能
 恢复原广告。详细变更与历史版本记录见 [CHANGELOG.md](./CHANGELOG.md)。
@@ -68,7 +76,8 @@ attach、离屏或复用时按容器 detach。同一逻辑广告条目滚出再�
 `canOpenURL:` 预检；ATT 未授权时预先设置的显式 IDFA 会被丢弃，授权后须重新设置；
 YS 白标方法 `ysifly_reportMediaShakeTriggeredWithError:` 虽然进入公开头，但 YS 变体
 未启用优酷媒体摇一摇能力，调用固定返回 `71512`。从 `6.0.14` 或更早版本升级时，
-还须处理 `6.1.0` 引入的响应数据白名单变更。新增接入统一使用 `6.2.2` 的公开契约。
+还须处理 `6.1.0` 引入的响应数据白名单变更。`6.2.3` 在该主路径上新增受限外部 CTA
+和固定单容器便利解绑，正式发布前生产接入仍使用 `6.2.2`。
 
 ---
 
@@ -99,8 +108,7 @@ YS 白标方法 `ysifly_reportMediaShakeTriggeredWithError:` 虽然进入公开�
 
 ### CocoaPods
 
-`6.2.2` tag 与 Release 资产已对外可见，可在 `Podfile` 中通过对应 tag 上的
-`YSIFLYADLib.podspec`（raw URL）直连接入：
+生产项目继续使用已正式发布的 `6.2.2` tag；`6.2.3` 正式发布后再切换版本：
 
 ```ruby
 source 'https://cdn.cocoapods.org/'
@@ -122,13 +130,12 @@ open YourApp.xcworkspace
 
 > 说明：
 > - `:podspec` 的二进制源固定指向 `6.2.2` Release 合并 zip；CocoaPods 解包并链接其中的静态 `YSIFLYADLib.xcframework`，同时把 `YSAdvSDK.bundle`（含隐私清单）**自动拷入 app 主包**（podspec 已声明 `s.resources`）。
-> - **请把 URL 钉死到具体 tag（当前为 `6.2.2`），不要指向分支**；升级版本时同步改 URL 里的 tag。
+> - **请把 URL 钉死到具体正式 tag，不要指向分支**；`6.2.3` tag/Release 生成前生产项目继续使用 `6.2.2`。
 > - 静态 framework 随 app 链接，pod 不会（也不需要）Embed；podspec 会同时向 pod target 与 aggregate/user target 注入 `-ObjC`，并复制 `.bundle`，CocoaPods 接入无需手工处理这两项。
 
 ### Swift Package Manager
 
-`6.2.2` tag 与 Release 资产已对外可见，可在 Xcode「**File → Add Packages…**」填入仓库地址并
-选择当前正式版本 `6.2.2`：
+当前可在 Xcode「**File → Add Packages…**」填入仓库地址并选择正式版本 `6.2.2`：
 
 ```
 https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
@@ -150,13 +157,12 @@ targets: [
 （含 `PrivacyInfo.xcprivacy`）复制到 App。接入方不再需要从合并 zip
 手工复制资源；接入方仍须在 App target 的 `OTHER_LDFLAGS` 添加 `-ObjC`。
 
-> 当前仓库根 `Package.swift` 已固定到 `6.2.2`，checksum
-> `757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d`
-> 来自正式冻结的签名 zip；上述 published CI 已对该 tag 的远程依赖解析和实际消费构建完成复验。
+> 当前仓库根 `Package.swift` 已切换到 `6.2.3` PENDING checksum；正式签名 zip 冻结并回填
+> 真实 checksum 前不能远程消费，也不得复用 `6.2.2` checksum。
 
 ### 手动集成
 
-不便使用包管理器时，可从已公开的 Release 下载正式合并 zip
+不便使用包管理器时，可下载已发布的正式合并 zip
 （`YSIFLYADLib-6.2.2.zip`）并集成其中内容：
 
 1. 解压得到 `YSIFLYADLib.xcframework` 与 `YSAdvSDK.bundle`；
@@ -457,6 +463,11 @@ SDK。SDK 负责曝光检测、点击/摇一摇响应、关闭、播放器与监
 
 `6.2.2` 统一为 SDK 托管生命周期。普通页面和 `UITableView` / `UICollectionView`
 复用列表都使用同一组 Ad attach 与容器 detach API；媒体不创建或维护 SDK 生命周期对象。
+
+`6.2.3` 新增两个可选入口：
+
+- 固定、非复用且不会迁移的单活动容器，可调用 `ysifly_detachFromCurrentContainer`；常规 Cell 生命周期仍应立即调用 `ysifly_detachAdFromContainerView:`，避免旧回调误解绑新容器。
+- `clickViews` 默认仍须位于 `containerView` 内。只有外部 CTA 与广告同生共灭且媒体无法调整层级时，才显式设置 `binder.allowsExternalClickViews = YES`。SDK 仅接受同 window/scene 且归属可判定的同 Cell 或窄范围兄弟视图；共享、固定悬浮、广告离屏后仍可点击或归属不明时失败关闭。运行中拒绝通过 delegate `ysifly_nativeFeedAd:didRejectClickWithError:` 通知，错误为 `YSIFLYAdErrorCodeNativeFeedClickViewsInvalid`（71503）。
 
 ```objc
 @interface NativeFeedViewController () <YSIFLYNativeFeedAdDelegate>

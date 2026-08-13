@@ -94,7 +94,7 @@ jobs:
           candidate_id = os.environ["INPUT_CANDIDATE_ID"].strip()
           dispatch_nonce = os.environ["INPUT_DISPATCH_NONCE"].strip()
           candidate_branch = ""
-          version = "6.2.2"
+          version = "6.2.3"
 
           if event == "release":
               mode = "formal_release"
@@ -300,12 +300,12 @@ jobs:
               r"YSIFLYADLib_iOS/([^/]+)/YSIFLYADLib\.podspec",
               demo_podfile,
           ).group(1)
-          assert target_version == "6.2.2", target_version
+          assert target_version == "6.2.3", target_version
           assert package_version == target_version
           assert pod_url_version == (target_version, target_version)
           assert demo_pod_version == target_version
           assert re.search(
-              r"^## (?:6\.2\.2（待发布）|\[6\.2\.2\] - \d{4}-\d{2}-\d{2})$",
+              r"^## (?:6\.2\.3（待发布）|\[6\.2\.3\] - \d{4}-\d{2}-\d{2})$",
               changelog,
               re.M,
           )
@@ -323,15 +323,16 @@ jobs:
               )
           )
           checksum = re.search(r'checksum:\s*"([^"]+)"', package).group(1)
-          pending_checksum = "__YSIFLYADLIB_6_2_2_SWIFTPM_CHECKSUM_PENDING__"
-          previous_checksum = (
-              "d65b715b1fa5eaf1ae38c3a94f3eaf7e2289958f2b678aa0dccec1f66873627a"
-          )
+          pending_checksum = "__YSIFLYADLIB_6_2_3_SWIFTPM_CHECKSUM_PENDING__"
+          historical_checksums = {
+              "d65b715b1fa5eaf1ae38c3a94f3eaf7e2289958f2b678aa0dccec1f66873627a",
+              "757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d",
+          }
           pending_binary_source_commit = (
-              "__YSIFLYADLIB_6_2_2_BINARY_SOURCE_COMMIT_PENDING__"
+              "__YSIFLYADLIB_6_2_3_BINARY_SOURCE_COMMIT_PENDING__"
           )
           pending_release_metadata_commit = (
-              "__YSIFLYADLIB_6_2_2_RELEASE_METADATA_COMMIT_PENDING__"
+              "__YSIFLYADLIB_6_2_3_RELEASE_METADATA_COMMIT_PENDING__"
           )
 
           binary_pattern = re.compile(
@@ -396,23 +397,36 @@ jobs:
               assert not is_tag_push, "正式 tag 禁止保留 PENDING checksum"
               assert release_state == "PENDING"
               assert provenance_pending, "准备态必须保留精确 A/B PENDING"
-              assert root_raw_tags == {"6.2.1"}, root_raw_tags
+              assert root_raw_tags == {"6.2.2"}, root_raw_tags
               assert demo_raw_tags == {target_version}, demo_raw_tags
-              assert "当前正式发布版本为 **6.2.1**" in readme
-              assert "当前清单目标版本为 **6.2.2（待发布）**" in readme
+              assert "当前正式发布版本为 **6.2.2**" in readme
+              assert "当前清单目标版本为 **6.2.3（待发布）**" in readme
               assert (
-                  "6.2.2` 的正式签名资产、checksum、tag 和 Release 尚未生成"
+                  "6.2.3` 的正式签名资产、checksum、tag 和 Release 尚未生成"
                   in readme
               )
-              assert "## 6.2.2（待发布）" in changelog
-              assert "[6.2.2]:" not in changelog
-              assert "最新正式发布版本仍为 `6.2.1`" in changelog
+              assert "## 6.2.3（待发布）" in changelog
+              assert "[6.2.3]:" not in changelog
+              assert "最新正式发布版本仍为 `6.2.2`" in changelog
               assert "发布准备版本" in demo_readme
+              for label, document in (
+                  ("README.md", readme),
+                  ("CHANGELOG.md", changelog),
+                  ("RELEASING.md", releasing),
+              ):
+                  assert "`6.2.3` 不沿用历史风险授权" in document, label
+              for marker in (
+                  "`failOnWarning=true`",
+                  "`strict=true`",
+                  "`requireManual=true`",
+                  "接受名单为空",
+              ):
+                  assert marker in releasing, marker
               checksum_state = "精确 PENDING（不可发布）"
           else:
               assert re.fullmatch(r"[0-9a-f]{64}", checksum), checksum
               assert checksum != "0" * 64
-              assert checksum != previous_checksum, "6.2.2 不得沿用 6.2.1 checksum"
+              assert checksum not in historical_checksums, "6.2.3 不得沿用历史 checksum"
               assert release_state == "FORMAL"
               assert provenance_final, "正式态必须回填真实且不同的 A/B"
               assert root_raw_tags == {target_version}, root_raw_tags
@@ -443,7 +457,7 @@ jobs:
                   "发布完成后",
                   "正式发布前",
                   "目前尚无正式二进制",
-                  "尚未发布的 `6.2.2`",
+                  "尚未发布的 `6.2.3`",
               )
               for label, document in (
                   ("README.md", readme),
@@ -456,12 +470,12 @@ jobs:
                   assert not stale, f"{label} 残留准备态文案: {stale}"
 
               stale_formal_patterns = (
-                  r"最新正式发布版本[^\n]*6\.2\.1",
-                  r"当前正式发布版本[^\n]*6\.2\.1",
-                  r"最新正式版本仍为\s*`6\.2\.1`",
-                  r"当前正式版本\s*`6\.2\.1`",
-                  r"当前正式 Release[^\n]*6\.2\.1",
-                  r"当前正式接入[^\n]*6\.2\.1",
+                  r"最新正式发布版本[^\n]*6\.2\.2",
+                  r"当前正式发布版本[^\n]*6\.2\.2",
+                  r"最新正式版本仍为\s*`6\.2\.2`",
+                  r"当前正式版本\s*`6\.2\.2`",
+                  r"当前正式 Release[^\n]*6\.2\.2",
+                  r"当前正式接入[^\n]*6\.2\.2",
               )
               for label, document in (
                   ("README.md", readme),
@@ -473,13 +487,13 @@ jobs:
                       for pattern in stale_formal_patterns
                       if re.search(pattern, document)
                   ]
-                  assert not stale, f"{label} 仍把 6.2.1 写成当前正式版: {stale}"
+                  assert not stale, f"{label} 仍把历史版本写成当前正式版: {stale}"
 
               assert "PENDING" not in readme
               assert "PENDING" not in changelog
               assert "PENDING" not in demo_readme
-              assert "/6.2.1/YSIFLYADLib.podspec" not in readme
-              assert "/6.2.1/YSIFLYADLib.podspec" not in demo_readme
+              assert "/6.2.2/YSIFLYADLib.podspec" not in readme
+              assert "/6.2.2/YSIFLYADLib.podspec" not in demo_readme
               assert re.search(
                   rf"^## \[{re.escape(target_version)}\] - \d{{4}}-\d{{2}}-\d{{2}}$",
                   changelog,
@@ -604,7 +618,7 @@ jobs:
       - name: Tag push 立即校验 annotated tag 与 checkout 绑定
         if: github.ref_type == 'tag'
         run: |
-          test "${GITHUB_REF_NAME}" = '6.2.2'
+          test "${GITHUB_REF_NAME}" = '6.2.3'
           test -z "$(git status --porcelain)"
           test "$(git cat-file -t "refs/tags/${GITHUB_REF_NAME}")" = 'tag'
           test "$(git rev-parse HEAD)" = "$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
@@ -649,6 +663,15 @@ jobs:
               "didEndDisplayingCell:",
           ):
               assert required in native, required
+
+          readme = Path("README.md").read_text(encoding="utf-8")
+          for required in (
+              "allowsExternalClickViews",
+              "ysifly_nativeFeedAd:didRejectClickWithError:",
+              "YSIFLYAdErrorCodeNativeFeedClickViewsInvalid",
+              "ysifly_detachFromCurrentContainer",
+          ):
+              assert required in readme, required
 
           for forbidden in (
               "YSIFLYNativeFeedDisplaySession",
@@ -918,6 +941,10 @@ jobs:
           for symbol in (
               b"ysifly_attachWithViewBinder:",
               b"ysifly_detachAdFromContainerView:",
+              b"ysifly_detachFromCurrentContainer",
+              b"allowsExternalClickViews",
+              b"ysifly_nativeFeedAd:didRejectClickWithError:",
+              b"YSIFLYAdErrorCodeNativeFeedClickViewsInvalid",
               b"ysifly_destroy",
           ):
               assert symbol in headers, symbol
@@ -946,12 +973,19 @@ jobs:
               )
               native_header = framework_dir / "Headers/IFLYNativeFeedAd.h"
               native_text = native_header.read_text(encoding="utf-8")
+              error_text = (framework_dir / "Headers/IFLYAdError.h").read_text(
+                  encoding="utf-8"
+              )
               for managed_api in (
                   "ysifly_attachWithViewBinder:",
                   "ysifly_detachAdFromContainerView:",
+                  "ysifly_detachFromCurrentContainer",
+                  "allowsExternalClickViews",
+                  "ysifly_nativeFeedAd:didRejectClickWithError:",
                   "ysifly_destroy",
               ):
                   assert managed_api in native_text, managed_api
+              assert "YSIFLYAdErrorCodeNativeFeedClickViewsInvalid = 71503" in error_text
 
               subprocess.check_call(
                   ["codesign", "--verify", "--strict", "--verbose=2", str(framework_dir)]
@@ -974,11 +1008,18 @@ jobs:
               for selector in (
                   "ysifly_attachWithViewBinder:error:",
                   "ysifly_detachAdFromContainerView:",
+                  "ysifly_detachFromCurrentContainer",
+                  "allowsExternalClickViews",
+                  "ysifly_nativeFeedAd:didRejectClickWithError:",
               ):
                   assert selector in lines, (selector, binary)
               for selector in (
                   "attachWithViewBinder:error:",
                   "detachAdFromContainerView:",
+                  "detachFromCurrentContainer",
+                  "nativeFeedAd:didRejectClickWithError:",
+                  "ysifly_allowsExternalClickViews",
+                  "ysifly_setAllowsExternalClickViews:",
                   "ysifly_beginDisplaySessionWithError:",
                   "ysifly_bindAdWithViewBinder:error:",
                   "ysifly_unbindAd",

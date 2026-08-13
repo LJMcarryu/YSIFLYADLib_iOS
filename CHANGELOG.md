@@ -5,15 +5,24 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
+## 6.2.3（待发布）
+
+- `releaseState`：`PENDING`
+- `binarySourceCommit`（SDK 二进制源码提交）：`__YSIFLYADLIB_6_2_3_BINARY_SOURCE_COMMIT_PENDING__`
+- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`__YSIFLYADLIB_6_2_3_RELEASE_METADATA_COMMIT_PENDING__`
+- 正式签名资产、SwiftPM checksum、tag、Release 与匿名消费验证尚未生成；最新正式发布版本仍为 `6.2.2`。
+- `6.2.3` 不沿用历史风险授权；主动扫描策略固定为 `failOn=high`、`failOnWarning=true`、`strict=true`、`requireManual=true` 且接受名单为空，不得套用 `6.2.2` 的扫描阈值或接受名单。
+- NativeFeed Binder 新增 `allowsExternalClickViews`（默认 `NO`）。显式开启后仅接受同 window/scene 且归属可判定的同 Cell 或窄范围兄弟视图；共享、固定悬浮、离屏仍可点击或归属不明时失败关闭，并通过 `ysifly_nativeFeedAd:didRejectClickWithError:` 返回 `YSIFLYAdErrorCodeNativeFeedClickViewsInvalid`（71503）。
+- 新增 `ysifly_detachFromCurrentContainer` 固定单容器便利入口；`6.2.2` 的 Ad 级 attach 与容器级 detach 仍是通用主路径。
+
 ## [6.2.2] - 2026-08-10
 
 ### 发布事实
 
 - 正式签名资产由唯一源码提交构建并完成本地发布门禁，SwiftPM checksum 为 `757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d`。
 - [GitHub Release 6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2) 已正式公开，annotated tag 解引用后的提交为 `b1bbaa5319335e027c560ab357c86cc6a732003e`，资产库存严格为 3 项。[published CI](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31347052226) 成功完成无凭据匿名下载、SHA-256 与双包同源校验、SwiftPM/CocoaPods 实际消费构建和完整 `pod spec lint`；该分发验收不代表最终宿主合规、`Validate App` 或 Apple 审核通过。
-- 本版按确认范围保留并原样归档 `SRC-004`、`SRC-008`、`SRC-009`、`SRC-011`、`NET-001`、`RRA-003`、`TRACK-001`、`TRACK-002`、`ADS-011`、`EXPORT-001` 启发式残余风险，以 `failOn=high`、`failOnWarning=false`、`strict=false`、`requireManual=false` 发布；该确认不适用于最终宿主。
-- `binarySourceCommit`（SDK 二进制源码提交）：`a8ec925d3731d7d11734647aa02ca7d91d674965`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`eff78263c2d3f65b029f4114de1a9ed00f3827f3`
+- `6.2.2` 按当版确认范围保留并原样归档 `SRC-004`、`SRC-008`、`SRC-009`、`SRC-011`、`NET-001`、`RRA-003`、`TRACK-001`、`TRACK-002`、`ADS-011`、`EXPORT-001` 启发式残余风险，以 `failOn=high`、`failOnWarning=false`、`strict=false`、`requireManual=false` 发布；该确认不适用于 `6.2.3` 或最终宿主。
+- `6.2.2` 二进制源码提交为 `a8ec925d3731d7d11734647aa02ca7d91d674965`，发布元数据提交为 `eff78263c2d3f65b029f4114de1a9ed00f3827f3`。
 
 ### 变更
 
