@@ -7,9 +7,9 @@
 不可用于生产依赖。
 
 <!-- 供发布 CI 机器校验的两提交 provenance；README、CHANGELOG、RELEASING 必须保持一致。 -->
-- `releaseState`：`PENDING`
-- `binarySourceCommit`（SDK 二进制源码提交）：`__YSIFLYADLIB_6_2_3_BINARY_SOURCE_COMMIT_PENDING__`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`__YSIFLYADLIB_6_2_3_RELEASE_METADATA_COMMIT_PENDING__`
+- `releaseState`：`FORMAL`
+- `binarySourceCommit`（SDK 二进制源码提交）：`11bd2827041cd245329d12e959310f77d76b7ddd`
+- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`6b2b21020589d3b96534167e9cb94b5a9fb76fa1`
 
 以下为 `6.2.2` 历史正式事实：
 
