@@ -324,10 +324,13 @@ class ReleaseModeContractTests(unittest.TestCase):
                 with self.assertRaises(MODE.ContractError):
                     MODE.read_local_contract(root)
 
-    def test_repository_is_exact_623_pending_and_keeps_622_history_scoped(self) -> None:
+    def test_repository_is_exact_623_state_and_keeps_622_history_scoped(self) -> None:
         contract = MODE.read_local_contract(ROOT)
         self.assertEqual(contract["version"], VERSION)
-        MODE.validate_pending(contract)
+        if contract["release_state"] == "PENDING":
+            MODE.validate_pending(contract)
+        else:
+            MODE.validate_formal(contract)
 
         documents = {
             name: (ROOT / name).read_text(encoding="utf-8")
