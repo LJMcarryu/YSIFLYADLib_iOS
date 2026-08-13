@@ -5,7 +5,7 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
-## 6.2.3
+## [6.2.3] - 2026-08-13
 
 - `releaseState`：`FORMAL`
 - `binarySourceCommit`（SDK 二进制源码提交）：`11bd2827041cd245329d12e959310f77d76b7ddd`
@@ -213,6 +213,7 @@
 - 缺陷：静态 framework 不投递内嵌资源包，广告图片缺失，已由后续版本修复。
 
 [6.2.2]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2
+[6.2.3]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.3
 [6.2.1]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.1
 [6.2.0]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.0
 [6.1.0]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.1.0

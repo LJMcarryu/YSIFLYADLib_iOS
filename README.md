@@ -11,6 +11,7 @@ GitHub Release 和发布后 CI 为准。最低支持 iOS 11.0。
 - `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`6b2b21020589d3b96534167e9cb94b5a9fb76fa1`
 - `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结；公开可用性以同版本 GitHub Release 和发布后 CI 为准。
 - 本提交是 `6.2.3` 的不可变发布目标。
+- `CHANGELOG.md` 已固定到 `6.2.3` tag。
 
 以下为 `6.2.2` 历史正式事实：
 
