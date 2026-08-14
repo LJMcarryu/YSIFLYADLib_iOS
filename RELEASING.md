@@ -18,8 +18,8 @@ job 结论；summary 对上游失败继续失败关闭。
 ## 当前状态
 
 - `releaseState`：`FORMAL`
-- `binarySourceCommit`（SDK 二进制源码提交）：`11bd2827041cd245329d12e959310f77d76b7ddd`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`6b2b21020589d3b96534167e9cb94b5a9fb76fa1`
+- `binarySourceCommit`（SDK 二进制源码提交）：`c90c8e969b05d4d55b522cb162ab0f2e37aacc52`
+- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`b340fe7cccc27af37fc6223042f9638e507a4b63`
 
 正式签名资产、checksum 和 A/B 已完成本地冻结校验；公开 tag、Release 和匿名消费验证仍须由编排器完成，
 当前不得作为正式发布证据。以下为 `6.2.2` 历史正式事实：该版本已于 2026 年 8 月 10 日通过
