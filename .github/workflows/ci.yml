@@ -779,7 +779,7 @@ jobs:
         if: env.RELEASE_MODE == 'draft_candidate'
         env:
           # draft Token 只在本步骤出现；checkout、本地门禁及后续消费均不注入。
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.DRAFT_RELEASE_READ_TOKEN }}
         run: |
           rm -rf "${RUNNER_TEMP}/ys-release"
           git show \
@@ -1135,7 +1135,7 @@ jobs:
         if: env.RELEASE_MODE == 'draft_candidate'
         env:
           # Token 只存在本下载步骤；后续哈希绑定与构建步骤均不注入。
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.DRAFT_RELEASE_READ_TOKEN }}
         run: |
           rm -rf "${RUNNER_TEMP}/ys-release"
           git show \
@@ -1287,7 +1287,7 @@ jobs:
         if: env.RELEASE_MODE == 'draft_candidate'
         env:
           # Token 只存在本下载步骤；后续哈希绑定、lint 与 Demo 构建均不注入。
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.DRAFT_RELEASE_READ_TOKEN }}
         run: |
           rm -rf "${RUNNER_TEMP}/ys-release"
           git show \
