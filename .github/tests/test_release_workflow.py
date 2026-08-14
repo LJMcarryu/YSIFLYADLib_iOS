@@ -44,6 +44,7 @@ METADATA_COMMIT = "b" * 40
 CANDIDATE_ID = "d" * 64
 DISPATCH_NONCE = "e" * 32
 CANDIDATE_BRANCH = f"release-candidate/{VERSION}-{CANDIDATE_ID}"
+DRAFT_SLUG = "untagged-" + "f" * 16
 
 
 def git(root: Path, *arguments: str) -> str:
@@ -140,6 +141,7 @@ def release_body(mode: str) -> str:
 
 def release_fixture(mode: str, contents: dict[str, bytes]) -> dict[str, object]:
     repository = "LJMcarryu/YSIFLYADLib_iOS"
+    download_slug = DRAFT_SLUG if mode == "draft_candidate" else VERSION
     assets = []
     for index, name in enumerate(sorted(contents), start=1):
         digest = hashlib.sha256(contents[name]).hexdigest()
@@ -155,7 +157,7 @@ def release_fixture(mode: str, contents: dict[str, bytes]) -> dict[str, object]:
                 ),
                 "browser_download_url": (
                     f"https://github.com/{repository}/releases/download/"
-                    f"{VERSION}/{name}"
+                    f"{download_slug}/{name}"
                 ),
             }
         )
@@ -167,7 +169,9 @@ def release_fixture(mode: str, contents: dict[str, bytes]) -> dict[str, object]:
         "draft": draft,
         "prerelease": False,
         "published_at": None if draft else "2026-08-10T00:00:00Z",
-        "html_url": f"https://github.com/{repository}/releases/tag/{VERSION}",
+        "html_url": (
+            f"https://github.com/{repository}/releases/tag/{download_slug}"
+        ),
         "body": release_body(mode),
         "assets": assets,
     }
@@ -498,6 +502,51 @@ class ReleaseDownloaderTests(unittest.TestCase):
                 mutate(mutated)
                 with self.assertRaises(DOWNLOAD.DownloadError):
                     DOWNLOAD.validate_release(mutated, **parameters)
+
+    def test_draft_rejects_asset_with_different_untagged_slug(self) -> None:
+        release = release_fixture("draft_candidate", self.contents)
+        release["assets"][0]["browser_download_url"] = release["assets"][0][
+            "browser_download_url"
+        ].replace(DRAFT_SLUG, "untagged-deadbeef")
+        documented = DOWNLOAD.provenance(
+            release_body("draft_candidate"), VERSION, "draft_candidate"
+        )
+
+        with self.assertRaisesRegex(DOWNLOAD.DownloadError, "Release slug"):
+            DOWNLOAD.validate_release(
+                release,
+                mode="draft_candidate",
+                repository="LJMcarryu/YSIFLYADLib_iOS",
+                version=VERSION,
+                candidate_release_id="12345",
+                candidate_id=CANDIDATE_ID,
+                target_branch=CANDIDATE_BRANCH,
+                expected_commit="c" * 40,
+                documented_provenance=documented,
+                resolved_target_commit="c" * 40,
+            )
+
+    def test_formal_release_rejects_untagged_html_url(self) -> None:
+        release = release_fixture("formal_release", self.contents)
+        release["html_url"] = (
+            f"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/{DRAFT_SLUG}"
+        )
+        documented = DOWNLOAD.provenance(
+            release_body("formal_release"), VERSION, "formal_release"
+        )
+
+        with self.assertRaisesRegex(DOWNLOAD.DownloadError, "html_url"):
+            DOWNLOAD.validate_release(
+                release,
+                mode="formal_release",
+                repository="LJMcarryu/YSIFLYADLib_iOS",
+                version=VERSION,
+                candidate_release_id="",
+                candidate_id="",
+                target_branch="",
+                expected_commit="c" * 40,
+                documented_provenance=documented,
+            )
 
     def test_cross_host_redirect_strips_authorization(self) -> None:
         request = urllib.request.Request(
