@@ -707,9 +707,13 @@ class WorkflowStructureTests(unittest.TestCase):
             },
         )
         self.assertEqual(len(token_steps), 3)
+        self.assertNotIn("${{ github.token }}", self.source)
         for _, step in token_steps:
             self.assertIn("draft_candidate", step["if"])
-            self.assertEqual(step["env"]["GITHUB_TOKEN"], "${{ github.token }}")
+            self.assertEqual(
+                step["env"]["GITHUB_TOKEN"],
+                "${{ secrets.DRAFT_RELEASE_READ_TOKEN }}",
+            )
         self.assertIn("-u GITHUB_TOKEN", self.source)
 
     def test_candidate_inputs_branch_and_exact_run_names_are_bound(self) -> None:
