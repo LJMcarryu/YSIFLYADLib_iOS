@@ -17,12 +17,12 @@ job 结论；summary 对上游失败继续失败关闭。
 
 ## 当前状态
 
-- `releaseState`：`PENDING`
-- `binarySourceCommit`（SDK 二进制源码提交）：`__YSIFLYADLIB_6_2_3_BINARY_SOURCE_COMMIT_PENDING__`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`__YSIFLYADLIB_6_2_3_RELEASE_METADATA_COMMIT_PENDING__`
+- `releaseState`：`FORMAL`
+- `binarySourceCommit`（SDK 二进制源码提交）：`ea0240e620b57d7275e486199099c648f51de257`
+- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`0f26b7647e6c1aadb32eca68b24f6845639a59c2`
 
-当前进入公开仓准备态；正式签名资产、checksum、A/B、tag、Release 和匿名消费验证尚未完成，
-不得作为正式发布证据。以下为 `6.2.2` 历史正式事实：该版本已于 2026 年 8 月 10 日通过
+正式签名资产、checksum 和 A/B 已完成本地冻结校验；公开 tag、Release 和匿名消费验证仍须由编排器完成，
+当前不得作为正式发布证据。以下为 `6.2.2` 历史正式事实：该版本已于 2026 年 8 月 10 日通过
 <https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2> 正式公开，Release 非草稿、
 非预发布，资产库存严格为以下 3 项。
 
@@ -44,6 +44,12 @@ CocoaPods Demo，同时通过完整 `pod spec lint`。该分发验收不代表�
 `6.2.3` 或最终宿主；`6.2.3` 不沿用历史风险授权。`6.2.3` 主动扫描策略固定为
 `failOn=high`、`failOnWarning=true`、`strict=true`、`requireManual=true` 且接受名单为空；扫描状态
 不改写正式发布状态，也不得把未扫描表述为通过。
+
+`releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结；公开可用性以同版本 GitHub Release 和发布后 CI 为准。
+
+冻结资产校验值：SwiftPM checksum 为 `84c77f4b9930f892086e08ec9f4185af474eab72a403905f4c5d9257936667a2`，`YSIFLYADLib-6.2.3.zip` 的 SHA-256 为 `904de36f02046e7612bec459bb432b203aa44cb21fd12ba5511f6c8b5bd1179e`。
+
+Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
 
 正式态回填后，`releaseMetadataCommit` 必须是 `binarySourceCommit` 的后代；两者之间只允许修改
 `Package.swift`、`README.md`、`CONTEXT.md` 和 `docs/**`，不能改变 SDK 二进制输入。
