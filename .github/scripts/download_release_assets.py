@@ -128,11 +128,18 @@ def validate_release(
             html_url == expected_html_prefix + f"tag/{version}",
             "正式 Release html_url 与当前仓库/tag 不一致",
         )
+        download_slug = version
     else:
-        require(
-            isinstance(html_url, str) and html_url.startswith(expected_html_prefix),
-            "draft Release 不属于当前仓库",
+        require(isinstance(html_url, str), "draft Release html_url 缺失")
+        match = re.fullmatch(
+            re.escape(expected_html_prefix + "tag/") + r"(untagged-[0-9a-f]+)",
+            html_url,
         )
+        require(
+            match is not None,
+            "draft Release html_url 必须是同仓 HTTPS untagged URL",
+        )
+        download_slug = match.group(1)
     release_body = release.get("body") or ""
     require(isinstance(release_body, str), "Release body 必须是字符串")
     if mode == "draft_candidate":
@@ -156,7 +163,9 @@ def validate_release(
     require(sorted(names) == expected and len(names) == len(set(names)), f"资产库存错误: {names}")
     assets: dict[str, Mapping[str, Any]] = {}
     api_prefix = f"https://api.github.com/repos/{repository}/releases/assets/"
-    browser_prefix = f"https://github.com/{repository}/releases/download/{version}/"
+    browser_prefix = (
+        f"https://github.com/{repository}/releases/download/{download_slug}/"
+    )
     for asset in assets_value:
         require(isinstance(asset, dict), "Release asset 必须是字典")
         name = asset["name"]
@@ -176,7 +185,7 @@ def validate_release(
         require(
             isinstance(asset.get("browser_download_url"), str)
             and asset["browser_download_url"] == browser_prefix + name,
-            f"资产 browser_download_url 不属于当前仓库/tag: {name}",
+            f"资产 browser_download_url 未绑定当前 Release slug: {name}",
         )
         assets[name] = asset
     return assets
