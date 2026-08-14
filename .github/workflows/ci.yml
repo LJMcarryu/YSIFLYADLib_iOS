@@ -938,6 +938,9 @@ jobs:
               "IFLYSplashAd.h",
               "YSIFLYADLib.h",
           }
+          white_labeled_reject_callback = re.compile(
+              r"(?m)^[ \t]*-[ \t]*\([^\)\r\n]+\)[ \t]*ysifly_nativeFeedAd[ \t]*:[ \t]*\([^\)\r\n]+\)[ \t]*[A-Za-z_][A-Za-z0-9_]*[ \t\r\n]+didRejectClickWithError[ \t]*:[ \t]*\([^\)\r\n]+\)[ \t]*[A-Za-z_][A-Za-z0-9_]*[ \t]*;"
+          )
           headers = b"\n".join(
               path.read_bytes() for path in spm_framework.rglob("Headers/*.h")
           )
@@ -950,11 +953,13 @@ jobs:
               b"ysifly_detachAdFromContainerView:",
               b"ysifly_detachFromCurrentContainer",
               b"allowsExternalClickViews",
-              b"ysifly_nativeFeedAd:didRejectClickWithError:",
               b"YSIFLYAdErrorCodeNativeFeedClickViewsInvalid",
               b"ysifly_destroy",
           ):
               assert symbol in headers, symbol
+          assert white_labeled_reject_callback.search(headers.decode("utf-8")), (
+              "缺少白标 NativeFeed 点击拒绝回调 selector"
+          )
           for symbol in (
               b"YSIFLYNativeFeedDisplaySession",
               b"YSIFLYNativeFeedAdBinding",
@@ -988,10 +993,12 @@ jobs:
                   "ysifly_detachAdFromContainerView:",
                   "ysifly_detachFromCurrentContainer",
                   "allowsExternalClickViews",
-                  "ysifly_nativeFeedAd:didRejectClickWithError:",
                   "ysifly_destroy",
               ):
                   assert managed_api in native_text, managed_api
+              assert white_labeled_reject_callback.search(native_text), (
+                  "缺少白标 NativeFeed 点击拒绝回调 selector"
+              )
               assert "YSIFLYAdErrorCodeNativeFeedClickViewsInvalid = 71503" in error_text
 
               subprocess.check_call(
