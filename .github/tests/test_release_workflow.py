@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import copy
 import hashlib
 import importlib.util
@@ -681,6 +682,37 @@ class WorkflowStructureTests(unittest.TestCase):
             )
             source = "\n".join(line[indentation:] for line in lines) + "\n"
             compile(source, f"ci.yml inline Python #{index}", "exec")
+
+    def test_white_labeled_reject_callback_accepts_only_exact_selector(self) -> None:
+        matches = re.findall(
+            r"white_labeled_reject_callback = re\.compile\(\n\s*(r\"[^\"]+\")\n\s*\)",
+            self.source,
+        )
+        self.assertEqual(len(matches), 1)
+        callback = re.compile(ast.literal_eval(matches[0]))
+
+        real_multiline_declaration = (
+            "- (void)ysifly_nativeFeedAd:(IFLYNativeFeedAd *)ad\n"
+            "    didRejectClickWithError:(IFLYAdError *)error;"
+        )
+        self.assertIsNotNone(callback.search(real_multiline_declaration))
+
+        invalid_declarations = {
+            "缺少回调段": (
+                "- (void)ysifly_nativeFeedAd:(IFLYNativeFeedAd *)ad;"
+            ),
+            "缺少白标前缀": (
+                "- (void)nativeFeedAd:(IFLYNativeFeedAd *)ad\n"
+                "    didRejectClickWithError:(IFLYAdError *)error;"
+            ),
+            "错误回调段": (
+                "- (void)ysifly_nativeFeedAd:(IFLYNativeFeedAd *)ad\n"
+                "    didRejectClick:(IFLYAdError *)error;"
+            ),
+        }
+        for label, declaration in invalid_declarations.items():
+            with self.subTest(label=label):
+                self.assertIsNone(callback.search(declaration))
 
     def run_resolver(
         self,
