@@ -21,8 +21,10 @@ job 结论；summary 对上游失败继续失败关闭。
 - `binarySourceCommit`（SDK 二进制源码提交）：`ea0240e620b57d7275e486199099c648f51de257`
 - `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`0f26b7647e6c1aadb32eca68b24f6845639a59c2`
 
-正式签名资产、checksum 和 A/B 已完成本地冻结校验；公开 tag、Release 和匿名消费验证仍须由编排器完成，
-当前不得作为正式发布证据。以下为 `6.2.2` 历史正式事实：该版本已于 2026 年 8 月 10 日通过
+`6.2.3` 正式签名资产、checksum 和 A/B 已完成冻结并公开；annotated tag 解引用到
+`b28e14d684d0178969c7a026a79614613773e160`，Release 为非草稿、非预发布且精确包含 3 个资产。
+[正式消费 Run 31939685915](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31939685915) 已完成匿名下载、SwiftPM、CocoaPods、Demo 与发布契约验证并返回 `success`。
+以下为 `6.2.2` 历史正式事实：该版本已于 2026 年 8 月 10 日通过
 <https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2> 正式公开，Release 非草稿、
 非预发布，资产库存严格为以下 3 项。
 

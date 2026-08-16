@@ -2,8 +2,7 @@
 
 `YSIFLYADLib` 是面向 YS 媒体定制的 iOS 广告 SDK，提供**开屏、Banner、插屏、自渲染信息流**广告能力（**含视频素材**，**不含激励视频**）。
 
-`6.2.3` 候选提交已冻结正式签名资产、checksum 和 A/B 元数据；公开可用性以同版本
-GitHub Release 和发布后 CI 为准。最低支持 iOS 11.0。
+当前最新公开正式版为 [`6.2.3`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.3)，已于 2026-08-16 发布；最低支持 iOS 11.0。annotated tag 解引用到 `b28e14d684d0178969c7a026a79614613773e160`，3 个资产已通过无 Token 匿名验证，正式消费 [Run 31939685915](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31939685915) 为 `success`。
 
 <!-- 供发布 CI 机器校验的两提交 provenance；README、CHANGELOG、RELEASING 必须保持一致。 -->
 - `releaseState`：`FORMAL`
@@ -68,7 +67,7 @@ GitHub [Release 6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag
 
 ## 版本记录
 
-当前候选版本为 **6.2.3**，其正式冻结状态由 `releaseState=FORMAL` 和发布清单记录；`6.2.2` 将 NativeFeed 列表生命周期改为 SDK 托管：数据层只持有
+当前正式版本为 **6.2.3**，其冻结身份由 `releaseState=FORMAL` 和发布清单记录；`6.2.2` 将 NativeFeed 列表生命周期改为 SDK 托管：数据层只持有
 `YSIFLYNativeFeedAd`，Cell 不持有 Session、Binding 或首次/复用状态；媒体只需在展示时
 attach、离屏或复用时按容器 detach。同一逻辑广告条目滚出再回来时，无论曝光前后都能
 恢复原广告。详细变更与历史版本记录见 [CHANGELOG.md](./CHANGELOG.md)。
@@ -88,18 +87,18 @@ YS 白标方法 `ysifly_reportMediaShakeTriggeredWithError:` 虽然进入公开�
 ## 环境要求
 
 - **iOS 11.0** 及以上（从 `6.0.14` 起；历史 `6.0.13` 及更早二进制不追溯扩大支持范围）。
-- **Xcode 15.0** 及以上（`Package.swift` 使用 Swift tools 5.9）；`6.2.2` 正式二进制由唯一冻结源码提交使用 Xcode 26.2 构建。
+- **Xcode 15.0** 及以上（`Package.swift` 使用 Swift tools 5.9）；`6.2.3` 正式二进制由提交 A 使用 Xcode 26.2 构建。
 - **交付形态**（6.0.12 起）：单一 `YSIFLYADLib.xcframework`（**静态 framework**），含 **真机 `arm64` + 模拟器 `arm64`/`x86_64`** 切片，**可直接在模拟器调试**；代码随 app 静态链接，**无需 Embed & Sign**。
 - 资源包 `YSAdvSDK.bundle`（内含隐私清单 `PrivacyInfo.xcprivacy`）**外置随包分发**：CocoaPods 与 SwiftPM 接入自动投递；手动集成需把 bundle 加入 app target 的 Copy Bundle Resources。
 - **最终 App 链接需 `-ObjC`**：CocoaPods podspec 同时向 pod target 与 aggregate/user target 注入，确保参数传播到最终 App；SwiftPM 与手动接入需在 App target 的 `OTHER_LDFLAGS` 添加。
-- 系统依赖中，CocoaPods podspec 显式链接 `AdSupport`、弱链接 `AppTrackingTransparency`；SwiftPM 与手动接入依靠 XCFramework 目标文件携带的 linker options。`6.2.2` 正式冻结产物已复核 ATT 仍为弱链接，保证 iOS 11～13 启动时不要求该框架存在。
+- 系统依赖中，CocoaPods podspec 显式链接 `AdSupport`、弱链接 `AppTrackingTransparency`；SwiftPM 与手动接入依靠 XCFramework 目标文件携带的 linker options。`6.2.3` 正式产物已复核 ATT 仍为弱链接，保证 iOS 11～13 启动时不要求该框架存在。
 - 统一入口头：`#import <YSIFLYADLib/YSIFLYADLib.h>`。
 
 ---
 
 ## 接入方式
 
-二进制通过本仓 **GitHub Releases** 分发；`6.2.2` Release 资产已对外可见并通过公开匿名下载验证，
+二进制通过本仓 **GitHub Releases** 分发；`6.2.3` Release 资产已对外可见并通过公开匿名下载验证，
 每个版本固定发布三个文件：
 
 | 资产 | 内容 | 适用 |
@@ -112,7 +111,7 @@ YS 白标方法 `ysifly_reportMediaShakeTriggeredWithError:` 虽然进入公开�
 
 ### CocoaPods
 
-候选验证与后续生产接入固定使用 `6.2.3` tag：
+生产接入固定使用 `6.2.3` tag：
 
 ```ruby
 source 'https://cdn.cocoapods.org/'
@@ -139,7 +138,7 @@ open YourApp.xcworkspace
 
 ### Swift Package Manager
 
-当前可在 Xcode「**File → Add Packages…**」填入仓库地址并选择正式版本 `6.2.2`：
+当前可在 Xcode「**File → Add Packages…**」填入仓库地址并选择正式版本 `6.2.3`：
 
 ```
 https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
@@ -149,7 +148,7 @@ https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS.git", from: "6.2.2"),
+    .package(url: "https://github.com/LJMcarryu/YSIFLYADLib_iOS.git", from: "6.2.3"),
 ],
 targets: [
     .target(name: "YourApp", dependencies: ["YSIFLYADLib"]),
@@ -161,13 +160,13 @@ targets: [
 （含 `PrivacyInfo.xcprivacy`）复制到 App。接入方不再需要从合并 zip
 手工复制资源；接入方仍须在 App target 的 `OTHER_LDFLAGS` 添加 `-ObjC`。
 
-> 当前仓库根 `Package.swift` 已写入本候选正式签名 zip 的真实 checksum；远程消费以同版本
-> GitHub Release 和发布后 CI 的结果为准，不得复用其他版本 checksum。
+> 当前仓库根 `Package.swift` 已写入 `6.2.3` 正式签名 zip 的真实 checksum，并已通过同版本
+> GitHub Release 匿名下载与发布后 CI 验证；不得复用其他版本 checksum。
 
 ### 手动集成
 
 不便使用包管理器时，可下载已发布的正式合并 zip
-（`YSIFLYADLib-6.2.2.zip`）并集成其中内容：
+（`YSIFLYADLib-6.2.3.zip`）并集成其中内容：
 
 1. 解压得到 `YSIFLYADLib.xcframework` 与 `YSAdvSDK.bundle`；
 2. 把 `YSIFLYADLib.xcframework` 拖入工程，General → Frameworks, Libraries, and Embedded Content 中 Embed 选 **Do Not Embed**（静态库随 app 链接，无需嵌入）；
