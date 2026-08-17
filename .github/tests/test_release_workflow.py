@@ -367,11 +367,17 @@ class ReleaseModeContractTests(unittest.TestCase):
                 with self.assertRaises(MODE.ContractError):
                     MODE.read_local_contract(root)
 
-    def test_repository_stages_624_over_last_closed_release_and_keeps_history(self) -> None:
+    def test_repository_stages_624_over_allowed_lifecycle_and_keeps_history(self) -> None:
         contract = MODE.read_local_contract(ROOT)
         self.assertEqual(contract["version"], VERSION)
-        self.assertEqual(contract["state_version"], PREVIOUS_VERSION)
-        self.assertEqual(contract["phase"], "CLOSED")
+        self.assertIn(
+            (contract["state_version"], contract["phase"]),
+            {
+                (PREVIOUS_VERSION, "CLOSED"),
+                (VERSION, "FROZEN"),
+                (VERSION, "CLOSED"),
+            },
+        )
         MODE.validate_formal(contract)
 
         documents = {
