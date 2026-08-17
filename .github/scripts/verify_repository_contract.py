@@ -39,7 +39,10 @@ def state(root: Path, release_kind: str) -> dict[str, object]:
     require(value.get("channel") == "ys", "release-state 渠道不匹配")
     phase = value.get("phase")
     state_version = value.get("version")
-    if release_kind == "repository" and phase == "CLOSED":
+    if release_kind in {"draft_candidate", "formal_release"}:
+        require(state_version == VERSION, "release-state 版本不匹配")
+        require(phase == "FROZEN", f"{release_kind} 只允许 release-state FROZEN")
+    elif release_kind == "repository" and phase == "CLOSED":
         require(
             state_version in {PREVIOUS_VERSION, VERSION},
             "main 只允许保留上一正式版或当前版 CLOSED 状态",
@@ -92,8 +95,6 @@ def verify_machine(
             "6.2.4 分发基线 checksum 非 64 位小写 SHA-256")
     require(checksum != "0" * 64 and checksum not in HISTORICAL,
             "6.2.4 分发基线 checksum 为零或沿用历史值")
-    if release_kind != "repository":
-        require(machine.get("phase") != "PREPARING", f"{release_kind} 禁止 PREPARING")
     for marker in (
         '.library(name: "YSIFLYADLib", targets: ["YSIFLYADLib", "YSIFLYADLibResources"])',
         '.copy("YSAdvSDK.bundle")',

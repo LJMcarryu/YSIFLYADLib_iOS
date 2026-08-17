@@ -193,6 +193,10 @@ def validate_contract(arguments: argparse.Namespace) -> dict[str, str]:
             contract["state_version"] == contract["version"],
             "draft candidate release-state 版本与分发清单不一致",
         )
+        require(
+            contract["phase"] == "FROZEN",
+            "draft candidate 只允许 release-state FROZEN",
+        )
         validate_formal(contract)
         require(head == arguments.event_sha, f"candidate checkout={head}，event sha={arguments.event_sha}")
         checkout_ref = expected_branch
@@ -219,6 +223,10 @@ def validate_contract(arguments: argparse.Namespace) -> dict[str, str]:
         require(
             contract["state_version"] == contract["version"],
             "正式复验 release-state 版本与分发清单不一致",
+        )
+        require(
+            contract["phase"] == "FROZEN",
+            "正式复验只允许 release-state FROZEN",
         )
         validate_formal(contract)
         tag_ref = f"refs/tags/{release_tag}"

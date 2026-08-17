@@ -319,12 +319,32 @@ class ReleaseModeContractTests(unittest.TestCase):
                     )
                 )
 
-    def test_draft_mode_rejects_pending_local_manifest(self) -> None:
-        with tempfile.TemporaryDirectory(prefix="ys-mode-wrong-state-") as directory:
-            root = Path(directory) / "repository"
-            create_repository(root, "PENDING")
-            with self.assertRaises(MODE.ContractError):
-                MODE.validate_contract(mode_arguments(root))
+    def test_candidate_and_formal_modes_require_exact_frozen_phase(self) -> None:
+        for mode in ("draft_candidate", "formal_release"):
+            for phase in ("PREPARING", "PUBLISHED", "VERIFIED"):
+                with self.subTest(mode=mode, phase=phase), tempfile.TemporaryDirectory(
+                    prefix="ys-mode-wrong-state-"
+                ) as directory:
+                    root = Path(directory) / "repository"
+                    create_repository(root, "FORMAL")
+                    state_path = root / "release-state.json"
+                    state = json.loads(state_path.read_text(encoding="utf-8"))
+                    state["phase"] = phase
+                    state_path.write_text(json.dumps(state), encoding="utf-8")
+                    git(root, "add", "release-state.json")
+                    git(root, "commit", "-q", "-m", phase)
+
+                    overrides = {}
+                    if mode == "formal_release":
+                        git(root, "tag", "-a", VERSION, "-m", "formal")
+                        git(root, "checkout", "-q", VERSION)
+                        overrides = {
+                            "mode": "formal_release",
+                            "release_tag": VERSION,
+                            "candidate_release_id": "",
+                        }
+                    with self.assertRaises(MODE.ContractError):
+                        MODE.validate_contract(mode_arguments(root, **overrides))
 
     def test_local_contract_rejects_distribution_url_drift(self) -> None:
         for label, filename in (
@@ -1107,7 +1127,7 @@ class WorkflowStructureTests(unittest.TestCase):
                     ROOT, "repository", self.podspec_json
                 )
 
-    def test_candidate_contract_accepts_only_current_frozen_state(self) -> None:
+    def test_release_contracts_accept_only_current_frozen_state(self) -> None:
         original_read = REPOSITORY_CONTRACT.read
         frozen = json.loads(original_read(ROOT, "release-state.json"))
         frozen.update({"version": VERSION, "phase": "FROZEN", "publication": None})
@@ -1120,24 +1140,30 @@ class WorkflowStructureTests(unittest.TestCase):
 
             return read
 
-        with mock.patch.object(
-            REPOSITORY_CONTRACT, "read", side_effect=with_state(frozen)
-        ):
-            REPOSITORY_CONTRACT.verify_machine(
-                ROOT, "draft_candidate", self.podspec_json
-            )
-            REPOSITORY_CONTRACT.verify_docs(ROOT, "draft_candidate")
-
-        for invalid in (
-            {**frozen, "version": PREVIOUS_VERSION},
-            {**frozen, "phase": "PREPARING"},
-        ):
-            with self.subTest(state=invalid), mock.patch.object(
-                REPOSITORY_CONTRACT, "read", side_effect=with_state(invalid)
-            ), self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+        for release_kind in ("draft_candidate", "formal_release"):
+            with self.subTest(release_kind=release_kind), mock.patch.object(
+                REPOSITORY_CONTRACT, "read", side_effect=with_state(frozen)
+            ):
                 REPOSITORY_CONTRACT.verify_machine(
-                    ROOT, "draft_candidate", self.podspec_json
+                    ROOT, release_kind, self.podspec_json
                 )
+                REPOSITORY_CONTRACT.verify_docs(ROOT, release_kind)
+
+            for invalid in (
+                {**frozen, "version": PREVIOUS_VERSION},
+                *(
+                    {**frozen, "phase": phase}
+                    for phase in ("PREPARING", "PUBLISHED", "VERIFIED", "CLOSED")
+                ),
+            ):
+                with self.subTest(
+                    release_kind=release_kind, state=invalid
+                ), mock.patch.object(
+                    REPOSITORY_CONTRACT, "read", side_effect=with_state(invalid)
+                ), self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+                    REPOSITORY_CONTRACT.verify_machine(
+                        ROOT, release_kind, self.podspec_json
+                    )
 
     def test_podspec_comments_cannot_substitute_for_parsed_link_contract(self) -> None:
         podspec_source = (ROOT / "YSIFLYADLib.podspec").read_text(encoding="utf-8")
