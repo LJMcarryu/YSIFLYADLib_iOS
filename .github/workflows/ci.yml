@@ -66,6 +66,9 @@ on:
 permissions:
   contents: read
 
+env:
+  RELEASE_TARGET_VERSION: 6.2.4
+
 concurrency:
   group: >-
     ${{ github.event_name == 'release' && format('{0}:formal:{1}', github.workflow, github.event.release.tag_name) || github.event_name == 'workflow_dispatch' && inputs.control_plane_canary && format('{0}:control-plane-canary:{1}:{2}', github.workflow, inputs.canary_candidate_id, inputs.canary_release_id) || github.event_name == 'workflow_dispatch' && inputs.validation_mode == 'draft_candidate' && format('{0}:candidate:{1}:{2}', github.workflow, inputs.candidate_id, inputs.candidate_release_id) || github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && format('{0}:formal:{1}', github.workflow, inputs.release_tag) || format('{0}:ci:{1}:{2}', github.workflow, github.event_name, github.ref) }}
@@ -103,6 +106,7 @@ jobs:
           CANARY_TAG: ${{ inputs.canary_tag || '' }}
           CANARY_RELEASE_ID: ${{ inputs.canary_release_id || '' }}
           CANARY_CANDIDATE_ID: ${{ inputs.canary_candidate_id || '' }}
+          TARGET_VERSION: ${{ env.RELEASE_TARGET_VERSION }}
         run: |
           python3 - <<'PY'
           import os
@@ -118,7 +122,8 @@ jobs:
           candidate_id = os.environ["INPUT_CANDIDATE_ID"].strip()
           dispatch_nonce = os.environ["INPUT_DISPATCH_NONCE"].strip()
           candidate_branch = ""
-          version = "6.2.3"
+          target_version = os.environ["TARGET_VERSION"].strip()
+          assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", target_version)
 
           control_plane_canary = os.environ["CONTROL_PLANE_CANARY"] == "true"
           canary_tag = os.environ["CANARY_TAG"].strip()
@@ -154,6 +159,7 @@ jobs:
               candidate_id = ""
               dispatch_nonce = ""
               assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", release_tag)
+              assert release_tag == target_version, "release 事件版本与当前分发基线不一致"
               checkout_ref = release_tag
           elif event == "workflow_dispatch":
               assert requested in {
@@ -173,7 +179,19 @@ jobs:
                   assert re.fullmatch(r"[0-9a-f]{32}", dispatch_nonce), (
                       "draft candidate 必须提供 32 位小写 dispatch_nonce"
                   )
-                  candidate_branch = f"release-candidate/{version}-{candidate_id}"
+                  branch_match = re.fullmatch(
+                      r"release-candidate/([0-9]+\.[0-9]+\.[0-9]+)-([0-9a-f]{64})",
+                      event_ref_name,
+                  )
+                  assert branch_match, "draft candidate 候选分支格式非法"
+                  candidate_version, branch_candidate_id = branch_match.groups()
+                  assert candidate_version == target_version, (
+                      "draft candidate 版本与当前分发基线不一致"
+                  )
+                  assert branch_candidate_id == candidate_id, (
+                      "draft candidate 分支 candidate_id 与输入不一致"
+                  )
+                  candidate_branch = event_ref_name
                   assert event_ref == f"refs/heads/{candidate_branch}", (
                       f"draft candidate 只允许从 {candidate_branch} 触发"
                   )
@@ -189,6 +207,7 @@ jobs:
                   assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", release_tag), (
                       "正式复验必须提供 x.y.z release_tag"
                   )
+                  assert release_tag == target_version, "正式复验版本与当前分发基线不一致"
                   checkout_ref = release_tag
               else:
                   assert not candidate_release_id, (
@@ -201,6 +220,7 @@ jobs:
                       assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", release_tag), (
                           "旧式 release_tag 必须为 x.y.z"
                       )
+                      assert release_tag == target_version, "旧式复验版本与当前分发基线不一致"
                       mode = "formal_release"
                       checkout_ref = release_tag
                   else:
@@ -272,10 +292,23 @@ jobs:
 
       - name: 校验机器可读发布状态
         run: |
+          state_version="$(python3 -c 'import json; print(json.load(open("release-state.json"))["version"])')"
           python3 scripts/release_state.py release-state.json \
             --expected-channel ys \
             --expected-repository "$GITHUB_REPOSITORY" \
-            --expected-version 6.2.3
+            --expected-version "$state_version"
+          python3 - <<'PY'
+          import json
+          import os
+
+          state = json.load(open("release-state.json", encoding="utf-8"))
+          target = tuple(int(part) for part in os.environ["RELEASE_TARGET_VERSION"].split("."))
+          current = tuple(int(part) for part in state["version"].split("."))
+          if state["phase"] == "CLOSED":
+              assert current <= target, "main CLOSED 版本不得高于当前分发基线"
+          else:
+              assert current == target, "非 CLOSED 状态必须绑定当前分发基线"
+          PY
 
       - name: Checkout 被验证的发布 ref
         uses: actions/checkout@v4
@@ -408,7 +441,7 @@ jobs:
       - name: Tag push 立即校验 annotated tag 与 checkout 绑定
         if: github.ref_type == 'tag'
         run: |
-          test "${GITHUB_REF_NAME}" = '6.2.3'
+          test "${GITHUB_REF_NAME}" = "${RELEASE_TARGET_VERSION}"
           test -z "$(git status --porcelain)"
           test "$(git cat-file -t "refs/tags/${GITHUB_REF_NAME}")" = 'tag'
           test "$(git rev-parse HEAD)" = "$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"

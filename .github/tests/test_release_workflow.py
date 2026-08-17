@@ -43,7 +43,8 @@ REPOSITORY_CONTRACT = load_module(
     ROOT / ".github/scripts/verify_repository_contract.py",
 )
 
-VERSION = "6.2.3"
+VERSION = "6.2.4"
+PREVIOUS_VERSION = "6.2.3"
 BINARY_COMMIT = "a" * 40
 METADATA_COMMIT = "b" * 40
 CANDIDATE_ID = "d" * 64
@@ -346,13 +347,12 @@ class ReleaseModeContractTests(unittest.TestCase):
                 with self.assertRaises(MODE.ContractError):
                     MODE.read_local_contract(root)
 
-    def test_repository_is_exact_623_state_and_keeps_622_history_scoped(self) -> None:
+    def test_repository_stages_624_over_last_closed_release_and_keeps_history(self) -> None:
         contract = MODE.read_local_contract(ROOT)
         self.assertEqual(contract["version"], VERSION)
-        if contract["release_state"] == "PENDING":
-            MODE.validate_pending(contract)
-        else:
-            MODE.validate_formal(contract)
+        self.assertEqual(contract["state_version"], PREVIOUS_VERSION)
+        self.assertEqual(contract["phase"], "CLOSED")
+        MODE.validate_formal(contract)
 
         documents = {
             name: (ROOT / name).read_text(encoding="utf-8")
@@ -370,12 +370,16 @@ class ReleaseModeContractTests(unittest.TestCase):
             documents["README.md"],
         )
         self.assertIn(
+            "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.3",
+            documents["README.md"],
+        )
+        self.assertIn(
             "757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d",
             documents["RELEASING.md"],
         )
         self.assertNotEqual(
             contract["checksum"],
-            "757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d",
+            "84c77f4b9930f892086e08ec9f4185af474eab72a403905f4c5d9257936667a2",
         )
         for marker in (
             "`failOnWarning=true`",
@@ -409,8 +413,15 @@ class ReleaseDownloaderTests(unittest.TestCase):
         temporary.mkdir(parents=True, exist_ok=True)
         release_state_path = temporary / "release-state.json"
         state = json.loads((ROOT / "release-state.json").read_text(encoding="utf-8"))
+        state["version"] = VERSION
+        state["phase"] = "FROZEN"
         state["binarySourceCommit"] = BINARY_COMMIT
         state["releaseMetadataCommit"] = METADATA_COMMIT
+        state["artifactInventory"] = {
+            "count": 3,
+            "sha256": "b0962e8e1129f680024fef53365802aa6797e6c163f8b7be18e4e9cec1020cf4",
+        }
+        state["publication"] = None
         release_state_path.write_text(json.dumps(state), encoding="utf-8")
         return argparse.Namespace(
             mode=mode,
@@ -788,6 +799,7 @@ class WorkflowStructureTests(unittest.TestCase):
                     "CANARY_TAG": canary_tag,
                     "CANARY_RELEASE_ID": canary_release_id,
                     "CANARY_CANDIDATE_ID": canary_candidate_id,
+                    "TARGET_VERSION": VERSION,
                     "GITHUB_OUTPUT": str(output),
                 }
             )
@@ -848,6 +860,7 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertIn("draft-candidate:{0}:{1}:{2}", self.workflow["run-name"])
         self.assertIn("formal-release:{0}:{1}", self.workflow["run-name"])
         self.assertIn("control-plane-canary:{0}:{1}:{2}", self.workflow["run-name"])
+        self.assertEqual(self.workflow["env"]["RELEASE_TARGET_VERSION"], VERSION)
         result, values = self.run_resolver(
             requested_mode="draft_candidate",
             candidate_release_id="12345",
@@ -858,8 +871,19 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertEqual(values["checkout_ref"], CANDIDATE_BRANCH)
         self.assertEqual(values["candidate_branch"], CANDIDATE_BRANCH)
 
+        wrong_version_branch = f"release-candidate/6.2.3-{CANDIDATE_ID}"
+        result, _ = self.run_resolver(
+            requested_mode="draft_candidate",
+            candidate_release_id="12345",
+            candidate_id=CANDIDATE_ID,
+            dispatch_nonce=DISPATCH_NONCE,
+            event_ref=f"refs/heads/{wrong_version_branch}",
+            event_ref_name=wrong_version_branch,
+        )
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+
         for name, value in (
-            ("canary_tag", "6.2.3001"),
+            ("canary_tag", "6.2.4001"),
             ("canary_release_id", "98765"),
             ("canary_candidate_id", CANDIDATE_ID),
         ):
@@ -893,14 +917,14 @@ class WorkflowStructureTests(unittest.TestCase):
 
         result, values = self.run_resolver(
             control_plane_canary=True,
-            canary_tag="6.2.3001",
+            canary_tag="6.2.4001",
             canary_release_id="98765",
             canary_candidate_id=CANDIDATE_ID,
             dispatch_nonce=DISPATCH_NONCE,
         )
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertEqual(
-            values["checkout_ref"], f"release-candidate/6.2.3001-{CANDIDATE_ID}"
+            values["checkout_ref"], f"release-candidate/6.2.4001-{CANDIDATE_ID}"
         )
         self.assertEqual(values["candidate_branch"], "")
 
@@ -1070,8 +1094,8 @@ class WorkflowStructureTests(unittest.TestCase):
             value = original_read(root, relative)
             if relative == "YSIFLYADLib.podspec":
                 return re.sub(
-                    r"(s\.version\s*=\s*['\"])6\.2\.3",
-                    r"\g<1>6.2.4",
+                    r"(s\.version\s*=\s*['\"])6\.2\.4",
+                    r"\g<1>6.2.5",
                     value,
                     count=1,
                 )
@@ -1081,6 +1105,38 @@ class WorkflowStructureTests(unittest.TestCase):
             with self.assertRaises(REPOSITORY_CONTRACT.ContractError):
                 REPOSITORY_CONTRACT.verify_machine(
                     ROOT, "repository", self.podspec_json
+                )
+
+    def test_candidate_contract_accepts_only_current_frozen_state(self) -> None:
+        original_read = REPOSITORY_CONTRACT.read
+        frozen = json.loads(original_read(ROOT, "release-state.json"))
+        frozen.update({"version": VERSION, "phase": "FROZEN", "publication": None})
+
+        def with_state(value: dict[str, object]):
+            def read(root: Path, relative: str) -> str:
+                if relative == "release-state.json":
+                    return json.dumps(value)
+                return original_read(root, relative)
+
+            return read
+
+        with mock.patch.object(
+            REPOSITORY_CONTRACT, "read", side_effect=with_state(frozen)
+        ):
+            REPOSITORY_CONTRACT.verify_machine(
+                ROOT, "draft_candidate", self.podspec_json
+            )
+            REPOSITORY_CONTRACT.verify_docs(ROOT, "draft_candidate")
+
+        for invalid in (
+            {**frozen, "version": PREVIOUS_VERSION},
+            {**frozen, "phase": "PREPARING"},
+        ):
+            with self.subTest(state=invalid), mock.patch.object(
+                REPOSITORY_CONTRACT, "read", side_effect=with_state(invalid)
+            ), self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+                REPOSITORY_CONTRACT.verify_machine(
+                    ROOT, "draft_candidate", self.podspec_json
                 )
 
     def test_podspec_comments_cannot_substitute_for_parsed_link_contract(self) -> None:

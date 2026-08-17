@@ -2,9 +2,9 @@
 
 这是 `YSIFLYADLib` 的 iOS 接入示例工程，用于演示 YS 媒体定制 SDK 的常见广告样式和基础生命周期处理。
 
-当前目录对应已正式发布的 `6.2.3`，源码和 `Podfile` 均使用 NativeFeed SDK 托管 API；
-`releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结，公开可用性以同版本
-GitHub Release 和发布后 CI 为准。
+当前目录对应 `6.2.4` 发布准备，源码和 `Podfile` 均使用 NativeFeed SDK 托管 API；
+正式签名资产、checksum 和 A/B 元数据已冻结，但同版本 GitHub Release 和发布后 CI 尚未完成，
+当前最新公开可用版仍为 `6.2.3`。
 
 当前 demo 覆盖：
 
@@ -18,7 +18,7 @@ YS 变体为 model B 单包，包含开屏、Banner、插屏、信息流和视�
 
 ## 运行方式
 
-当前可在本目录直接消费 `6.2.3` 正式 tag 与 Release 资产：
+`6.2.4` 正式发布后可在本目录直接消费同版本 tag 与 Release 资产：
 
 ```sh
 pod install
@@ -29,10 +29,11 @@ open YSIFLYADLibSimple.xcworkspace
 
 ## 接入要点
 
-`Podfile` 已固定到 `6.2.3` tag，示例工程最低支持 iOS 11.0：
+`Podfile` 已固定到待发布的 `6.2.4` tag，示例工程最低支持 iOS 11.0；Release 公开前
+`pod install` 预期不可用：
 
 ```ruby
-pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.2.3/YSIFLYADLib.podspec'
+pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.2.4/YSIFLYADLib.podspec'
 ```
 
 `6.2.2` 延续 `6.2.1` 的**静态 framework**交付：代码随 App 静态链接、无需 Embed；`YSAdvSDK.bundle`（含 `PrivacyInfo.xcprivacy`）由 CocoaPods podspec 或 SwiftPM 资源包装 target 自动拷入 App。最终 App 链接需要 `-ObjC`：CocoaPods podspec 同时向 pod target 与 aggregate/user target 注入，SwiftPM 和手动接入需在 App target 的 `OTHER_LDFLAGS` 添加。只有手动接入时需要自行把该 bundle 加入 Copy Bundle Resources。CocoaPods podspec 显式链接 `AdSupport`、弱链接 `AppTrackingTransparency`；SwiftPM 与手动接入依靠 XCFramework 目标文件携带的 linker options，最低 iOS 11.0 不变。
@@ -55,7 +56,7 @@ pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIF
 - 视频 detach/attach 会保留内容进度与既有播放意图；显式 `ysifly_pausePlay` /
   `ysifly_stopPlay` 后不会因回屏自动起播，只有 `ysifly_resumePlay` /
   `ysifly_startPlay` 才重新申请播放。
-- `6.2.3` 新增的外部 CTA 能力默认关闭；只有同 window/scene 且归属可判定的同 Cell 或窄范围兄弟视图才可设置 `allowsExternalClickViews=YES`，共享或固定悬浮 CTA 继续拒绝。固定单容器可按需调用 `ysifly_detachFromCurrentContainer`，复用列表仍按具体容器 detach。
+- `6.2.3` 新增的外部 CTA 能力默认关闭；`6.2.4` 进一步接受同 window/scene 内同 Cell、专属紧包 wrapper 或几何紧凑相邻的 window-local CTA。绑定时固定归属与祖先路径；共享、固定悬浮、离屏仍可点击、运行中 reparent 或归属不明继续以 71503 拒绝。固定单容器可按需调用 `ysifly_detachFromCurrentContainer`，复用列表仍按具体容器 detach。
 
 从 `6.2.1` 升级到 `6.2.2` 时，须删除 DisplaySession / Binding 及旧 bind/unbind/end 调用，
 改为上述 Ad attach 与容器 detach。若从 `6.1.0` 或更早版本升级，还需注意

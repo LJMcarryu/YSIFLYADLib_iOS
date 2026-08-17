@@ -94,6 +94,7 @@ def read_local_contract(root: Path) -> dict[str, str]:
     )
     return {
         "version": version,
+        "state_version": state["version"],
         "checksum": single_match(
             r'checksum:\s*"([^"]+)"', package, "Package.swift checksum"
         ),
@@ -141,6 +142,11 @@ def validate_formal(contract: dict[str, str]) -> None:
     require(binary != metadata, "最终 FORMAL A/B provenance 必须是两个不同提交")
 
 
+def version_tuple(value: str) -> tuple[int, int, int]:
+    require(VERSION.fullmatch(value) is not None, f"版本格式非法: {value!r}")
+    return tuple(int(part) for part in value.split("."))  # type: ignore[return-value]
+
+
 def validate_contract(arguments: argparse.Namespace) -> dict[str, str]:
     root = arguments.root.resolve()
     contract = read_local_contract(root)
@@ -183,6 +189,10 @@ def validate_contract(arguments: argparse.Namespace) -> dict[str, str]:
         )
         require(arguments.event_ref_name == expected_branch, "github.ref_name 与候选分支不一致")
         require(SHA40.fullmatch(arguments.event_sha) is not None, "github.sha 非 40 位小写 SHA")
+        require(
+            contract["state_version"] == contract["version"],
+            "draft candidate release-state 版本与分发清单不一致",
+        )
         validate_formal(contract)
         require(head == arguments.event_sha, f"candidate checkout={head}，event sha={arguments.event_sha}")
         checkout_ref = expected_branch
@@ -206,6 +216,10 @@ def validate_contract(arguments: argparse.Namespace) -> dict[str, str]:
                 "release published 事件 ref 与 release_tag 不一致",
             )
         require(release_tag == contract["version"], "release_tag 与本地版本不一致")
+        require(
+            contract["state_version"] == contract["version"],
+            "正式复验 release-state 版本与分发清单不一致",
+        )
         validate_formal(contract)
         tag_ref = f"refs/tags/{release_tag}"
         require(git(root, "cat-file", "-t", tag_ref) == "tag", "正式 tag 必须是 annotated tag")
@@ -222,6 +236,27 @@ def validate_contract(arguments: argparse.Namespace) -> dict[str, str]:
         require(not candidate_id, "repository 模式不得提供 candidate_id")
         require(not candidate_branch, "repository 模式不得提供 candidate_branch")
         require(not dispatch_nonce, "repository 模式不得提供 dispatch_nonce")
+        if contract["phase"] == "CLOSED" and (
+            contract["state_version"] != contract["version"]
+        ):
+            require(
+                version_tuple(contract["state_version"])
+                < version_tuple(contract["version"]),
+                "main 上一 CLOSED 版本必须低于当前分发基线",
+            )
+            validate_formal(contract)
+        elif contract["release_state"] == "PENDING":
+            require(
+                contract["state_version"] == contract["version"],
+                "PREPARING release-state 版本与分发清单不一致",
+            )
+            validate_pending(contract)
+        else:
+            require(
+                contract["state_version"] == contract["version"],
+                "FORMAL release-state 版本与分发清单不一致",
+            )
+            validate_formal(contract)
         checkout_ref = arguments.event_ref
         release_locator = ""
 
