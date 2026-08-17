@@ -63,8 +63,8 @@ def write_contract(root: Path, state: str) -> None:
     marker = VERSION.replace(".", "_")
     if state == "PENDING":
         checksum = f"__YSIFLYADLIB_{marker}_SWIFTPM_CHECKSUM_PENDING__"
-        binary = f"__YSIFLYADLIB_{marker}_BINARY_SOURCE_COMMIT_PENDING__"
-        metadata = f"__YSIFLYADLIB_{marker}_RELEASE_METADATA_COMMIT_PENDING__"
+        binary = BINARY_COMMIT
+        metadata = METADATA_COMMIT
     else:
         checksum = "1" * 64
         binary = BINARY_COMMIT
@@ -84,12 +84,25 @@ def write_contract(root: Path, state: str) -> None:
         encoding="utf-8",
     )
     (root / "RELEASING.md").write_text(
-        f"- `releaseState`：`{state}`\n"
-        f"- `binarySourceCommit`（SDK 二进制源码提交）：`{binary}`\n"
-        "- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，"
-        f"不是 SDK 二进制源码提交）：`{metadata}`\n",
+        "面向维护者的自由格式发布说明；不承载机器门禁事实。\n",
         encoding="utf-8",
     )
+    (root / "scripts").mkdir(exist_ok=True)
+    (root / "scripts/release_state.py").write_text(
+        (ROOT / "scripts/release_state.py").read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    phase = "PREPARING" if state == "PENDING" else "FROZEN"
+    (root / "release-state.json").write_text(json.dumps({
+        "schemaVersion": 1, "channel": "ys",
+        "repository": "LJMcarryu/YSIFLYADLib_iOS", "version": VERSION,
+        "phase": phase, "binarySourceCommit": binary,
+        "releaseMetadataCommit": metadata,
+        "artifactInventory": {"count": 3, "sha256": "2" * 64},
+        "appleReview": {"requiredForRelease": False, "statusAtFreeze": "not-run",
+                        "evidenceIncluded": False},
+        "publication": None,
+    }), encoding="utf-8")
 
 
 def create_repository(root: Path, state: str) -> str:
@@ -341,17 +354,11 @@ class ReleaseModeContractTests(unittest.TestCase):
             name: (ROOT / name).read_text(encoding="utf-8")
             for name in ("README.md", "CHANGELOG.md", "RELEASING.md")
         }
-        patterns = (
-            r"^- `releaseState`：`(PENDING|FORMAL)`$",
-            r"^- `binarySourceCommit`（SDK 二进制源码提交）：`([^`]+)`$",
-            r"^- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，"
-            r"不是 SDK 二进制源码提交）：`([^`]+)`$",
-        )
-        for name, contents in documents.items():
-            with self.subTest(document=name):
-                for pattern in patterns:
-                    self.assertEqual(len(re.findall(pattern, contents, re.M)), 1)
-                self.assertIn("`6.2.3` 不沿用历史风险授权", contents)
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Path(directory)
+            write_contract(fixture, "FORMAL")
+            (fixture / "RELEASING.md").write_text("任意维护说明\n", encoding="utf-8")
+            self.assertEqual(MODE.read_local_contract(fixture)["release_state"], "FORMAL")
 
         self.assertIn("## [6.2.2] - 2026-08-10", documents["CHANGELOG.md"])
         self.assertIn(
@@ -383,9 +390,6 @@ class ReleaseDownloaderTests(unittest.TestCase):
             "checksums.txt": b"checksums",
         }
 
-    def write_releasing(self, path: Path, mode: str) -> None:
-        path.write_text(release_body(mode), encoding="utf-8")
-
     def download_for_url(self, url: str, _headers, timeout: int = 300) -> bytes:
         del timeout
         for name, contents in self.contents.items():
@@ -399,8 +403,11 @@ class ReleaseDownloaderTests(unittest.TestCase):
 
     def arguments(self, temporary: Path, mode: str) -> argparse.Namespace:
         temporary.mkdir(parents=True, exist_ok=True)
-        releasing = temporary / "RELEASING.md"
-        self.write_releasing(releasing, mode)
+        release_state_path = temporary / "release-state.json"
+        state = json.loads((ROOT / "release-state.json").read_text(encoding="utf-8"))
+        state["binarySourceCommit"] = BINARY_COMMIT
+        state["releaseMetadataCommit"] = METADATA_COMMIT
+        release_state_path.write_text(json.dumps(state), encoding="utf-8")
         return argparse.Namespace(
             mode=mode,
             repository="LJMcarryu/YSIFLYADLib_iOS",
@@ -409,7 +416,8 @@ class ReleaseDownloaderTests(unittest.TestCase):
             candidate_release_id="12345" if mode == "draft_candidate" else "",
             candidate_id=CANDIDATE_ID if mode == "draft_candidate" else "",
             target_branch=CANDIDATE_BRANCH if mode == "draft_candidate" else "",
-            releasing=releasing,
+            release_state=release_state_path,
+            release_metadata_output=temporary / "release-metadata.json",
             destination=temporary / "assets",
         )
 
@@ -432,6 +440,10 @@ class ReleaseDownloaderTests(unittest.TestCase):
                 hashes = DOWNLOAD.run(arguments)
 
             self.assertEqual(set(hashes), set(self.contents))
+            self.assertEqual(
+                json.loads(arguments.release_metadata_output.read_text(encoding="utf-8"))["id"],
+                12345,
+            )
             for name, contents in self.contents.items():
                 self.assertEqual((arguments.destination / name).read_bytes(), contents)
 
@@ -726,14 +738,19 @@ class WorkflowStructureTests(unittest.TestCase):
         candidate_release_id: str = "",
         candidate_id: str = "",
         dispatch_nonce: str = "",
+        control_plane_canary: bool = False,
+        canary_tag: str = "",
+        canary_release_id: str = "",
+        canary_candidate_id: str = "",
     ) -> tuple[subprocess.CompletedProcess[str], dict[str, str]]:
         resolver = self.jobs["resolve-validation-mode"]["steps"][0]["run"]
         if event_ref is None:
-            branch = (
-                f"release-candidate/{VERSION}-{candidate_id}"
-                if requested_mode == "draft_candidate" and candidate_id
-                else "main"
-            )
+            if control_plane_canary:
+                branch = f"release-candidate/{canary_tag}-{canary_candidate_id}"
+            elif requested_mode == "draft_candidate" and candidate_id:
+                branch = f"release-candidate/{VERSION}-{candidate_id}"
+            else:
+                branch = "main"
             event_ref = f"refs/heads/{branch}"
             event_ref_name = branch
         elif event_ref_name is None:
@@ -752,6 +769,10 @@ class WorkflowStructureTests(unittest.TestCase):
                     "INPUT_CANDIDATE_RELEASE_ID": candidate_release_id,
                     "INPUT_CANDIDATE_ID": candidate_id,
                     "INPUT_DISPATCH_NONCE": dispatch_nonce,
+                    "CONTROL_PLANE_CANARY": str(control_plane_canary).lower(),
+                    "CANARY_TAG": canary_tag,
+                    "CANARY_RELEASE_ID": canary_release_id,
+                    "CANARY_CANDIDATE_ID": canary_candidate_id,
                     "GITHUB_OUTPUT": str(output),
                 }
             )
@@ -782,15 +803,19 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertEqual(
             {job_name for job_name, _ in token_steps},
             {
+                "control-plane-canary",
                 "validate-release-assets",
                 "consume-swiftpm-release",
                 "consume-cocoapods-release",
             },
         )
-        self.assertEqual(len(token_steps), 3)
+        self.assertEqual(len(token_steps), 4)
         self.assertNotIn("${{ github.token }}", self.source)
-        for _, step in token_steps:
-            self.assertIn("draft_candidate", step["if"])
+        for job_name, step in token_steps:
+            if job_name == "control-plane-canary":
+                self.assertNotIn("if", step)
+            else:
+                self.assertIn("draft_candidate", step["if"])
             self.assertEqual(
                 step["env"]["GITHUB_TOKEN"],
                 "${{ secrets.DRAFT_RELEASE_READ_TOKEN }}",
@@ -799,10 +824,15 @@ class WorkflowStructureTests(unittest.TestCase):
 
     def test_candidate_inputs_branch_and_exact_run_names_are_bound(self) -> None:
         inputs = self.workflow["true"]["workflow_dispatch"]["inputs"]
-        for name in ("candidate_release_id", "candidate_id", "dispatch_nonce"):
+        for name in (
+            "candidate_release_id", "candidate_id", "dispatch_nonce",
+            "control_plane_canary", "canary_tag", "canary_release_id",
+            "canary_candidate_id",
+        ):
             self.assertIn(name, inputs)
         self.assertIn("draft-candidate:{0}:{1}:{2}", self.workflow["run-name"])
         self.assertIn("formal-release:{0}:{1}", self.workflow["run-name"])
+        self.assertIn("control-plane-canary:{0}:{1}:{2}", self.workflow["run-name"])
         result, values = self.run_resolver(
             requested_mode="draft_candidate",
             candidate_release_id="12345",
@@ -812,6 +842,75 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertEqual(values["checkout_ref"], CANDIDATE_BRANCH)
         self.assertEqual(values["candidate_branch"], CANDIDATE_BRANCH)
+
+        for name, value in (
+            ("canary_tag", "6.2.3001"),
+            ("canary_release_id", "98765"),
+            ("canary_candidate_id", CANDIDATE_ID),
+        ):
+            result, _ = self.run_resolver(**{name: value})
+            self.assertNotEqual(
+                result.returncode,
+                0,
+                f"非 Canary 模式错误接受了 {name}",
+            )
+
+    def test_control_plane_canary_reuses_draft_downloader_without_heavy_builds(self) -> None:
+        canary = self.jobs["control-plane-canary"]
+        self.assertEqual(
+            set(canary["needs"]), {"resolve-validation-mode", "verify-repository"}
+        )
+        self.assertEqual(canary["permissions"], {"contents": "read"})
+        source = "\n".join(step.get("run", "") for step in canary["steps"])
+        self.assertIn("DRAFT_RELEASE_READ_TOKEN", json.dumps(canary))
+        self.assertIn("download_release_assets.py", source)
+        self.assertIn('test "$CANARY_TAG" != "$state_version"', source)
+        self.assertIn("release-candidate/${CANARY_TAG}-${CANARY_CANDIDATE_ID}", source)
+        self.assertIn("release_control_plane_checks.py fixture", source)
+        production = (ROOT / "scripts/release_control_plane_checks.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("symlink_to", production)
+        self.assertIn("resolve_pod_root", production)
+        self.assertIn("didRejectClickWithError:", source)
+        for forbidden in ("xcodebuild", "pod install", "swift build"):
+            self.assertNotIn(forbidden, source)
+
+        result, values = self.run_resolver(
+            control_plane_canary=True,
+            canary_tag="6.2.3001",
+            canary_release_id="98765",
+            canary_candidate_id=CANDIDATE_ID,
+            dispatch_nonce=DISPATCH_NONCE,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(
+            values["checkout_ref"], f"release-candidate/6.2.3001-{CANDIDATE_ID}"
+        )
+
+    def test_simple_job_has_scheme_bound_name_and_integer_json_contract(self) -> None:
+        simple = self.jobs["consume-cocoapods-release"]
+        self.assertIn("YSIFLYADLibSimple", simple["name"])
+        self.assertIn("simple_result_json", simple["outputs"])
+        step = next(item for item in simple["steps"] if item.get("id") == "simple-result")
+        self.assertEqual(
+            step["env"]["RELEASE_ID"],
+            "${{ needs.validate-release-assets.outputs.release_id }}",
+        )
+        assets = self.jobs["validate-release-assets"]
+        self.assertEqual(
+            assets["outputs"]["release_id"],
+            "${{ steps.release-identity.outputs.release_id }}",
+        )
+        self.assertIn("--release-metadata-output", json.dumps(assets))
+        source = step["run"]
+        for marker in (
+            '"schemaVersion": 1', '"channel": "ys"',
+            '"simpleScheme": "YSIFLYADLibSimple"',
+            '"artifactInventorySha256"', '"buildResult": "success"',
+            '"runId"', 'int(os.environ["RELEASE_ID"])',
+        ):
+            self.assertIn(marker, source)
 
     def test_local_python_validation_cannot_dirty_candidate_worktree(self) -> None:
         ignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
@@ -884,25 +983,23 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertIn("Draft/正式清单 checksum 必须等于本次下载资产", asset_contract["run"])
         self.assertNotIn("expected_pending", asset_contract["run"])
 
-    def test_formal_manifest_uses_time_stable_candidate_wording(self) -> None:
-        self.assertIn(
-            "releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B",
-            self.source,
+    def test_markdown_wording_check_is_non_blocking_and_state_is_authoritative(self) -> None:
+        maintenance = next(
+            step for step in self.jobs["verify-repository"]["steps"]
+            if step.get("name") == "校验版本、发布状态和本地分发清单"
         )
-        self.assertIn(
-            "公开可用性以同版本 GitHub Release 和发布后 CI 为准",
-            self.source,
+        self.assertIs(maintenance["continue-on-error"], True)
+        contract = next(
+            step for step in self.jobs["verify-repository"]["steps"]
+            if step.get("id") == "release-contract"
         )
-        self.assertIn("不可变发布目标", self.source)
-        self.assertNotIn(
-            'f"最新正式发布版本为 `YSIFLYADLib {target_version}`"',
-            self.source,
+        self.assertIn("validate_release_mode.py", contract["run"])
+        compare = next(
+            step for step in self.jobs["verify-repository"]["steps"]
+            if step.get("name") == "Candidate/正式态校验 A/B 私有源码祖先关系与 B 变更范围"
         )
-        self.assertNotIn(
-            'f"当前正式发布版本为 **{target_version}**"',
-            self.source,
-        )
-        self.assertNotIn("f\"releases/tag/{target_version}\"", self.source)
+        self.assertIn('Path("release-state.json")', compare["run"])
+        self.assertNotIn('Path("RELEASING.md")', compare["run"])
 
     def test_asset_gate_fans_out_to_parallel_isolated_consumers(self) -> None:
         swift = self.jobs["consume-swiftpm-release"]
@@ -928,7 +1025,7 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertIn("formal_release", upload["if"])
         self.assertEqual(
             set(asset_gate["outputs"]),
-            {"spm_sha256", "combined_sha256", "checksums_sha256"},
+            {"spm_sha256", "combined_sha256", "checksums_sha256", "release_id"},
         )
         for job in (swift, pods):
             download = next(
@@ -960,7 +1057,10 @@ class WorkflowStructureTests(unittest.TestCase):
         )
 
     def test_control_scripts_are_pinned_to_workflow_commit_not_release_tag(self) -> None:
-        self.assertNotIn("python3 .github/scripts/", self.source)
+        non_canary_jobs = {
+            name: job for name, job in self.jobs.items() if name != "control-plane-canary"
+        }
+        self.assertNotIn("python3 .github/scripts/", json.dumps(non_canary_jobs))
         expected_control_files = (
             ".github/scripts/validate_release_mode.py",
             ".github/scripts/download_release_assets.py",

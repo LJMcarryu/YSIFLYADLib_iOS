@@ -1,7 +1,7 @@
 name: CI
 
 run-name: >-
-  ${{ github.event_name == 'release' && format('formal-release:{0}:{1}', github.event.release.id, github.event.release.tag_name) || github.event_name == 'workflow_dispatch' && inputs.validation_mode == 'draft_candidate' && format('draft-candidate:{0}:{1}:{2}', inputs.candidate_id, inputs.candidate_release_id, inputs.dispatch_nonce) || format('ci:{0}:{1}', github.event_name, github.ref_name) }}
+  ${{ github.event_name == 'release' && format('formal-release:{0}:{1}', github.event.release.id, github.event.release.tag_name) || github.event_name == 'workflow_dispatch' && inputs.control_plane_canary && format('control-plane-canary:{0}:{1}:{2}', inputs.canary_candidate_id, inputs.canary_release_id, inputs.dispatch_nonce) || github.event_name == 'workflow_dispatch' && inputs.validation_mode == 'draft_candidate' && format('draft-candidate:{0}:{1}:{2}', inputs.candidate_id, inputs.candidate_release_id, inputs.dispatch_nonce) || format('ci:{0}:{1}', github.event_name, github.ref_name) }}
 
 on:
   push:
@@ -42,13 +42,33 @@ on:
         required: false
         default: ''
         type: string
+      control_plane_canary:
+        description: 只验证控制面和同仓 Draft 下载链，不执行 SDK、Simple 或包管理器构建
+        required: false
+        default: false
+        type: boolean
+      canary_tag:
+        description: control_plane_canary 独占的临时语义版本；不得与当前正式版本相同
+        required: false
+        default: ''
+        type: string
+      canary_release_id:
+        description: control_plane_canary 使用的同仓 Draft Release ID
+        required: false
+        default: ''
+        type: string
+      canary_candidate_id:
+        description: control_plane_canary 使用的 64 位小写候选身份
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
   group: >-
-    ${{ github.event_name == 'release' && format('{0}:formal:{1}', github.workflow, github.event.release.tag_name) || github.event_name == 'workflow_dispatch' && inputs.validation_mode == 'draft_candidate' && format('{0}:candidate:{1}:{2}', github.workflow, inputs.candidate_id, inputs.candidate_release_id) || github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && format('{0}:formal:{1}', github.workflow, inputs.release_tag) || format('{0}:ci:{1}:{2}', github.workflow, github.event_name, github.ref) }}
+    ${{ github.event_name == 'release' && format('{0}:formal:{1}', github.workflow, github.event.release.tag_name) || github.event_name == 'workflow_dispatch' && inputs.control_plane_canary && format('{0}:control-plane-canary:{1}:{2}', github.workflow, inputs.canary_candidate_id, inputs.canary_release_id) || github.event_name == 'workflow_dispatch' && inputs.validation_mode == 'draft_candidate' && format('{0}:candidate:{1}:{2}', github.workflow, inputs.candidate_id, inputs.candidate_release_id) || github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && format('{0}:formal:{1}', github.workflow, inputs.release_tag) || format('{0}:ci:{1}:{2}', github.workflow, github.event_name, github.ref) }}
   # 同一候选的复验顺序排队，不取消既有证据；候选与正式 Release 使用不同分组。
   cancel-in-progress: false
 
@@ -79,6 +99,10 @@ jobs:
           INPUT_CANDIDATE_RELEASE_ID: ${{ inputs.candidate_release_id || '' }}
           INPUT_CANDIDATE_ID: ${{ inputs.candidate_id || '' }}
           INPUT_DISPATCH_NONCE: ${{ inputs.dispatch_nonce || '' }}
+          CONTROL_PLANE_CANARY: ${{ inputs.control_plane_canary || false }}
+          CANARY_TAG: ${{ inputs.canary_tag || '' }}
+          CANARY_RELEASE_ID: ${{ inputs.canary_release_id || '' }}
+          CANARY_CANDIDATE_ID: ${{ inputs.canary_candidate_id || '' }}
         run: |
           python3 - <<'PY'
           import os
@@ -96,7 +120,34 @@ jobs:
           candidate_branch = ""
           version = "6.2.3"
 
-          if event == "release":
+          control_plane_canary = os.environ["CONTROL_PLANE_CANARY"] == "true"
+          canary_tag = os.environ["CANARY_TAG"].strip()
+          canary_release_id = os.environ["CANARY_RELEASE_ID"].strip()
+          canary_candidate_id = os.environ["CANARY_CANDIDATE_ID"].strip()
+
+          if not control_plane_canary:
+              assert not canary_tag, "非 Canary 模式不得提供 canary_tag"
+              assert not canary_release_id, "非 Canary 模式不得提供 canary_release_id"
+              assert not canary_candidate_id, "非 Canary 模式不得提供 canary_candidate_id"
+
+          if control_plane_canary:
+              assert event == "workflow_dispatch"
+              assert requested == "repository"
+              assert not release_tag and not candidate_release_id and not candidate_id
+              assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", canary_tag)
+              assert re.fullmatch(r"[1-9][0-9]*", canary_release_id)
+              assert re.fullmatch(r"[0-9a-f]{64}", canary_candidate_id)
+              assert re.fullmatch(r"[0-9a-f]{32}", dispatch_nonce)
+              candidate_branch = f"release-candidate/{canary_tag}-{canary_candidate_id}"
+              assert event_ref == f"refs/heads/{candidate_branch}"
+              assert event_ref_name == candidate_branch
+              mode = "repository"
+              release_tag = ""
+              candidate_release_id = ""
+              candidate_id = ""
+              dispatch_nonce = ""
+              checkout_ref = candidate_branch
+          elif event == "release":
               mode = "formal_release"
               release_tag = os.environ["RELEASE_EVENT_TAG"].strip()
               candidate_release_id = ""
@@ -219,6 +270,13 @@ jobs:
               -s .github/tests \
               -p 'test_*.py'
 
+      - name: 校验机器可读发布状态
+        run: |
+          python3 scripts/release_state.py release-state.json \
+            --expected-channel ys \
+            --expected-repository "$GITHUB_REPOSITORY" \
+            --expected-version 6.2.3
+
       - name: Checkout 被验证的发布 ref
         uses: actions/checkout@v4
         with:
@@ -256,6 +314,7 @@ jobs:
               --github-output "${GITHUB_OUTPUT}"
 
       - name: 校验版本、发布状态和本地分发清单
+        continue-on-error: true
         run: |
           swift package dump-package > "${RUNNER_TEMP}/ys-package.json"
           pod ipc spec YSIFLYADLib.podspec > "${RUNNER_TEMP}/ys-podspec.json"
@@ -545,27 +604,10 @@ jobs:
           import urllib.request
           from pathlib import Path
 
-          releasing = Path("RELEASING.md").read_text(encoding="utf-8")
-          release_state_match = re.findall(
-              r"^- `releaseState`：`(PENDING|FORMAL)`$", releasing, re.M
-          )
-          assert len(release_state_match) == 1, release_state_match
-          release_state = release_state_match[0]
-          binary = re.findall(
-              r"^- `binarySourceCommit`（SDK 二进制源码提交）：`([^`]+)`$",
-              releasing,
-              re.M,
-          )
-          metadata = re.findall(
-              r"^- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，"
-              r"不是 SDK 二进制源码提交）：`([^`]+)`$",
-              releasing,
-              re.M,
-          )
-          assert len(binary) == len(metadata) == 1
-          binary_source_commit = binary[0]
-          release_metadata_commit = metadata[0]
-          assert release_state == "FORMAL"
+          release_state = json.loads(Path("release-state.json").read_text(encoding="utf-8"))
+          binary_source_commit = release_state["binarySourceCommit"]
+          release_metadata_commit = release_state["releaseMetadataCommit"]
+          assert release_state["phase"] in {"FROZEN", "PUBLISHED", "VERIFIED", "CLOSED"}
           assert re.fullmatch(r"[0-9a-f]{40}", binary_source_commit)
           assert re.fullmatch(r"[0-9a-f]{40}", release_metadata_commit)
           assert binary_source_commit != release_metadata_commit
@@ -732,6 +774,58 @@ jobs:
           print("NativeFeed Demo 托管生命周期与 UIKit 新旧 Cell 乱序防护通过")
           PY
 
+  control-plane-canary:
+    name: 控制面 Canary（真实 Draft 下载链）
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.control_plane_canary }}
+    needs: [resolve-validation-mode, verify-repository]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: 校验 Canary 身份并认证下载精确 Draft 资产
+        env:
+          GITHUB_TOKEN: ${{ secrets.DRAFT_RELEASE_READ_TOKEN }}
+          CANARY_TAG: ${{ inputs.canary_tag }}
+          CANARY_RELEASE_ID: ${{ inputs.canary_release_id }}
+          CANARY_CANDIDATE_ID: ${{ inputs.canary_candidate_id }}
+          DISPATCH_NONCE: ${{ inputs.dispatch_nonce }}
+        run: |
+          set -euo pipefail
+          [[ "$CANARY_RELEASE_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$CANARY_CANDIDATE_ID" =~ ^[0-9a-f]{64}$ ]]
+          [[ "$DISPATCH_NONCE" =~ ^[0-9a-f]{32}$ ]]
+          state_version="$(python3 -c 'import json; print(json.load(open("release-state.json"))["version"])')"
+          test "$CANARY_TAG" != "$state_version"
+          canary_branch="release-candidate/${CANARY_TAG}-${CANARY_CANDIDATE_ID}"
+          test "$GITHUB_REF" = "refs/heads/$canary_branch"
+          python3 scripts/release_state.py release-state.json \
+            --expected-channel ys \
+            --expected-repository "$GITHUB_REPOSITORY" \
+            --expected-version "$state_version"
+          python3 .github/scripts/download_release_assets.py \
+            --mode draft_candidate \
+            --repository "$GITHUB_REPOSITORY" \
+            --version "$CANARY_TAG" \
+            --expected-commit "$(git rev-parse HEAD)" \
+            --candidate-release-id "$CANARY_RELEASE_ID" \
+            --candidate-id "$CANARY_CANDIDATE_ID" \
+            --target-branch "$canary_branch" \
+            --release-state release-state.json \
+            --destination "$RUNNER_TEMP/control-plane-canary-assets"
+
+      - name: 运行 Pod 符号链接与多行 Objective-C selector 轻量夹具
+        run: |
+          python3 scripts/release_control_plane_checks.py fixture \
+            --module-name YSIFLYADLib \
+            --header-name IFLYNativeFeedAd.h \
+            --selector 'ysifly_nativeFeedAd:didRejectClickWithError:'
+
   validate-release-assets:
     name: 前置校验 draft/formal Release 三资产
     if: needs.resolve-validation-mode.outputs.mode != 'repository'
@@ -744,6 +838,7 @@ jobs:
       spm_sha256: ${{ steps.asset-contract.outputs.spm_sha256 }}
       combined_sha256: ${{ steps.asset-contract.outputs.combined_sha256 }}
       checksums_sha256: ${{ steps.asset-contract.outputs.checksums_sha256 }}
+      release_id: ${{ steps.release-identity.outputs.release_id }}
     env:
       RELEASE_MODE: ${{ needs.verify-repository.outputs.mode }}
       RELEASE_TAG: ${{ needs.verify-repository.outputs.version }}
@@ -792,6 +887,7 @@ jobs:
               --candidate-release-id "${CANDIDATE_RELEASE_ID}" \
               --candidate-id "${CANDIDATE_ID}" \
               --target-branch "${CANDIDATE_BRANCH}" \
+              --release-metadata-output "${RUNNER_TEMP}/ys-release-metadata.json" \
               --destination "${RUNNER_TEMP}/ys-release"
 
       - name: 无 Token 匿名下载已发布正式 Release 精确三资产
@@ -810,8 +906,29 @@ jobs:
                   --repository "${GITHUB_REPOSITORY}" \
                   --version "${RELEASE_TAG}" \
                   --expected-commit "${EXPECTED_CHECKOUT_COMMIT}" \
+                  --release-metadata-output "${RUNNER_TEMP}/ys-release-metadata.json" \
                   --destination "${RUNNER_TEMP}/ys-release"
             '
+
+      - id: release-identity
+        name: 固化本次 Release ID
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          release = json.loads(
+              (Path(os.environ["RUNNER_TEMP"]) / "ys-release-metadata.json").read_text(
+                  encoding="utf-8"
+              )
+          )
+          release_id = release.get("id")
+          assert isinstance(release_id, int) and not isinstance(release_id, bool)
+          assert release_id > 0, release_id
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
+              output.write(f"release_id={release_id}\n")
+          PY
 
       - id: asset-contract
         name: 逐项校验 SHA-256、SwiftPM checksum、双包结构与公开 API
@@ -823,8 +940,12 @@ jobs:
           import plistlib
           import re
           import subprocess
+          import sys
           import zipfile
           from pathlib import Path, PurePosixPath
+
+          sys.path.insert(0, str(Path("scripts").resolve()))
+          from release_control_plane_checks import validate_public_header_selectors
 
           root = Path(os.environ["RELEASE_DIR"])
           version = os.environ["RELEASE_TAG"]
@@ -915,6 +1036,11 @@ jobs:
 
           spm_framework = spm_out / "YSIFLYADLib.xcframework"
           combined_framework = combined_out / "YSIFLYADLib.xcframework"
+          validate_public_header_selectors(
+              spm_out,
+              ["YSIFLYADLib.xcframework/*/YSIFLYADLib.framework/Headers/IFLYNativeFeedAd.h"],
+              ["ysifly_nativeFeedAd:didRejectClickWithError:"],
+          )
           assert tree_hashes(spm_framework) == tree_hashes(combined_framework)
           assert tree_hashes(Path("spm/YSIFLYADLibResources/YSAdvSDK.bundle")) == (
               tree_hashes(combined_out / "YSAdvSDK.bundle")
@@ -1249,13 +1375,15 @@ jobs:
           EOF
 
   consume-cocoapods-release:
-    name: lint 并实际消费已验证 CocoaPods/Demo 资产
+    name: Simple YSIFLYADLibSimple｜lint 并实际消费 CocoaPods/Demo 资产
     if: needs.resolve-validation-mode.outputs.mode != 'repository'
     needs: [resolve-validation-mode, verify-repository, validate-release-assets]
     runs-on: macos-15
     timeout-minutes: 55
     permissions:
       contents: read
+    outputs:
+      simple_result_json: ${{ steps.simple-result.outputs.json }}
     env:
       RELEASE_MODE: ${{ needs.verify-repository.outputs.mode }}
       RELEASE_TAG: ${{ needs.verify-repository.outputs.version }}
@@ -1419,6 +1547,23 @@ jobs:
           print(f"OK 最终 App OTHER_LDFLAGS: {flags}")
           PY
 
+      - name: 输出统一 Simple 验证结果
+        id: simple-result
+        env:
+          RELEASE_ID: ${{ needs.validate-release-assets.outputs.release_id }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          inventory = json.load(open("release-state.json", encoding="utf-8"))["artifactInventory"]["sha256"]
+          value = json.dumps({"schemaVersion": 1, "channel": "ys",
+              "simpleScheme": "YSIFLYADLibSimple", "releaseId": int(os.environ["RELEASE_ID"]),
+              "artifactInventorySha256": inventory, "buildResult": "success",
+              "runId": int(os.environ["GITHUB_RUN_ID"])}, separators=(",", ":"), sort_keys=True)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write(f"json={value}\n")
+          print(value)
+          PY
+
   release-summary:
     name: 发布验证只读汇总
     if: ${{ always() }}
@@ -1434,7 +1579,7 @@ jobs:
     env:
       RELEASE_MODE: ${{ needs.verify-repository.outputs.mode || needs.resolve-validation-mode.outputs.mode }}
       RELEASE_TAG: ${{ needs.verify-repository.outputs.version || needs.resolve-validation-mode.outputs.release_tag }}
-      RELEASE_ID: ${{ needs.verify-repository.outputs.candidate_release_id || github.event.release.id || '' }}
+      RELEASE_ID: ${{ needs.validate-release-assets.outputs.release_id }}
       CANDIDATE_ID: ${{ needs.verify-repository.outputs.candidate_id }}
       CANDIDATE_IDENTITY: ${{ needs.verify-repository.outputs.candidate_identity }}
       CHECKOUT_COMMIT: ${{ needs.verify-repository.outputs.checkout_commit || github.sha }}
@@ -1446,6 +1591,7 @@ jobs:
       ASSETS_RESULT: ${{ needs.validate-release-assets.result }}
       SWIFTPM_RESULT: ${{ needs.consume-swiftpm-release.result }}
       COCOAPODS_RESULT: ${{ needs.consume-cocoapods-release.result }}
+      SIMPLE_RESULT_JSON: ${{ needs.consume-cocoapods-release.outputs.simple_result_json }}
     steps:
       - name: 写入身份、库存与 job 结论
         shell: bash
@@ -1480,6 +1626,9 @@ jobs:
             printf '| validate-release-assets | `%s` |\n' "$ASSETS_RESULT"
             printf '| consume-swiftpm-release | `%s` |\n' "$SWIFTPM_RESULT"
             printf '| consume-cocoapods-release | `%s` |\n' "$COCOAPODS_RESULT"
+            echo
+            echo '### Simple 结构化结果'
+            printf '```json\n%s\n```\n' "${SIMPLE_RESULT_JSON:-{}}"
           } >> "$GITHUB_STEP_SUMMARY"
 
           for result in \

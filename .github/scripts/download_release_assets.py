@@ -150,7 +150,7 @@ def validate_release(
             "Draft Release body 必须唯一声明输入 candidateId",
         )
     body_provenance = provenance(release_body, version, mode)
-    require(body_provenance == documented_provenance, "Release 正文 A/B 与 RELEASING.md 不一致")
+    require(body_provenance == documented_provenance, "Release 正文 A/B 与 release-state 不一致")
     for value in body_provenance:
         require(release_body.count(value) == 1, "Release 正文每个 provenance 提交只能出现一次")
 
@@ -240,7 +240,18 @@ def run(arguments: argparse.Namespace) -> dict[str, str]:
     require(re.fullmatch(r"[^/\s]+/[^/\s]+", repository) is not None, "仓库名必须为 owner/name")
     require(VERSION.fullmatch(version) is not None, "版本必须为 x.y.z")
     require(SHA40.fullmatch(arguments.expected_commit) is not None, "expected commit 非 40 位 SHA")
-    documented = provenance(arguments.releasing.read_text(encoding="utf-8"), version, mode)
+    state = json.loads(arguments.release_state.read_text(encoding="utf-8"))
+    require(state.get("version") == version or mode == "draft_candidate",
+            "release-state version 与正式 Release 不一致")
+    require(state.get("phase") in {"FROZEN", "PUBLISHED", "VERIFIED", "CLOSED"},
+            "Release 下载必须绑定 release-state FROZEN 或后续阶段")
+    documented = (state.get("binarySourceCommit"), state.get("releaseMetadataCommit"))
+    require(all(SHA40.fullmatch(value or "") for value in documented)
+            and documented[0] != documented[1], "release-state A/B 非法")
+    release_metadata_output = getattr(arguments, "release_metadata_output", None)
+    if release_metadata_output is not None:
+        require(not release_metadata_output.exists(), "Release 元数据输出已存在，禁止覆盖")
+        require(not release_metadata_output.is_symlink(), "Release 元数据输出不得是符号链接")
 
     token = os.environ.get("GITHUB_TOKEN", "").strip()
     if mode == "draft_candidate":
@@ -314,6 +325,10 @@ def run(arguments: argparse.Namespace) -> dict[str, str]:
                 hashlib.sha256(retry).hexdigest() == hashes[name],
                 f"第二次匿名下载内容不一致: {name}",
             )
+    if release_metadata_output is not None:
+        with release_metadata_output.open("x", encoding="utf-8") as output:
+            json.dump(release, output, ensure_ascii=False, sort_keys=True)
+            output.write("\n")
     return hashes
 
 
@@ -326,7 +341,8 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--candidate-release-id", default="")
     result.add_argument("--candidate-id", default="")
     result.add_argument("--target-branch", default="")
-    result.add_argument("--releasing", type=Path, default=Path("RELEASING.md"))
+    result.add_argument("--release-state", type=Path, default=Path("release-state.json"))
+    result.add_argument("--release-metadata-output", type=Path)
     result.add_argument("--destination", required=True, type=Path)
     return result
 

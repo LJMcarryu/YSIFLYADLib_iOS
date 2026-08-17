@@ -8,6 +8,7 @@ import hashlib
 import json
 import re
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -56,7 +57,14 @@ def pending_values(version: str) -> dict[str, str]:
 def read_local_contract(root: Path) -> dict[str, str]:
     package = (root / "Package.swift").read_text(encoding="utf-8")
     podspec = (root / "YSIFLYADLib.podspec").read_text(encoding="utf-8")
-    releasing = (root / "RELEASING.md").read_text(encoding="utf-8")
+    sys.path.insert(0, str(root / "scripts"))
+    from release_state import validate_state
+
+    state = validate_state(
+        json.loads((root / "release-state.json").read_text(encoding="utf-8")),
+        expected_channel="ys",
+        expected_repository="LJMcarryu/YSIFLYADLib_iOS",
+    )
     version = single_match(
         r"s\.version\s*=\s*['\"]([^'\"]+)", podspec, "podspec version"
     )
@@ -89,43 +97,32 @@ def read_local_contract(root: Path) -> dict[str, str]:
         "checksum": single_match(
             r'checksum:\s*"([^"]+)"', package, "Package.swift checksum"
         ),
-        "release_state": single_match(
-            r"^- `releaseState`：`(PENDING|FORMAL)`$",
-            releasing,
-            "releaseState",
-        ),
-        "binary_source_commit": single_match(
-            r"^- `binarySourceCommit`（SDK 二进制源码提交）：`([^`]+)`$",
-            releasing,
-            "binarySourceCommit",
-        ),
-        "release_metadata_commit": single_match(
-            r"^- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，"
-            r"不是 SDK 二进制源码提交）：`([^`]+)`$",
-            releasing,
-            "releaseMetadataCommit",
-        ),
+        "release_state": "PENDING" if state["phase"] == "PREPARING" else "FORMAL",
+        "phase": state["phase"],
+        "binary_source_commit": state["binarySourceCommit"],
+        "release_metadata_commit": state["releaseMetadataCommit"],
     }
 
 
 def validate_pending(contract: dict[str, str]) -> None:
     expected = pending_values(contract["version"])
-    require(contract["release_state"] == "PENDING", "PENDING 清单的 releaseState 不一致")
+    require(contract["phase"] == "PREPARING", "准备态必须来自 release-state PREPARING")
     require(contract["checksum"] == expected["checksum"], "PENDING checksum 不精确")
     require(
-        contract["binary_source_commit"] == expected["binary"],
-        "PENDING binarySourceCommit 不精确",
+        SHA40.fullmatch(contract["binary_source_commit"]) is not None,
+        "release-state binarySourceCommit 非 40 位 SHA",
     )
     require(
-        contract["release_metadata_commit"] == expected["metadata"],
-        "PENDING releaseMetadataCommit 不精确",
+        SHA40.fullmatch(contract["release_metadata_commit"]) is not None
+        and contract["release_metadata_commit"] != contract["binary_source_commit"],
+        "release-state A/B 必须是两个不同的 40 位 SHA",
     )
 
 
 def validate_formal(contract: dict[str, str]) -> None:
     require(
-        contract["release_state"] == "FORMAL",
-        "draft candidate 与正式复验都必须来自最终 FORMAL 清单",
+        contract["phase"] in {"FROZEN", "PUBLISHED", "VERIFIED", "CLOSED"},
+        "draft candidate 与正式复验必须来自 release-state FROZEN 或后续阶段",
     )
     require(
         SHA64.fullmatch(contract["checksum"]) is not None,
