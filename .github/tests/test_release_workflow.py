@@ -38,6 +38,10 @@ COCOAPODS = load_module(
     "ys_prepare_cocoapods_fixture",
     ROOT / ".github/scripts/prepare_cocoapods_fixture.py",
 )
+REPOSITORY_CONTRACT = load_module(
+    "ys_verify_repository_contract",
+    ROOT / ".github/scripts/verify_repository_contract.py",
+)
 
 VERSION = "6.2.3"
 BINARY_COMMIT = "a" * 40
@@ -659,6 +663,17 @@ class WorkflowStructureTests(unittest.TestCase):
         cls.workflow = json.loads(result.stdout)
         cls.jobs = cls.workflow["jobs"]
         cls.source = WORKFLOW.read_text(encoding="utf-8")
+        cls._podspec_temp = tempfile.TemporaryDirectory(prefix="ys-podspec-json-")
+        cls.addClassCleanup(cls._podspec_temp.cleanup)
+        cls.podspec_json = Path(cls._podspec_temp.name) / "YSIFLYADLib.json"
+        podspec = subprocess.run(
+            ["pod", "ipc", "spec", str(ROOT / "YSIFLYADLib.podspec")],
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        cls.podspec_json.write_text(podspec.stdout, encoding="utf-8")
 
     def test_yaml_and_all_embedded_bash_blocks_parse(self) -> None:
         for job_name, job in self.jobs.items():
@@ -983,12 +998,23 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertIn("Draft/正式清单 checksum 必须等于本次下载资产", asset_contract["run"])
         self.assertNotIn("expected_pending", asset_contract["run"])
 
-    def test_markdown_wording_check_is_non_blocking_and_state_is_authoritative(self) -> None:
-        maintenance = next(
+    def test_machine_contract_is_blocking_and_docs_are_non_blocking(self) -> None:
+        machine = next(
             step for step in self.jobs["verify-repository"]["steps"]
-            if step.get("name") == "校验版本、发布状态和本地分发清单"
+            if step.get("name") == "阻断校验版本、checksum 与本地包机器契约"
         )
-        self.assertIs(maintenance["continue-on-error"], True)
+        self.assertNotIn("continue-on-error", machine)
+        self.assertIn(".github/scripts/verify_repository_contract.py", machine["run"])
+        self.assertIn("--scope machine", machine["run"])
+        self.assertIn("--podspec-json", machine["run"])
+        self.assertNotIn("python3 - +", machine["run"])
+        documentation = next(
+            step for step in self.jobs["verify-repository"]["steps"]
+            if step.get("name") == "非阻断校验 Markdown 发布展示措辞"
+        )
+        self.assertIs(documentation["continue-on-error"], True)
+        self.assertIn("--scope docs", documentation["run"])
+        self.assertEqual(self.source.count("continue-on-error: true"), 1)
         contract = next(
             step for step in self.jobs["verify-repository"]["steps"]
             if step.get("id") == "release-contract"
@@ -1000,6 +1026,97 @@ class WorkflowStructureTests(unittest.TestCase):
         )
         self.assertIn('Path("release-state.json")', compare["run"])
         self.assertNotIn('Path("RELEASING.md")', compare["run"])
+
+    def test_docs_drift_is_isolated_but_checksum_drift_fails_machine_scope(self) -> None:
+        original_read = REPOSITORY_CONTRACT.read
+
+        def docs_drift(root: Path, relative: str) -> str:
+            value = original_read(root, relative)
+            if relative == "README.md":
+                return value.replace(
+                    "`releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B "
+                    "元数据已经冻结",
+                    "",
+                    1,
+                )
+            return value
+
+        with mock.patch.object(REPOSITORY_CONTRACT, "read", side_effect=docs_drift):
+            REPOSITORY_CONTRACT.verify_machine(
+                ROOT, "repository", self.podspec_json
+            )
+            with self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+                REPOSITORY_CONTRACT.verify_docs(ROOT, "repository")
+
+        def checksum_drift(root: Path, relative: str) -> str:
+            value = original_read(root, relative)
+            if relative == "Package.swift":
+                return re.sub(
+                    r'checksum:\s*"[0-9a-f]{64}"',
+                    'checksum: "not-a-checksum"',
+                    value,
+                    count=1,
+                )
+            return value
+
+        with mock.patch.object(REPOSITORY_CONTRACT, "read", side_effect=checksum_drift):
+            with self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+                REPOSITORY_CONTRACT.verify_machine(
+                    ROOT, "repository", self.podspec_json
+                )
+
+        def version_drift(root: Path, relative: str) -> str:
+            value = original_read(root, relative)
+            if relative == "YSIFLYADLib.podspec":
+                return re.sub(
+                    r"(s\.version\s*=\s*['\"])6\.2\.3",
+                    r"\g<1>6.2.4",
+                    value,
+                    count=1,
+                )
+            return value
+
+        with mock.patch.object(REPOSITORY_CONTRACT, "read", side_effect=version_drift):
+            with self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+                REPOSITORY_CONTRACT.verify_machine(
+                    ROOT, "repository", self.podspec_json
+                )
+
+    def test_podspec_comments_cannot_substitute_for_parsed_link_contract(self) -> None:
+        podspec_source = (ROOT / "YSIFLYADLib.podspec").read_text(encoding="utf-8")
+        for marker in ("AdSupport", "AppTrackingTransparency", "-ObjC"):
+            self.assertIn(marker, podspec_source)
+        parsed = json.loads(self.podspec_json.read_text(encoding="utf-8"))
+        mutations = (
+            ("frameworks", lambda value: value.__setitem__("frameworks", [])),
+            (
+                "weak_frameworks",
+                lambda value: value.__setitem__("weak_frameworks", []),
+            ),
+            (
+                "pod_target_xcconfig",
+                lambda value: value.__setitem__(
+                    "pod_target_xcconfig", {"OTHER_LDFLAGS": "$(inherited)"}
+                ),
+            ),
+            (
+                "user_target_xcconfig",
+                lambda value: value.__setitem__(
+                    "user_target_xcconfig", {"OTHER_LDFLAGS": "$(inherited)"}
+                ),
+            ),
+        )
+        with tempfile.TemporaryDirectory(prefix="ys-bad-podspec-json-") as directory:
+            bad_path = Path(directory) / "podspec.json"
+            for label, mutate in mutations:
+                with self.subTest(field=label):
+                    bad = copy.deepcopy(parsed)
+                    mutate(bad)
+                    bad_path.write_text(json.dumps(bad), encoding="utf-8")
+                    with self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+                        REPOSITORY_CONTRACT.verify_machine(
+                            ROOT, "repository", bad_path
+                        )
 
     def test_asset_gate_fans_out_to_parallel_isolated_consumers(self) -> None:
         swift = self.jobs["consume-swiftpm-release"]
@@ -1065,6 +1182,7 @@ class WorkflowStructureTests(unittest.TestCase):
             ".github/scripts/validate_release_mode.py",
             ".github/scripts/download_release_assets.py",
             ".github/scripts/prepare_cocoapods_fixture.py",
+            ".github/scripts/verify_repository_contract.py",
             ".github/fixtures/swiftpm-local/Package.swift",
         )
         for path in expected_control_files:
