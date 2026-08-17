@@ -902,6 +902,7 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertEqual(
             values["checkout_ref"], f"release-candidate/6.2.3001-{CANDIDATE_ID}"
         )
+        self.assertEqual(values["candidate_branch"], "")
 
     def test_simple_job_has_scheme_bound_name_and_integer_json_contract(self) -> None:
         simple = self.jobs["consume-cocoapods-release"]

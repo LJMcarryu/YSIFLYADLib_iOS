@@ -138,15 +138,15 @@ jobs:
               assert re.fullmatch(r"[1-9][0-9]*", canary_release_id)
               assert re.fullmatch(r"[0-9a-f]{64}", canary_candidate_id)
               assert re.fullmatch(r"[0-9a-f]{32}", dispatch_nonce)
-              candidate_branch = f"release-candidate/{canary_tag}-{canary_candidate_id}"
-              assert event_ref == f"refs/heads/{candidate_branch}"
-              assert event_ref_name == candidate_branch
+              canary_branch = f"release-candidate/{canary_tag}-{canary_candidate_id}"
+              assert event_ref == f"refs/heads/{canary_branch}"
+              assert event_ref_name == canary_branch
               mode = "repository"
               release_tag = ""
               candidate_release_id = ""
               candidate_id = ""
               dispatch_nonce = ""
-              checkout_ref = candidate_branch
+              checkout_ref = canary_branch
           elif event == "release":
               mode = "formal_release"
               release_tag = os.environ["RELEASE_EVENT_TAG"].strip()
