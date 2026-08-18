@@ -2,21 +2,20 @@
 
 `YSIFLYADLib` 是面向 YS 媒体定制的 iOS 广告 SDK，提供**开屏、Banner、插屏、自渲染信息流**广告能力（**含视频素材**，**不含激励视频**）。
 
-`6.2.4` 已进入发布准备：正式签名资产、checksum 和 A/B 元数据已冻结，但 GitHub Tag/Release、
-无 Token 匿名下载和正式消费验证尚未完成。当前最新公开正式版仍为
-[`6.2.3`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.3)，最低支持 iOS 11.0。
+当前最新公开正式版为 [`6.2.4`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.4)，
+已于 2026-08-17 完成 Tag、Release、3 个资产无 Token 匿名校验和正式消费验证，最低支持 iOS 11.0。
 
 <!-- 供发布 CI 机器校验的两提交 provenance；README、CHANGELOG、RELEASING 必须保持一致。 -->
 - `releaseState`：`FORMAL`
 - `binarySourceCommit`（SDK 二进制源码提交）：`b0f745d582ce2bed5110702cff972be4153e5038`
 - `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`7b08118b43a0c4441de4c76a64f34fa54b3fe889`
-- `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结；不表示 Release 已公开。
-- 公开可用性以同版本 GitHub Release 和发布后 CI 为准。
+- `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结；仓库根 `release-state.json` 已推进到 `6.2.4/CLOSED`。
+- annotated Tag 解引用到 `43b6eadeb3431e5bceb0befd4610f9cb7313b3b6`，正式消费 [Run 32027223627](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/32027223627) 为 `success`。
 - 冻结资产校验值：`YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256 为 `76082025635bd2e427c09c5d1427c253db93ab75f897ed7a6e11024f6bcf4c7e`，`YSIFLYADLib-6.2.4.zip` 的 SHA-256 为 `bce3bd4ea143fdc06a4c9c648f305fe5534752eeed2d134c0bbc8709a17806ec`，`checksums.txt` 的 SHA-256 为 `1f4f08237327dabbb7c90be7c980f731d6d1925f189ae6904dc04a75c0076142`。
 - Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
-- 仓库根 `release-state.json` 暂保留上一正式版 `6.2.3/CLOSED`；编排器生成候选时才推进为 `6.2.4/FROZEN`。
+- `6.2.4` 的 Tag、Release 和资产保持不可变；后续维护只在 `main` 更新文档或准备新版本。
 
-以下为 `6.2.3` 历史正式事实：该版本已于 2026-08-16 发布，annotated tag 解引用到
+以下为 [`6.2.3`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.3) 历史正式事实：该版本已于 2026-08-16 发布，annotated tag 解引用到
 `b28e14d684d0178969c7a026a79614613773e160`，3 个资产已通过无 Token 匿名验证，正式消费
 [Run 31939685915](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31939685915) 为 `success`；
 其 A/B 分别为 `ea0240e620b57d7275e486199099c648f51de257` 和
@@ -75,7 +74,7 @@ GitHub [Release 6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag
 
 ## 版本记录
 
-当前发布准备版本为 **6.2.4**，最新公开正式版本仍为 **6.2.3**。`6.2.2` 将 NativeFeed 列表生命周期改为 SDK 托管：数据层只持有
+当前最新公开正式版本为 **6.2.4**。`6.2.2` 将 NativeFeed 列表生命周期改为 SDK 托管：数据层只持有
 `YSIFLYNativeFeedAd`，Cell 不持有 Session、Binding 或首次/复用状态；媒体只需在展示时
 attach、离屏或复用时按容器 detach。同一逻辑广告条目滚出再回来时，无论曝光前后都能
 恢复原广告。详细变更与历史版本记录见 [CHANGELOG.md](./CHANGELOG.md)。
@@ -107,8 +106,7 @@ YS 白标方法 `ysifly_reportMediaShakeTriggeredWithError:` 虽然进入公开�
 
 ## 接入方式
 
-二进制通过本仓 **GitHub Releases** 分发；`6.2.4` 分发清单已切换到待发布资产，Release 公开前
-远程接入不可用。每个版本固定发布三个文件：
+二进制通过本仓 **GitHub Releases** 分发；`6.2.4` 的三个正式资产已公开并完成发布后验证。每个版本固定发布三个文件：
 
 | 资产 | 内容 | 适用 |
 | --- | --- | --- |
@@ -120,7 +118,7 @@ YS 白标方法 `ysifly_reportMediaShakeTriggeredWithError:` 虽然进入公开�
 
 ### CocoaPods
 
-以下发布目标固定使用 `6.2.4` tag；同版本 Release 公开且发布后 CI 成功后方可用于生产：
+以下发布目标固定使用已验证的 `6.2.4` tag 和同版本 Release 资产：
 
 ```ruby
 source 'https://cdn.cocoapods.org/'
@@ -170,7 +168,7 @@ targets: [
 手工复制资源；接入方仍须在 App target 的 `OTHER_LDFLAGS` 添加 `-ObjC`。
 
 > 当前仓库根 `Package.swift` 已写入 `6.2.4` 正式签名 zip 的真实 checksum；同版本
-> GitHub Release 匿名下载与发布后 CI 验证尚待发布流程完成，不得复用其他版本 checksum。
+> GitHub Release 已完成匿名下载与发布后 CI 验证，不得复用其他版本 checksum。
 
 ### 手动集成
 
@@ -727,7 +725,7 @@ NSString *dealId = ad.bidInfo.dealId;
 
 | 现象 | 排查建议 |
 | --- | --- |
-| `pod install` 找不到 SDK | 请确认 `Podfile` 使用 `:podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.2.4/YSIFLYADLib.podspec'`（钉到具体 tag），并检查同版本 GitHub Release 与发布后 CI 状态；发布准备期间远程 URL 尚不可用。 |
+| `pod install` 找不到 SDK | 请确认 `Podfile` 使用 `:podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.2.4/YSIFLYADLib.podspec'`（钉到具体 tag），并检查同版本 GitHub Release 与网络状态；必要时清理旧 CocoaPods 缓存。 |
 | 广告图片缺失 | **6.1.0 及以上**：CocoaPods / SwiftPM 都会自动投递 `YSAdvSDK.bundle`，请确认最终 App 中存在该 bundle 及 `PrivacyInfo.xcprivacy`；手动接入须加入 Copy Bundle Resources。**6.0.12～6.0.14**：CocoaPods 自动，SPM / 手动接入须手工复制。**6.0.11 及以前**为历史动态交付。 |
 | 开屏「摇一摇或点击」图标显示为白色文件占位 | 1.0.2/1.0.3 的已知缺陷（改名误改资源名致内嵌图标失配），自 1.0.4 起已修复；请使用已验证的 `6.2.2` 或更高版本。 |
 | 真机启动崩溃 | 1.0.1 有悬空依赖缺陷，已下线；请升级到 **1.0.2 及以上**。 |

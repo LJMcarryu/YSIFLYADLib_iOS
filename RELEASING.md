@@ -15,18 +15,17 @@
 Token、只读的 summary job 汇总 Candidate、Release、checkout commit、三资产 SHA-256 和全部
 job 结论；summary 对上游失败继续失败关闭。
 
-## 6.2.4 发布准备状态
+## 6.2.4 发布状态
 
 - `releaseState`：`FORMAL`
 - `binarySourceCommit`（SDK 二进制源码提交）：`b0f745d582ce2bed5110702cff972be4153e5038`
 - `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`7b08118b43a0c4441de4c76a64f34fa54b3fe889`
 
-`6.2.4` 正式签名资产、checksum 和 A/B 已完成冻结；GitHub Tag/Release、无 Token 匿名下载和
-正式消费验证尚待编排器完成。仓库根 `release-state.json` 在发布准备阶段保持上一正式版
-`6.2.3/CLOSED`，编排器生成不可变候选时才推进为 `6.2.4/FROZEN`。当前最新公开可用版仍为
-[`6.2.3`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.3)。
+`6.2.4` 正式签名资产、checksum 和 A/B 已完成冻结并公开；[GitHub Release 6.2.4](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.4)
+的 3 个资产已完成无 Token 匿名校验，正式消费 [Run 32027223627](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/32027223627)
+为 `success`。仓库根 `release-state.json` 已由编排器推进到 `6.2.4/CLOSED`。
 
-`releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结。
+`releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结；公开可用性由同版本 GitHub Release、匿名下载和发布后 CI 共同证明。
 公开可用性以同版本 GitHub Release 和发布后 CI 为准。
 
 冻结资产校验值：

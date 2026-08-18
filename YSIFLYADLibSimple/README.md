@@ -2,9 +2,8 @@
 
 这是 `YSIFLYADLib` 的 iOS 接入示例工程，用于演示 YS 媒体定制 SDK 的常见广告样式和基础生命周期处理。
 
-当前目录对应 `6.2.4` 发布准备，源码和 `Podfile` 均使用 NativeFeed SDK 托管 API；
-正式签名资产、checksum 和 A/B 元数据已冻结，但同版本 GitHub Release 和发布后 CI 尚未完成，
-当前最新公开可用版仍为 `6.2.3`。
+当前目录对应已发布的 `6.2.4`，源码和 `Podfile` 均使用 NativeFeed SDK 托管 API；
+同版本 GitHub Release、匿名下载和发布后 CI 均已完成。
 
 当前 demo 覆盖：
 
@@ -18,7 +17,7 @@ YS 变体为 model B 单包，包含开屏、Banner、插屏、信息流和视�
 
 ## 运行方式
 
-`6.2.4` 正式发布后可在本目录直接消费同版本 tag 与 Release 资产：
+可在本目录直接消费 `6.2.4` tag 与同版本 Release 资产：
 
 ```sh
 pod install
@@ -29,8 +28,7 @@ open YSIFLYADLibSimple.xcworkspace
 
 ## 接入要点
 
-`Podfile` 已固定到待发布的 `6.2.4` tag，示例工程最低支持 iOS 11.0；Release 公开前
-`pod install` 预期不可用：
+`Podfile` 已固定到已发布的 `6.2.4` tag，示例工程最低支持 iOS 11.0：
 
 ```ruby
 pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.2.4/YSIFLYADLib.podspec'
