@@ -494,7 +494,7 @@ class ReleaseDownloaderTests(unittest.TestCase):
             ):
                 DOWNLOAD.run(missing_token)
 
-    def test_formal_download_is_anonymous_and_retries_every_asset(self) -> None:
+    def test_formal_download_is_anonymous_and_reuses_verified_assets(self) -> None:
         with tempfile.TemporaryDirectory(prefix="ys-formal-download-") as directory:
             temporary = Path(directory)
             arguments = self.arguments(temporary, "formal_release")
@@ -507,13 +507,52 @@ class ReleaseDownloaderTests(unittest.TestCase):
                 ) as download,
             ):
                 DOWNLOAD.run(arguments)
-            self.assertEqual(download.call_count, len(self.contents) * 2)
+            self.assertEqual(download.call_count, len(self.contents))
+            arguments.release_metadata_output.unlink()
+            with (
+                mock.patch.dict(os.environ, {}, clear=True),
+                mock.patch.object(DOWNLOAD, "request_json", return_value=release),
+                mock.patch.object(
+                    DOWNLOAD,
+                    "download_bytes",
+                    side_effect=AssertionError("已校验缓存不得再次下载"),
+                ),
+            ):
+                DOWNLOAD.run(arguments)
 
             leaked = self.arguments(temporary / "leaked", "formal_release")
             with mock.patch.dict(
                 os.environ, {"GITHUB_TOKEN": "must-not-exist"}, clear=True
             ), self.assertRaises(DOWNLOAD.DownloadError):
                 DOWNLOAD.run(leaked)
+
+    def test_asset_download_retries_timeout_and_uses_atomic_part(self) -> None:
+        payload = b"asset"
+        item = {
+            "name": "asset.zip",
+            "url": "https://api.github.com/repos/owner/repo/releases/assets/1",
+            "browser_download_url": "https://github.com/owner/repo/releases/download/1.0.0/asset.zip",
+            "size": len(payload),
+            "digest": "sha256:" + hashlib.sha256(payload).hexdigest(),
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "asset.zip"
+            with (
+                mock.patch.object(
+                    DOWNLOAD,
+                    "download_bytes",
+                    side_effect=[TimeoutError("TLS handshake timeout"), payload],
+                ) as download,
+                mock.patch.object(DOWNLOAD.time, "sleep") as sleep,
+            ):
+                actual = DOWNLOAD.download_asset(
+                    item, destination, mode="formal_release", token=""
+                )
+            self.assertEqual(actual, hashlib.sha256(payload).hexdigest())
+            self.assertEqual(download.call_count, 2)
+            sleep.assert_called_once_with(1)
+            self.assertEqual(destination.read_bytes(), payload)
+            self.assertFalse(Path(f"{destination}.part").exists())
 
     def test_inventory_and_provenance_drift_fail_closed(self) -> None:
         release = release_fixture("draft_candidate", self.contents)

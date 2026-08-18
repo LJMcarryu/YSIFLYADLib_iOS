@@ -5,10 +5,15 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import hmac
 import json
 import os
 import re
+import socket
+import ssl
 import sys
+import time
+import urllib.error
 import urllib.request
 from urllib.parse import quote, urlsplit
 from pathlib import Path
@@ -16,6 +21,7 @@ from typing import Any, Mapping
 
 
 TOKEN_NAMES = ("GH_TOKEN", "GITHUB_TOKEN", "GITHUB_AUTH_TOKEN", "ACTIONS_RUNTIME_TOKEN")
+DOWNLOAD_MAX_ATTEMPTS = 5
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 VERSION = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 CANDIDATE = re.compile(r"^[0-9a-f]{64}$")
@@ -177,6 +183,12 @@ def validate_release(
             f"资产 size 非正整数: {name}",
         )
         require(
+            isinstance(asset.get("digest"), str)
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", asset["digest"])
+            is not None,
+            f"资产 digest 非法: {name}",
+        )
+        require(
             isinstance(asset.get("url"), str)
             and re.fullmatch(re.escape(api_prefix) + r"[1-9][0-9]*", asset["url"])
             is not None,
@@ -204,6 +216,18 @@ def download_asset(
     mode: str,
     token: str,
 ) -> str:
+    if destination.exists() or destination.is_symlink():
+        require(
+            destination.is_file() and not destination.is_symlink(),
+            f"缓存目标必须是普通文件: {destination}",
+        )
+        cached = hashlib.sha256(destination.read_bytes()).hexdigest()
+        if (
+            destination.stat().st_size == asset["size"]
+            and hmac.compare_digest(f"sha256:{cached}", str(asset["digest"]))
+        ):
+            return cached
+        destination.unlink()
     if mode == "draft_candidate":
         url = str(asset["url"])
         headers = {
@@ -215,22 +239,58 @@ def download_asset(
     else:
         url = str(asset["browser_download_url"])
         headers = {"User-Agent": "YSIFLYADLib-anonymous-release-gate"}
-    contents = download_bytes(url, headers)
-    require(len(contents) == asset["size"], f"下载大小与 API 不一致: {asset['name']}")
-    digest = hashlib.sha256(contents).hexdigest()
-    api_digest = asset.get("digest")
-    if api_digest is not None:
-        require(api_digest == f"sha256:{digest}", f"API digest 不一致: {asset['name']}")
-    temporary = destination.with_name(destination.name + ".tmp")
-    temporary.write_bytes(contents)
-    temporary.replace(destination)
-    return digest
+    temporary = destination.with_name(destination.name + ".part")
+    require(not temporary.is_symlink(), f"临时下载目标不得为符号链接: {temporary}")
+    temporary.unlink(missing_ok=True)
+    for attempt in range(1, DOWNLOAD_MAX_ATTEMPTS + 1):
+        try:
+            contents = download_bytes(url, headers)
+            require(
+                len(contents) == asset["size"],
+                f"下载大小与 API 不一致: {asset['name']}",
+            )
+            digest = hashlib.sha256(contents).hexdigest()
+            require(
+                hmac.compare_digest(str(asset["digest"]), f"sha256:{digest}"),
+                f"API digest 不一致: {asset['name']}",
+            )
+            temporary.write_bytes(contents)
+            temporary.replace(destination)
+            return digest
+        except Exception as error:
+            temporary.unlink(missing_ok=True)
+            retryable = False
+            if isinstance(error, urllib.error.HTTPError):
+                retryable = error.code in {408, 429} or 500 <= error.code <= 599
+            elif isinstance(error, urllib.error.URLError):
+                retryable = isinstance(
+                    error.reason,
+                    (TimeoutError, socket.timeout, ssl.SSLError, ConnectionError),
+                )
+            elif isinstance(
+                error, (TimeoutError, socket.timeout, ssl.SSLError, ConnectionError)
+            ):
+                retryable = True
+            if (
+                isinstance(error, DownloadError)
+                or not retryable
+                or attempt == DOWNLOAD_MAX_ATTEMPTS
+            ):
+                raise
+            time.sleep(min(2 ** (attempt - 1), 8))
+    raise AssertionError("unreachable")
 
 
 def ensure_destination(path: Path) -> None:
     require(not path.is_symlink(), "下载目录不得是符号链接")
     path.mkdir(parents=True, exist_ok=True)
-    require(not any(path.iterdir()), "下载目录必须为空，防止复用旧资产或缓存")
+    for child in path.iterdir():
+        require(
+            child.is_file() and not child.is_symlink(),
+            f"下载目录只能包含普通文件缓存: {child}",
+        )
+        if child.name.endswith(".part"):
+            child.unlink()
 
 
 def run(arguments: argparse.Namespace) -> dict[str, str]:
@@ -315,16 +375,6 @@ def run(arguments: argparse.Namespace) -> dict[str, str]:
             assets[name], destination / name, mode=mode, token=token
         )
 
-    if mode == "formal_release":
-        for name in expected_asset_names(version):
-            retry = download_bytes(
-                str(assets[name]["browser_download_url"]),
-                {"User-Agent": "YSIFLYADLib-anonymous-release-retry"},
-            )
-            require(
-                hashlib.sha256(retry).hexdigest() == hashes[name],
-                f"第二次匿名下载内容不一致: {name}",
-            )
     if release_metadata_output is not None:
         with release_metadata_output.open("x", encoding="utf-8") as output:
             json.dump(release, output, ensure_ascii=False, sort_keys=True)
