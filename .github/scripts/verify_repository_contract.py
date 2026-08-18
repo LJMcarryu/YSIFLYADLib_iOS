@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""分别校验 YS 机器分发契约与非阻断 Markdown 展示契约。"""
+"""分别校验 YS 机器分发契约与阻断式 Markdown 发布契约。"""
 
 from __future__ import annotations
 
@@ -19,6 +19,9 @@ HISTORICAL = {
     "757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d",
     "84c77f4b9930f892086e08ec9f4185af474eab72a403905f4c5d9257936667a2",
 }
+RELEASE_STATUS_RE = re.compile(
+    r"<!--\s*ifly-release-status:\s*(\{[^\r\n]*\})\s*-->"
+)
 
 
 class ContractError(RuntimeError):
@@ -32,6 +35,23 @@ def require(condition: bool, message: str) -> None:
 
 def read(root: Path, relative: str) -> str:
     return (root / relative).read_text(encoding="utf-8")
+
+
+def verify_release_status(label: str, document: str) -> None:
+    markers = RELEASE_STATUS_RE.findall(document)
+    require(len(markers) == 1, f"{label} 发布状态标记数量错误: {len(markers)}")
+    try:
+        marker = json.loads(markers[0])
+    except json.JSONDecodeError as error:
+        raise ContractError(f"{label} 发布状态标记不是合法 JSON") from error
+    expected = {
+        "schemaVersion": 1,
+        "version": VERSION,
+        "releaseState": "FORMAL",
+        "distribution": "github-release",
+        "releaseUrl": f"https://github.com/{REPOSITORY}/releases/tag/{VERSION}",
+    }
+    require(marker == expected, f"{label} 发布状态标记漂移: {marker}")
 
 
 def state(root: Path, release_kind: str) -> dict[str, object]:
@@ -132,11 +152,8 @@ def verify_docs(root: Path, release_kind: str) -> None:
         for name in ("README.md", "CHANGELOG.md", "RELEASING.md")
     }
     demo = read(root, "YSIFLYADLibSimple/README.md")
-    frozen = "`releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结"
-    availability = "公开可用性以同版本 GitHub Release 和发布后 CI 为准"
     for label, document in documents.items():
-        require(frozen in document, f"{label} 缺少 FORMAL 冻结展示")
-        require(availability in document, f"{label} 缺少公开可用性展示")
+        verify_release_status(label, document)
     require(VERSION in demo, "Demo 缺少当前版本展示")
     if release_kind == "repository" and machine.get("version") == PREVIOUS_VERSION:
         require("待发布" in documents["CHANGELOG.md"], "CHANGELOG 缺少待发布展示")

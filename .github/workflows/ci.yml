@@ -358,8 +358,7 @@ jobs:
               --release-kind "${VALIDATION_MODE}" \
               --podspec-json "${RUNNER_TEMP}/ys-podspec.json"
 
-      - name: 非阻断校验 Markdown 发布展示措辞
-        continue-on-error: true
+      - name: 阻断校验 Markdown 发布状态契约
         env:
           VALIDATION_MODE: ${{ needs.resolve-validation-mode.outputs.mode }}
         run: |

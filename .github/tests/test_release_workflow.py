@@ -1049,7 +1049,7 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertIn("Draft/正式清单 checksum 必须等于本次下载资产", asset_contract["run"])
         self.assertNotIn("expected_pending", asset_contract["run"])
 
-    def test_machine_contract_is_blocking_and_docs_are_non_blocking(self) -> None:
+    def test_machine_and_document_contracts_are_blocking(self) -> None:
         machine = next(
             step for step in self.jobs["verify-repository"]["steps"]
             if step.get("name") == "阻断校验版本、checksum 与本地包机器契约"
@@ -1061,11 +1061,11 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertNotIn("python3 - +", machine["run"])
         documentation = next(
             step for step in self.jobs["verify-repository"]["steps"]
-            if step.get("name") == "非阻断校验 Markdown 发布展示措辞"
+            if step.get("name") == "阻断校验 Markdown 发布状态契约"
         )
-        self.assertIs(documentation["continue-on-error"], True)
+        self.assertNotIn("continue-on-error", documentation)
         self.assertIn("--scope docs", documentation["run"])
-        self.assertEqual(self.source.count("continue-on-error: true"), 1)
+        self.assertEqual(self.source.count("continue-on-error: true"), 0)
         contract = next(
             step for step in self.jobs["verify-repository"]["steps"]
             if step.get("id") == "release-contract"
@@ -1085,9 +1085,8 @@ class WorkflowStructureTests(unittest.TestCase):
             value = original_read(root, relative)
             if relative == "README.md":
                 return value.replace(
-                    "`releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B "
-                    "元数据已经冻结",
-                    "",
+                    "<!-- ifly-release-status:",
+                    "<!-- removed-release-status:",
                     1,
                 )
             return value
