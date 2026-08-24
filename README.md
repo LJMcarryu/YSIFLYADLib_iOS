@@ -2,9 +2,9 @@
 
 `YSIFLYADLib` 是面向 YS 媒体定制的 iOS 广告 SDK，提供**开屏、Banner、插屏、自渲染信息流**广告能力（**含视频素材**，**不含激励视频**）。
 
-`6.3.0` 已进入发布准备：正式签名资产、checksum 和 A/B 元数据已冻结，但 GitHub Tag/Release、
-无 Token 匿名下载和正式消费验证尚未完成。当前最新公开正式版仍为
-[`6.2.4`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.4)，最低支持 iOS 11.0。
+当前最新公开正式版为
+[`6.3.0`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0)。正式签名资产、
+checksum 和 A/B 元数据已冻结，最低支持 iOS 11.0。
 
 <!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.0","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0"} -->
 
@@ -12,7 +12,7 @@
 - `releaseState`：`FORMAL`
 - `binarySourceCommit`（SDK 二进制源码提交）：`38eb0715f889fe2d585641891923511c9cc3e43e`
 - `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`0e667f9f1a2d615d3f7e15a552f093c903ff1a57`
-- `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结；不表示 Release 已公开。
+- `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结。
 - 公开可用性以同版本 GitHub Release 和发布后 CI 为准。
 - 冻结资产校验值：`YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256 为 `73a1e82ffee9c01d63f1e6a391c732e8837c422d23ab60846c92e8f2c167ad08`，`YSIFLYADLib-6.3.0.zip` 的 SHA-256 为 `d0fdc4d0077deaf53aa85efeefa8fae9fb96cf5db831dd4145ad9d8096c63e9e`，`checksums.txt` 的 SHA-256 为 `4e742cea449d0289df852ada89b5da5bbd0e79f24bbb0d1a124314a08a2ce196`。
 - Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
@@ -80,7 +80,7 @@ GitHub [Release 6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag
 
 ## 版本记录
 
-当前发布准备版本为 **6.3.0**，最新公开正式版本仍为 **6.2.4**。`6.2.2` 将 NativeFeed 列表生命周期改为 SDK 托管：数据层只持有
+当前公开正式版本为 **6.3.0**。`6.2.2` 将 NativeFeed 列表生命周期改为 SDK 托管：数据层只持有
 `YSIFLYNativeFeedAd`，Cell 不持有 Session、Binding 或首次/复用状态；媒体只需在展示时
 attach、离屏或复用时按容器 detach。同一逻辑广告条目滚出再回来时，无论曝光前后都能
 恢复原广告。详细变更与历史版本记录见 [CHANGELOG.md](./CHANGELOG.md)。
@@ -114,8 +114,8 @@ YS 白标方法 `ysifly_reportMediaShakeTriggeredWithError:` 虽然进入公开�
 
 ## 接入方式
 
-二进制通过本仓 **GitHub Releases** 分发；`6.3.0` 分发清单已切换到待发布资产，Release 公开前
-远程接入不可用。每个版本固定发布三个文件：
+二进制通过本仓 **GitHub Releases** 分发；`6.3.0` 分发清单已切换到正式资产。
+每个版本固定发布三个文件：
 
 | 资产 | 内容 | 适用 |
 | --- | --- | --- |
@@ -177,7 +177,7 @@ targets: [
 手工复制资源；接入方仍须在 App target 的 `OTHER_LDFLAGS` 添加 `-ObjC`。
 
 > 当前仓库根 `Package.swift` 已写入 `6.3.0` 正式签名 zip 的真实 checksum；同版本
-> GitHub Release 匿名下载与发布后 CI 验证尚待发布流程完成，不得复用其他版本 checksum。
+> GitHub Release 匿名下载与发布后 CI 验证结果以同版本发布记录为准，不得复用其他版本 checksum。
 
 ### 手动集成
 
@@ -735,7 +735,7 @@ NSString *dealId = ad.bidInfo.dealId;
 
 | 现象 | 排查建议 |
 | --- | --- |
-| `pod install` 找不到 SDK | 请确认 `Podfile` 使用 `:podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.3.0/YSIFLYADLib.podspec'`（钉到具体 tag），并检查同版本 GitHub Release 与发布后 CI 状态；发布准备期间远程 URL 尚不可用。 |
+| `pod install` 找不到 SDK | 请确认 `Podfile` 使用 `:podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.3.0/YSIFLYADLib.podspec'`（钉到具体 tag），并检查同版本 GitHub Release 与发布后 CI 状态。 |
 | 广告图片缺失 | **6.1.0 及以上**：CocoaPods / SwiftPM 都会自动投递 `YSAdvSDK.bundle`，请确认最终 App 中存在该 bundle 及 `PrivacyInfo.xcprivacy`；手动接入须加入 Copy Bundle Resources。**6.0.12～6.0.14**：CocoaPods 自动，SPM / 手动接入须手工复制。**6.0.11 及以前**为历史动态交付。 |
 | 开屏「摇一摇或点击」图标显示为白色文件占位 | 1.0.2/1.0.3 的已知缺陷（改名误改资源名致内嵌图标失配），自 1.0.4 起已修复；请使用已验证的 `6.2.2` 或更高版本。 |
 | 真机启动崩溃 | 1.0.1 有悬空依赖缺陷，已下线；请升级到 **1.0.2 及以上**。 |

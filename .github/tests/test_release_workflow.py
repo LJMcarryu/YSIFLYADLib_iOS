@@ -1119,6 +1119,7 @@ class WorkflowStructureTests(unittest.TestCase):
 
     def test_docs_drift_is_isolated_but_checksum_drift_fails_machine_scope(self) -> None:
         original_read = REPOSITORY_CONTRACT.read
+        REPOSITORY_CONTRACT.verify_docs(ROOT, "repository")
 
         def docs_drift(root: Path, relative: str) -> str:
             value = original_read(root, relative)

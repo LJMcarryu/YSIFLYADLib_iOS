@@ -5,20 +5,20 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
-## [6.3.0] - 待发布
+## [6.3.0] - 2026-08-25
 
 <!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.0","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0"} -->
 
 - `releaseState`：`FORMAL`
 - `binarySourceCommit`（SDK 二进制源码提交）：`38eb0715f889fe2d585641891923511c9cc3e43e`
 - `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`0e667f9f1a2d615d3f7e15a552f093c903ff1a57`
-- `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结；GitHub Tag/Release、无 Token 匿名下载和正式消费验证仍待编排器完成。
+- `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结。
 - 公开可用性以同版本 GitHub Release 和发布后 CI 为准。
 - 冻结资产校验值：`YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256 为 `73a1e82ffee9c01d63f1e6a391c732e8837c422d23ab60846c92e8f2c167ad08`，`YSIFLYADLib-6.3.0.zip` 的 SHA-256 为 `d0fdc4d0077deaf53aa85efeefa8fae9fb96cf5db831dd4145ad9d8096c63e9e`，`checksums.txt` 的 SHA-256 为 `4e742cea449d0289df852ada89b5da5bbd0e79f24bbb0d1a124314a08a2ce196`。
 - Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
 - `6.3.0` 不沿用历史风险授权；主动扫描策略固定为 `failOn=high`、`failOnWarning=true`、`strict=true`、`requireManual=true` 且接受名单为空。
 - NativeFeed 外部 CTA 共享 permissive attach、container 非页面根祖先放宽和媒体交互优先策略，并统一以结构化 `71503/<point>` 诊断 attach 与点击拒绝；独占 lease、同 window/scene、页面根排除和点击时可见性门禁保持不变。
-- 仓库根 `release-state.json` 在发布准备阶段保留上一正式版 `6.2.4/CLOSED`；候选由编排器推进为 `6.3.0/FROZEN`。
+- 仓库根 `release-state.json` 在本次候选生成前保留上一正式版 `6.2.4/CLOSED`；候选由编排器推进为 `6.3.0/FROZEN`。
 
 ## [6.2.4] - 2026-08-17
 

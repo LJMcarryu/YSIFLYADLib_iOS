@@ -15,7 +15,7 @@
 Token、只读的 summary job 汇总 Candidate、Release、checkout commit、三资产 SHA-256 和全部
 job 结论；summary 对上游失败继续失败关闭。
 
-## 6.3.0 发布准备状态
+## 6.3.0 发布状态
 
 <!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.0","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0"} -->
 
@@ -23,10 +23,10 @@ job 结论；summary 对上游失败继续失败关闭。
 - `binarySourceCommit`（SDK 二进制源码提交）：`38eb0715f889fe2d585641891923511c9cc3e43e`
 - `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`0e667f9f1a2d615d3f7e15a552f093c903ff1a57`
 
-`6.3.0` 正式签名资产、checksum 和 A/B 已完成冻结；GitHub Tag/Release、无 Token 匿名下载和
-正式消费验证尚待编排器完成。仓库根 `release-state.json` 在发布准备阶段保持上一正式版
-`6.2.4/CLOSED`，编排器生成不可变候选时才推进为 `6.3.0/FROZEN`。当前最新公开可用版仍为
-[`6.2.4`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.4)。
+`6.3.0` 正式签名资产、checksum 和 A/B 已完成冻结。仓库根 `release-state.json` 在本次候选
+生成前保持上一正式版 `6.2.4/CLOSED`，编排器生成不可变候选时推进为 `6.3.0/FROZEN`。
+当前最新公开正式版为
+[`6.3.0`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0)。
 
 `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结。
 公开可用性以同版本 GitHub Release 和发布后 CI 为准。

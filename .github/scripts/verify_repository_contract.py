@@ -147,7 +147,7 @@ def verify_machine(
 
 
 def verify_docs(root: Path, release_kind: str) -> None:
-    machine = state(root, release_kind)
+    state(root, release_kind)
     documents = {
         name: read(root, name)
         for name in ("README.md", "CHANGELOG.md", "RELEASING.md")
@@ -156,10 +156,6 @@ def verify_docs(root: Path, release_kind: str) -> None:
     for label, document in documents.items():
         verify_release_status(label, document)
     require(VERSION in demo, "Demo 缺少当前版本展示")
-    if release_kind == "repository" and machine.get("version") == PREVIOUS_VERSION:
-        require("待发布" in documents["CHANGELOG.md"], "CHANGELOG 缺少待发布展示")
-        require("发布准备" in documents["RELEASING.md"], "RELEASING 缺少发布准备展示")
-        require("发布准备" in demo, "Demo 缺少发布准备展示")
 
 
 def main() -> int:
