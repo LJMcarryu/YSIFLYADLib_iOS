@@ -16,21 +16,21 @@ import release_state  # noqa: E402
 
 
 CLOSED_ARTIFACTS = [
-    {"name": "checksums.txt", "contentSha256": "f008d1f5263bec5c09dd0824b99d05d596bcd9c93314d106c358e31c7030712f"},
-    {"name": "YSIFLYADLib-6.2.3.zip", "contentSha256": "904de36f02046e7612bec459bb432b203aa44cb21fd12ba5511f6c8b5bd1179e"},
-    {"name": "YSIFLYADLib.xcframework.zip", "contentSha256": "84c77f4b9930f892086e08ec9f4185af474eab72a403905f4c5d9257936667a2"},
+    {"name": "checksums.txt", "contentSha256": "1f4f08237327dabbb7c90be7c980f731d6d1925f189ae6904dc04a75c0076142"},
+    {"name": "YSIFLYADLib-6.2.4.zip", "contentSha256": "bce3bd4ea143fdc06a4c9c648f305fe5534752eeed2d134c0bbc8709a17806ec"},
+    {"name": "YSIFLYADLib.xcframework.zip", "contentSha256": "76082025635bd2e427c09c5d1427c253db93ab75f897ed7a6e11024f6bcf4c7e"},
 ]
 CLOSED_STATE = {
     "schemaVersion": 1,
     "channel": "ys",
     "repository": "LJMcarryu/YSIFLYADLib_iOS",
-    "version": "6.2.3",
+    "version": "6.2.4",
     "phase": "CLOSED",
-    "binarySourceCommit": "ea0240e620b57d7275e486199099c648f51de257",
-    "releaseMetadataCommit": "0f26b7647e6c1aadb32eca68b24f6845639a59c2",
+    "binarySourceCommit": "b0f745d582ce2bed5110702cff972be4153e5038",
+    "releaseMetadataCommit": "7b08118b43a0c4441de4c76a64f34fa54b3fe889",
     "artifactInventory": {
         "count": 3,
-        "sha256": "036a5908465c52d72b172de6f49dd2f706cae3bc5afad66afb59cdefaf4ccfe8",
+        "sha256": "b0962e8e1129f680024fef53365802aa6797e6c163f8b7be18e4e9cec1020cf4",
     },
     "appleReview": {
         "requiredForRelease": False,
@@ -38,28 +38,28 @@ CLOSED_STATE = {
         "evidenceIncluded": False,
     },
     "publication": {
-        "releaseId": 370458967,
-        "tagName": "6.2.3",
-        "tagObjectSha": "84d3961c0f57081b757375314e5e566b8a69f18f",
-        "tagCommitSha": "b28e14d684d0178969c7a026a79614613773e160",
-        "releaseUrl": "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.3",
-        "publishedAt": "2026-08-16T09:40:59Z",
-        "formalConsumerRunId": 31939685915,
+        "releaseId": 371715388,
+        "tagName": "6.2.4",
+        "tagObjectSha": "1659ae3f8d0d12e9bd7830a919ea15be6655d6ae",
+        "tagCommitSha": "43b6eadeb3431e5bceb0befd4610f9cb7313b3b6",
+        "releaseUrl": "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.4",
+        "publishedAt": "2026-08-17T11:54:50Z",
+        "formalConsumerRunId": 32027223627,
         "formalConsumerRunUrl": (
-            "https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31939685915"
+            "https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/32027223627"
         ),
         "conclusion": "success",
-        "verifiedAt": "2026-08-16T09:43:18Z",
+        "verifiedAt": "2026-08-17T12:00:10Z",
     },
 }
 FROZEN_ARTIFACTS = [
-    {"name": "checksums.txt", "contentSha256": "1f4f08237327dabbb7c90be7c980f731d6d1925f189ae6904dc04a75c0076142"},
-    {"name": "YSIFLYADLib-6.2.4.zip", "contentSha256": "bce3bd4ea143fdc06a4c9c648f305fe5534752eeed2d134c0bbc8709a17806ec"},
-    {"name": "YSIFLYADLib.xcframework.zip", "contentSha256": "76082025635bd2e427c09c5d1427c253db93ab75f897ed7a6e11024f6bcf4c7e"},
+    {"name": "checksums.txt", "contentSha256": "4e742cea449d0289df852ada89b5da5bbd0e79f24bbb0d1a124314a08a2ce196"},
+    {"name": "YSIFLYADLib-6.3.0.zip", "contentSha256": "d0fdc4d0077deaf53aa85efeefa8fae9fb96cf5db831dd4145ad9d8096c63e9e"},
+    {"name": "YSIFLYADLib.xcframework.zip", "contentSha256": "73a1e82ffee9c01d63f1e6a391c732e8837c422d23ab60846c92e8f2c167ad08"},
 ]
 FROZEN_INVENTORY = {
     "count": 3,
-    "sha256": "b0962e8e1129f680024fef53365802aa6797e6c163f8b7be18e4e9cec1020cf4",
+    "sha256": "3da306fb95a7d6a8b839c7638614595a7820f296a8239374297c7d820c3c26a0",
 }
 APPLE_REVIEW = {
     "requiredForRelease": False,
@@ -71,7 +71,7 @@ APPLE_REVIEW = {
 class ReleaseStateTests(unittest.TestCase):
     def setUp(self) -> None:
         # CLOSED 生成与迁移单测必须使用不可变历史夹具，不能让候选分支中
-        # 合法变为 6.2.4/FROZEN 的实时 release-state 污染历史事实。
+        # 合法变为 6.3.0/FROZEN 的实时 release-state 污染历史事实。
         self.state = copy.deepcopy(CLOSED_STATE)
         self.closed_facts = {
             key: copy.deepcopy(value)
@@ -83,10 +83,10 @@ class ReleaseStateTests(unittest.TestCase):
             "schemaVersion": 1,
             "channel": "ys",
             "repository": "LJMcarryu/YSIFLYADLib_iOS",
-            "version": "6.2.4",
+            "version": "6.3.0",
             "phase": "FROZEN",
-            "binarySourceCommit": "b0f745d582ce2bed5110702cff972be4153e5038",
-            "releaseMetadataCommit": "7b08118b43a0c4441de4c76a64f34fa54b3fe889",
+            "binarySourceCommit": "38eb0715f889fe2d585641891923511c9cc3e43e",
+            "releaseMetadataCommit": "0e667f9f1a2d615d3f7e15a552f093c903ff1a57",
             "artifacts": copy.deepcopy(FROZEN_ARTIFACTS),
             "appleReview": copy.deepcopy(APPLE_REVIEW),
         }
@@ -100,7 +100,7 @@ class ReleaseStateTests(unittest.TestCase):
     def test_closed_fixture_is_rebuilt_exactly_from_content_digests(self) -> None:
         generated = release_state.build_closed_state(self.closed_facts)
         self.assertEqual(generated, self.state)
-        self.assertEqual(self.state["version"], "6.2.3")
+        self.assertEqual(self.state["version"], "6.2.4")
         self.assertEqual(self.state["phase"], "CLOSED")
         self.assertEqual(
             release_state.canonical_json(generated),
@@ -120,9 +120,9 @@ class ReleaseStateTests(unittest.TestCase):
             current,
         )
 
-    def test_orchestrated_624_frozen_facts_build_exact_inventory(self) -> None:
+    def test_orchestrated_630_frozen_facts_build_exact_inventory(self) -> None:
         frozen = release_state.build_frozen_state(self.frozen_facts)
-        self.assertEqual(frozen["version"], "6.2.4")
+        self.assertEqual(frozen["version"], "6.3.0")
         self.assertEqual(frozen["phase"], "FROZEN")
         self.assertIsNone(frozen["publication"])
         self.assertEqual(frozen["artifactInventory"], FROZEN_INVENTORY)
@@ -153,7 +153,7 @@ class ReleaseStateTests(unittest.TestCase):
                     str(self.write_facts(root, self.closed_facts)), "--write",
                     "--expected-channel", "ys",
                     "--expected-repository", "LJMcarryu/YSIFLYADLib_iOS",
-                    "--expected-version", "6.2.3",
+                    "--expected-version", "6.2.4",
                 ])
             self.assertEqual(result, 0)
             self.assertEqual(
@@ -176,7 +176,7 @@ class ReleaseStateTests(unittest.TestCase):
             lambda value: value.update({"phase": "VERIFIED"}),
             lambda value: value["publication"].update({"conclusion": "failure"}),
             lambda value: value["appleReview"].update({"statusAtFreeze": "success"}),
-            lambda value: value["publication"].update({"releaseId": "370458967"}),
+            lambda value: value["publication"].update({"releaseId": "371715388"}),
         ):
             value = copy.deepcopy(self.closed_facts)
             mutate(value)
@@ -212,15 +212,15 @@ class ReleaseStateTests(unittest.TestCase):
         closed["phase"] = "CLOSED"
         closed["publication"] = {
             "releaseId": 1,
-            "tagName": "6.2.4",
+            "tagName": "6.3.0",
             "tagObjectSha": "c" * 40,
             "tagCommitSha": "d" * 40,
-            "releaseUrl": "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.4",
-            "publishedAt": "2026-08-17T00:00:00Z",
+            "releaseUrl": "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0",
+            "publishedAt": "2026-08-25T00:00:00Z",
             "formalConsumerRunId": 2,
             "formalConsumerRunUrl": "https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/2",
             "conclusion": "success",
-            "verifiedAt": "2026-08-17T00:01:00Z",
+            "verifiedAt": "2026-08-25T00:01:00Z",
         }
         release_state.validate_state_transition(frozen, closed)
 
@@ -230,7 +230,7 @@ class ReleaseStateTests(unittest.TestCase):
             release_state.validate_state(invalid_publication)
 
         same_version_frozen = copy.deepcopy(frozen)
-        same_version_frozen["version"] = "6.2.3"
+        same_version_frozen["version"] = "6.2.4"
         with self.assertRaises(release_state.ReleaseStateError):
             release_state.validate_state_transition(self.state, same_version_frozen)
 

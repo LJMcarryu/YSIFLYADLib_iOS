@@ -1,4 +1,4 @@
-# 6.2.4 发布维护说明
+# 6.3.0 发布维护说明
 
 本文件只维护 YS 公开分发仓的发布状态和可机器校验的私有源码溯源，不包含 SDK 私有源码。
 
@@ -15,32 +15,41 @@
 Token、只读的 summary job 汇总 Candidate、Release、checkout commit、三资产 SHA-256 和全部
 job 结论；summary 对上游失败继续失败关闭。
 
-## 6.2.4 发布状态
+## 6.3.0 发布准备状态
 
-<!-- ifly-release-status: {"schemaVersion":1,"version":"6.2.4","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.4"} -->
+<!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.0","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0"} -->
 
 - `releaseState`：`FORMAL`
-- `binarySourceCommit`（SDK 二进制源码提交）：`b0f745d582ce2bed5110702cff972be4153e5038`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`7b08118b43a0c4441de4c76a64f34fa54b3fe889`
+- `binarySourceCommit`（SDK 二进制源码提交）：`38eb0715f889fe2d585641891923511c9cc3e43e`
+- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`0e667f9f1a2d615d3f7e15a552f093c903ff1a57`
 
-`6.2.4` 正式签名资产、checksum 和 A/B 已完成冻结并公开；[GitHub Release 6.2.4](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.4)
-的 3 个资产已完成无 Token 匿名校验，正式消费 [Run 32027223627](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/32027223627)
-为 `success`。仓库根 `release-state.json` 已由编排器推进到 `6.2.4/CLOSED`。
+`6.3.0` 正式签名资产、checksum 和 A/B 已完成冻结；GitHub Tag/Release、无 Token 匿名下载和
+正式消费验证尚待编排器完成。仓库根 `release-state.json` 在发布准备阶段保持上一正式版
+`6.2.4/CLOSED`，编排器生成不可变候选时才推进为 `6.3.0/FROZEN`。当前最新公开可用版仍为
+[`6.2.4`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.4)。
 
-`releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结；公开可用性由同版本 GitHub Release、匿名下载和发布后 CI 共同证明。
+`releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结。
 公开可用性以同版本 GitHub Release 和发布后 CI 为准。
 
 冻结资产校验值：
 
-- `YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256：`76082025635bd2e427c09c5d1427c253db93ab75f897ed7a6e11024f6bcf4c7e`
-- `YSIFLYADLib-6.2.4.zip` 的 SHA-256：`bce3bd4ea143fdc06a4c9c648f305fe5534752eeed2d134c0bbc8709a17806ec`
-- `checksums.txt` 的 SHA-256：`1f4f08237327dabbb7c90be7c980f731d6d1925f189ae6904dc04a75c0076142`
+- `YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256：`73a1e82ffee9c01d63f1e6a391c732e8837c422d23ab60846c92e8f2c167ad08`
+- `YSIFLYADLib-6.3.0.zip` 的 SHA-256：`d0fdc4d0077deaf53aa85efeefa8fae9fb96cf5db831dd4145ad9d8096c63e9e`
+- `checksums.txt` 的 SHA-256：`4e742cea449d0289df852ada89b5da5bbd0e79f24bbb0d1a124314a08a2ce196`
 
 Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、
 `evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
 
-`6.2.4` 不沿用历史风险授权；主动扫描策略固定为 `failOn=high`、`failOnWarning=true`、
+`6.3.0` 不沿用历史风险授权；主动扫描策略固定为 `failOn=high`、`failOnWarning=true`、
 `strict=true`、`requireManual=true` 且接受名单为空。扫描状态不改写正式发布状态，未扫描不得表述为通过。
+
+## 6.2.4 历史正式事实
+
+`6.2.4` 已于 2026-08-17 正式公开；annotated tag 解引用到
+`43b6eadeb3431e5bceb0befd4610f9cb7313b3b6`，Release 为非草稿、非预发布且精确包含 3 个资产。
+[正式消费 Run 32027223627](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/32027223627) 已完成匿名下载、SwiftPM、CocoaPods、Demo 与发布契约验证并返回 `success`。
+其二进制源码提交为 `b0f745d582ce2bed5110702cff972be4153e5038`，发布元数据提交为
+`7b08118b43a0c4441de4c76a64f34fa54b3fe889`。
 
 ## 6.2.3 历史正式事实
 
@@ -116,7 +125,7 @@ SwiftPM 消费 runner 和 CocoaPods 消费 runner。前置 job 只输出三个 S
 
 正式 Release 固定且只能包含以下三个资产：
 
-- `YSIFLYADLib-6.2.4.zip`
+- `YSIFLYADLib-6.3.0.zip`
 - `YSIFLYADLib.xcframework.zip`
 - `checksums.txt`
 
@@ -134,9 +143,10 @@ CocoaPods 消费 job 生成的临时 podspec 使用已验证 zip 的 `file://` U
 普通 main、PR 和 tag push 只执行 `pod ipc spec` 等本地门禁，不能依赖尚未对外可见的 Release
 资产。正式模式使用不带 `Authorization` 或 GitHub 凭据的公开 URL 下载全部三项，再执行完整复验。
 
-`6.2.4` 还必须验证 NativeFeed 外部 CTA 默认关闭，同 Cell/专属 wrapper/window-local 三种归属、
-祖先路径固定、运行中 reparent 拒绝、71503 白标 delegate 回调，以及
-`ysifly_detachFromCurrentContainer`；公开头、二进制 selector 和文档必须保持一致。
+`6.3.0` 还必须验证 NativeFeed 外部 CTA 默认关闭；显式开启时允许 permissive attach，container
+非页面根祖先与媒体交互优先策略生效，attach/点击拒绝返回结构化 `71503/<point>` 白标诊断；
+独占 lease、同 window/scene、页面根排除、点击时可见性以及 `ysifly_detachFromCurrentContainer`
+契约保持一致。公开头、二进制 selector 和文档必须同步。
 
 首次启用候选分支控制面前，必须把只包含 workflow、控制脚本和测试的 bootstrap 提交独立合入
 远端 `main`，且该提交不得同时修改版本、`Package.swift` 或 `YSIFLYADLib.podspec`。默认分支先具备

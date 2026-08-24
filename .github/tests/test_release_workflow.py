@@ -43,8 +43,8 @@ REPOSITORY_CONTRACT = load_module(
     ROOT / ".github/scripts/verify_repository_contract.py",
 )
 
-VERSION = "6.2.4"
-PREVIOUS_VERSION = "6.2.3"
+VERSION = "6.3.0"
+PREVIOUS_VERSION = "6.2.4"
 BINARY_COMMIT = "a" * 40
 METADATA_COMMIT = "b" * 40
 CANDIDATE_ID = "d" * 64
@@ -367,7 +367,7 @@ class ReleaseModeContractTests(unittest.TestCase):
                 with self.assertRaises(MODE.ContractError):
                     MODE.read_local_contract(root)
 
-    def test_repository_stages_624_over_allowed_lifecycle_and_keeps_history(self) -> None:
+    def test_repository_stages_630_over_allowed_lifecycle_and_keeps_history(self) -> None:
         contract = MODE.read_local_contract(ROOT)
         self.assertEqual(contract["version"], VERSION)
         self.assertIn(
@@ -405,7 +405,7 @@ class ReleaseModeContractTests(unittest.TestCase):
         )
         self.assertNotEqual(
             contract["checksum"],
-            "84c77f4b9930f892086e08ec9f4185af474eab72a403905f4c5d9257936667a2",
+            "76082025635bd2e427c09c5d1427c253db93ab75f897ed7a6e11024f6bcf4c7e",
         )
         for marker in (
             "`failOnWarning=true`",
@@ -936,7 +936,7 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertEqual(values["checkout_ref"], CANDIDATE_BRANCH)
         self.assertEqual(values["candidate_branch"], CANDIDATE_BRANCH)
 
-        wrong_version_branch = f"release-candidate/6.2.3-{CANDIDATE_ID}"
+        wrong_version_branch = f"release-candidate/6.2.4-{CANDIDATE_ID}"
         result, _ = self.run_resolver(
             requested_mode="draft_candidate",
             candidate_release_id="12345",
@@ -948,7 +948,7 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0, result.stdout)
 
         for name, value in (
-            ("canary_tag", "6.2.4001"),
+            ("canary_tag", "6.3.1001"),
             ("canary_release_id", "98765"),
             ("canary_candidate_id", CANDIDATE_ID),
         ):
@@ -982,14 +982,14 @@ class WorkflowStructureTests(unittest.TestCase):
 
         result, values = self.run_resolver(
             control_plane_canary=True,
-            canary_tag="6.2.4001",
+            canary_tag="6.3.1001",
             canary_release_id="98765",
             canary_candidate_id=CANDIDATE_ID,
             dispatch_nonce=DISPATCH_NONCE,
         )
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertEqual(
-            values["checkout_ref"], f"release-candidate/6.2.4001-{CANDIDATE_ID}"
+            values["checkout_ref"], f"release-candidate/6.3.1001-{CANDIDATE_ID}"
         )
         self.assertEqual(values["candidate_branch"], "")
 
@@ -1158,8 +1158,8 @@ class WorkflowStructureTests(unittest.TestCase):
             value = original_read(root, relative)
             if relative == "YSIFLYADLib.podspec":
                 return re.sub(
-                    r"(s\.version\s*=\s*['\"])6\.2\.4",
-                    r"\g<1>6.2.5",
+                    r"(s\.version\s*=\s*['\"])6\.3\.0",
+                    r"\g<1>6.3.1",
                     value,
                     count=1,
                 )
