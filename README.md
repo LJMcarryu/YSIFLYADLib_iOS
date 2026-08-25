@@ -258,7 +258,9 @@ iOS 14 及以上如需使用 IDFA：
 - `ysifly_attachWithViewBinder:error:` 必须在主线程同步调用；`containerView` 必填，视频素材必须提供普通 `UIView` 作为 `videoView`。
 - `interactionType` 为 `Exposure` 或 `Unknown` 时，`clickViews` 传 `@[]`；为 `Redirect` 或 `Download` 时只传实际点击视图。
 - 如确需在容器外放置 CTA，显式设置 `binder.allowsExternalClickViews = YES`，并保证 CTA 与广告处于同一 window/scene、可见且可交互。常规接入优先让 CTA 位于容器内。
+- 外部 CTA 不满足可见性或交互条件时，delegate 会通过 `ysifly_nativeFeedAd:didRejectClickWithError:` 返回 `YSIFLYAdErrorCodeNativeFeedClickViewsInvalid`（`71503`）；业务应记录并修正视图层级，不要自行跳转。
 - Cell 离屏、复用或切换普通内容时，调用 `ysifly_detachAdFromContainerView:` 反注册具体容器，不要按旧 `indexPath` 反查广告。
+- 固定单容器且明确知道当前广告对象时，也可以调用 `ysifly_detachFromCurrentContainer`；可复用列表仍优先按容器调用 `ysifly_detachAdFromContainerView:`。
 - 列表数据层持有 `YSIFLYNativeFeedAd`，Cell 只负责渲染和 attach/detach。条目暂时离屏可以继续持有同一 Ad；永久删除或退出页面时 detach、置空 delegate 并释放 Ad。
 - SDK 管理视频播放器。绑定且曝光后可用 `ysifly_startPlay`、`ysifly_pausePlay`、`ysifly_resumePlay`、`ysifly_stopPlay` 控制播放。
 
