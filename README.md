@@ -2,9 +2,13 @@
 
 `YSIFLYADLib` 是 YS 媒体定制的 iOS 广告 SDK，提供开屏、Banner、插屏和自渲染信息流（含视频素材）。本变体不包含激励视频。
 
+## 6.3.0 发布状态
+
 <!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.0","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0"} -->
 
 当前正式版本：[`6.3.0`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0)。生产项目请固定到具体版本，不要依赖 `main` 分支。
+
+历史版本：[6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2) · [6.2.3](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.3)。
 
 ## 能力矩阵
 
