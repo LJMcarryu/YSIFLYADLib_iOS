@@ -2,11 +2,11 @@
 
 `YSIFLYADLib` 是 YS 媒体定制的 iOS 广告 SDK，提供开屏、Banner、插屏和自渲染信息流（含视频素材）。本变体不包含激励视频。
 
-## 6.3.0 发布状态
+## 6.3.1 发布状态
 
-<!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.0","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0"} -->
+<!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.1","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.1"} -->
 
-当前正式版本：[`6.3.0`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0)。生产项目请固定到具体版本，不要依赖 `main` 分支。
+当前正式版本：[`6.3.1`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.1)。生产项目请固定到具体版本，不要依赖 `main` 分支。
 
 历史版本：[6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2) · [6.2.3](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.3)。
 
@@ -46,7 +46,7 @@ platform :ios, '11.0'
 target 'YourApp' do
   use_frameworks!
   pod 'YSIFLYADLib',
-      :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.3.0/YSIFLYADLib.podspec'
+      :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.3.1/YSIFLYADLib.podspec'
 end
 ```
 
@@ -65,7 +65,7 @@ CocoaPods 会自动复制 `YSAdvSDK.bundle` 并传播 `-ObjC`。
 https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
 ```
 
-选择版本 `6.3.0` 和产品 `YSIFLYADLib`。资源 target 会自动投递 `YSAdvSDK.bundle`；在 App target 的 `Other Linker Flags` 添加：
+选择版本 `6.3.1` 和产品 `YSIFLYADLib`。资源 target 会自动投递 `YSAdvSDK.bundle`；在 App target 的 `Other Linker Flags` 添加：
 
 ```text
 -ObjC
@@ -73,7 +73,7 @@ https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
 
 ### 手动集成
 
-从 [Release 6.3.0](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0) 下载 `YSIFLYADLib-6.3.0.zip`：
+从 [Release 6.3.1](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.1) 下载 `YSIFLYADLib-6.3.1.zip`：
 
 1. 将 `YSIFLYADLib.xcframework` 加入 App target，Embed 选择 **Do Not Embed**。
 2. 将 `YSAdvSDK.bundle` 加入 **Copy Bundle Resources**。

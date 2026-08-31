@@ -5,9 +5,21 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
-## [6.3.0] - 2026-08-25
+## [6.3.1] - 2026-09-01
 
-<!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.0","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.0"} -->
+<!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.1","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.1"} -->
+
+- `releaseState`：`FORMAL`
+- `binarySourceCommit`（SDK 二进制源码提交）：`b7e46a9f06897924d3d69d4d6a7e43f6237d8579`
+- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`b86f5d7dc5e1105194889bc60a5ee9eec40b611f`
+- `candidateId`：`74f506ec2562caac2d0f1f48a404c1c3b69a1a2d29463ce94067b18821d1f1d7`
+- `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结。
+- 冻结资产校验值：`YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256 为 `2c2d14bc635ae4fe9784934ea93b039c03c2d244449fff74f3857fff7b35bbdd`，`YSIFLYADLib-6.3.1.zip` 的 SHA-256 为 `0b5eed5b5e037c550b0e441b587c249279fc1c80cdd7ea5f863bf72e793553f0`，`checksums.txt` 的 SHA-256 为 `3340bac0bb1ffcf0f9c5c58f262bd4d225091d086a66b5baea5f9688f53bb9d7`。
+- Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
+- NativeFeed 的 71503 描述统一为结构化 `[71503/<point>]` 中文诊断并使用诊断级日志；Banner 请求、解析、素材和展示四阶段增加稳定字段、幂等失败链路与脱敏安全网。
+- 仓库根 `release-state.json` 由编排器在候选阶段推进为 `6.3.1/FROZEN`。
+
+## [6.3.0] - 2026-08-25
 
 - `releaseState`：`FORMAL`
 - `binarySourceCommit`（SDK 二进制源码提交）：`38eb0715f889fe2d585641891923511c9cc3e43e`
