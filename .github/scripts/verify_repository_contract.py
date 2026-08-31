@@ -11,10 +11,11 @@ import sys
 from pathlib import Path
 
 
-VERSION = "6.3.0"
-PREVIOUS_VERSION = "6.2.4"
+VERSION = "6.3.1"
+PREVIOUS_VERSION = "6.3.0"
 REPOSITORY = "LJMcarryu/YSIFLYADLib_iOS"
 HISTORICAL = {
+    "73a1e82ffee9c01d63f1e6a391c732e8837c422d23ab60846c92e8f2c167ad08",
     "d65b715b1fa5eaf1ae38c3a94f3eaf7e2289958f2b678aa0dccec1f66873627a",
     "757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d",
     "84c77f4b9930f892086e08ec9f4185af474eab72a403905f4c5d9257936667a2",
@@ -113,9 +114,9 @@ def verify_machine(
     )
     checksum = one(r'checksum:\s*"([^"]+)"', package, "SwiftPM checksum")
     require(re.fullmatch(r"[0-9a-f]{64}", checksum) is not None,
-            "6.3.0 分发基线 checksum 非 64 位小写 SHA-256")
+            "6.3.1 分发基线 checksum 非 64 位小写 SHA-256")
     require(checksum != "0" * 64 and checksum not in HISTORICAL,
-            "6.3.0 分发基线 checksum 为零或沿用历史值")
+            "6.3.1 分发基线 checksum 为零或沿用历史值")
     for marker in (
         '.library(name: "YSIFLYADLib", targets: ["YSIFLYADLib", "YSIFLYADLibResources"])',
         '.copy("YSAdvSDK.bundle")',
