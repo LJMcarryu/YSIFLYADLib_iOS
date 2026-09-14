@@ -43,8 +43,8 @@ REPOSITORY_CONTRACT = load_module(
     ROOT / ".github/scripts/verify_repository_contract.py",
 )
 
-VERSION = "6.3.1"
-PREVIOUS_VERSION = "6.3.0"
+VERSION = "6.3.5"
+PREVIOUS_VERSION = "6.3.1"
 BINARY_COMMIT = "a" * 40
 METADATA_COMMIT = "b" * 40
 CANDIDATE_ID = "d" * 64
@@ -367,7 +367,7 @@ class ReleaseModeContractTests(unittest.TestCase):
                 with self.assertRaises(MODE.ContractError):
                     MODE.read_local_contract(root)
 
-    def test_repository_stages_631_over_allowed_lifecycle_and_keeps_history(self) -> None:
+    def test_repository_stages_635_over_allowed_lifecycle_and_keeps_history(self) -> None:
         contract = MODE.read_local_contract(ROOT)
         self.assertEqual(contract["version"], VERSION)
         self.assertIn(
@@ -391,6 +391,7 @@ class ReleaseModeContractTests(unittest.TestCase):
             self.assertEqual(MODE.read_local_contract(fixture)["release_state"], "FORMAL")
 
         self.assertIn("## [6.2.2] - 2026-08-10", documents["CHANGELOG.md"])
+        self.assertIn("## [6.3.1] - 2026-09-01", documents["CHANGELOG.md"])
         self.assertIn(
             "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2",
             documents["README.md"],
@@ -936,7 +937,7 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertEqual(values["checkout_ref"], CANDIDATE_BRANCH)
         self.assertEqual(values["candidate_branch"], CANDIDATE_BRANCH)
 
-        wrong_version_branch = f"release-candidate/6.3.0-{CANDIDATE_ID}"
+        wrong_version_branch = f"release-candidate/{PREVIOUS_VERSION}-{CANDIDATE_ID}"
         result, _ = self.run_resolver(
             requested_mode="draft_candidate",
             candidate_release_id="12345",
@@ -1138,19 +1139,25 @@ class WorkflowStructureTests(unittest.TestCase):
             with self.assertRaises(REPOSITORY_CONTRACT.ContractError):
                 REPOSITORY_CONTRACT.verify_docs(ROOT, "repository")
 
-        def checksum_drift(root: Path, relative: str) -> str:
-            value = original_read(root, relative)
-            if relative == "Package.swift":
-                return re.sub(
-                    r'checksum:\s*"[0-9a-f]{64}"',
-                    'checksum: "not-a-checksum"',
-                    value,
-                    count=1,
-                )
-            return value
+        for invalid_checksum in (
+            "not-a-checksum",
+            "0" * 64,
+            "2c2d14bc635ae4fe9784934ea93b039c03c2d244449fff74f3857fff7b35bbdd",
+        ):
+            def checksum_drift(root: Path, relative: str) -> str:
+                value = original_read(root, relative)
+                if relative == "Package.swift":
+                    return re.sub(
+                        r'checksum:\s*"[0-9a-f]{64}"',
+                        f'checksum: "{invalid_checksum}"',
+                        value,
+                        count=1,
+                    )
+                return value
 
-        with mock.patch.object(REPOSITORY_CONTRACT, "read", side_effect=checksum_drift):
-            with self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+            with self.subTest(checksum=invalid_checksum), mock.patch.object(
+                REPOSITORY_CONTRACT, "read", side_effect=checksum_drift
+            ), self.assertRaises(REPOSITORY_CONTRACT.ContractError):
                 REPOSITORY_CONTRACT.verify_machine(
                     ROOT, "repository", self.podspec_json
                 )
@@ -1159,8 +1166,8 @@ class WorkflowStructureTests(unittest.TestCase):
             value = original_read(root, relative)
             if relative == "YSIFLYADLib.podspec":
                 return re.sub(
-                    r"(s\.version\s*=\s*['\"])6\.3\.1",
-                    r"\g<1>6.3.2",
+                    rf"(s\.version\s*=\s*['\"]){re.escape(VERSION)}",
+                    rf"\g<1>{PREVIOUS_VERSION}",
                     value,
                     count=1,
                 )
@@ -1171,6 +1178,31 @@ class WorkflowStructureTests(unittest.TestCase):
                 REPOSITORY_CONTRACT.verify_machine(
                     ROOT, "repository", self.podspec_json
                 )
+
+    def test_repository_contract_keeps_only_previous_or_current_closed_state(self) -> None:
+        original_read = REPOSITORY_CONTRACT.read
+        closed = json.loads(original_read(ROOT, "release-state.json"))
+        closed["phase"] = "CLOSED"
+
+        def with_version(version: str):
+            def read(root: Path, relative: str) -> str:
+                if relative == "release-state.json":
+                    return json.dumps({**closed, "version": version})
+                return original_read(root, relative)
+
+            return read
+
+        for version in (PREVIOUS_VERSION, VERSION):
+            with self.subTest(version=version), mock.patch.object(
+                REPOSITORY_CONTRACT, "read", side_effect=with_version(version)
+            ):
+                REPOSITORY_CONTRACT.verify_machine(ROOT, "repository", self.podspec_json)
+
+        for version in ("6.3.0", "6.3.6"):
+            with self.subTest(version=version), mock.patch.object(
+                REPOSITORY_CONTRACT, "read", side_effect=with_version(version)
+            ), self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+                REPOSITORY_CONTRACT.verify_machine(ROOT, "repository", self.podspec_json)
 
     def test_release_contracts_accept_only_current_frozen_state(self) -> None:
         original_read = REPOSITORY_CONTRACT.read
