@@ -20,6 +20,10 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from github_http_retry import call_with_retry, retry_delay
+
+
 TOKEN_NAMES = ("GH_TOKEN", "GITHUB_TOKEN", "GITHUB_AUTH_TOKEN", "ACTIONS_RUNTIME_TOKEN")
 DOWNLOAD_MAX_ATTEMPTS = 5
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
@@ -59,11 +63,13 @@ def open_url(request: urllib.request.Request, timeout: int):
 
 
 def request_json(url: str, headers: Mapping[str, str]) -> dict[str, Any]:
-    request = urllib.request.Request(url, headers=dict(headers))
-    with open_url(request, timeout=180) as response:
-        value = json.load(response)
-    require(isinstance(value, dict), "Release API 响应必须是字典")
-    return value
+    def request_once():
+        request = urllib.request.Request(url, headers=dict(headers))
+        with open_url(request, timeout=180) as response:
+            value = json.load(response)
+        require(isinstance(value, dict), "Release API 响应必须是字典")
+        return value
+    return call_with_retry(request_once)
 
 
 def provenance(document: str, version: str, mode: str) -> tuple[str, str]:
@@ -259,25 +265,12 @@ def download_asset(
             return digest
         except Exception as error:
             temporary.unlink(missing_ok=True)
-            retryable = False
-            if isinstance(error, urllib.error.HTTPError):
-                retryable = error.code in {408, 429} or 500 <= error.code <= 599
-            elif isinstance(error, urllib.error.URLError):
-                retryable = isinstance(
-                    error.reason,
-                    (TimeoutError, socket.timeout, ssl.SSLError, ConnectionError),
-                )
-            elif isinstance(
-                error, (TimeoutError, socket.timeout, ssl.SSLError, ConnectionError)
-            ):
-                retryable = True
-            if (
-                isinstance(error, DownloadError)
-                or not retryable
-                or attempt == DOWNLOAD_MAX_ATTEMPTS
-            ):
+            if isinstance(error, DownloadError) or attempt == DOWNLOAD_MAX_ATTEMPTS:
                 raise
-            time.sleep(min(2 ** (attempt - 1), 8))
+            delay = retry_delay(error, attempt)
+            if delay is None:
+                raise
+            time.sleep(delay)
     raise AssertionError("unreachable")
 
 

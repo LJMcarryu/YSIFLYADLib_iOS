@@ -3,11 +3,13 @@
 本日志按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 格式维护。
 `6.1.0` 包含经产品批准的不兼容公开契约变更，升级时不能仅根据次版本号判断兼容性。
 
-`YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有 dev 仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
+`YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有源码仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
 ## [6.3.5] - 2026-09-14
 
 <!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.5","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.5"} -->
+
+正式发布于 2026-09-14；本版本的消费结果见 [RELEASING](RELEASING.md)。历史章节只描述各自版本，不替代当前接入契约。
 
 - `releaseState`：`FORMAL`，表示正式签名资产、checksum 和 A/B 元数据已经冻结；公开可用性以同版本 GitHub Release 和发布后 CI 为准。
 - `binarySourceCommit`（SDK 二进制源码提交）：`82d8cab58eba588104eee9bc89063952a277af65`
@@ -16,7 +18,7 @@
 - 冻结资产校验值：`YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256 为 `562a1c680c87479196ccaea71423392cb491f8c170b26ead96764345a28dfd7c`，`YSIFLYADLib-6.3.5.zip` 的 SHA-256 为 `90e2ff30a1fa9836fb7545f7feb8d7fd02ac4432f49f32e62716d7ca3b84cff1`，`checksums.txt` 的 SHA-256 为 `ab3ac30a219190d7d39cb5cb83ae33ef1ac273a7981a970d4412512d5aaccdd2`。
 - 本版统一到 `6.3.5`；保持开屏、Banner、插屏和自渲染信息流能力，包含当前源码的生命周期保护、共享图片订阅取消隔离、日志硬化和 NativeFeed 独立落地页宿主。
 - Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
-- 仓库根 `release-state.json` 在候选生成前保持上一正式版 `6.3.1/CLOSED`，由编排器推进为 `6.3.5/FROZEN`。
+- 仓库根 `release-state.json` 已完成 `6.3.5/FROZEN → CLOSED`；正式 Tag 保留冻结内容，公开 `main` 保存发布后的消费回执。
 
 ## [6.3.1] - 2026-09-01
 
@@ -287,3 +289,11 @@
 [1.0.4]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/1.0.4
 [1.0.3]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/1.0.3
 [1.0.2]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/1.0.2
+
+[6.3.5]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.5
+
+[6.3.1]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.1
+
+[1.0.1]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/1.0.1
+
+[1.0.0]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/1.0.0

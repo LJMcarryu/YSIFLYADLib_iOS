@@ -12,7 +12,7 @@ static NSString *const YSNativeFeedDemoAdItemIdentifier = @"ys-native-feed-stabl
 typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable failureReason);
 
 /// 列表数据层中的逻辑广告条目。stableIdentifier 不随 Cell 复用变化；媒体只持有 Ad，
-/// SDK 在 Ad 内部托管展示会话、绑定句柄和复用代次。
+/// 数据层持有同一广告对象，使条目离屏后仍可恢复展示。
 @interface YSNativeFeedDemoItem : NSObject
 
 @property (nonatomic, copy) NSString *stableIdentifier;
@@ -36,7 +36,7 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
 @end
 
 /// 可复用的广告 Cell。Cell 只负责渲染 UI、生成 Binder，并在离屏/复用时按容器反注册；
-/// 不保存 Session、Binding 或首次/复用状态。
+/// Cell 负责当前容器的渲染、挂载和解绑。
 @interface YSNativeFeedDemoTableViewCell : UITableViewCell
 
 - (void)renderAd:(YSIFLYNativeFeedAd *)ad completion:(YSNativeFeedDemoRenderCompletion)completion;
@@ -407,7 +407,7 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
 }
 
 - (void)ys_demoResetVisuals {
-    // SDK 的透明播放器宿主由容器级 detach 清理；媒体只清自己的图片和文案。
+    // 视频展示由容器级 detach 清理；媒体同时清理自己的图片和文案。
     self.videoView.hidden = NO;
     self.placeholderLabel.hidden = NO;
     self.placeholderLabel.text = @"等待加载广告";
@@ -458,7 +458,7 @@ typedef void (^YSNativeFeedDemoRenderCompletion)(BOOL ready, NSString *_Nullable
     self.view.backgroundColor = UIColor.whiteColor;
     self.adItem = [[YSNativeFeedDemoItem alloc] initWithStableIdentifier:YSNativeFeedDemoAdItemIdentifier];
     [self setupUI];
-    [self log:@"稳定广告条目：数据层只持有 Ad，SDK 托管 Session / Binding 与复用代次"];
+    [self log:@"列表复用：数据层持有广告，Cell 离屏时解绑，回屏后重新挂载同一广告"];
 }
 
 - (void)dealloc {
@@ -612,7 +612,7 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
     }
 
     // UIKit 可能先回调新 Cell 的 willDisplay，再回调旧 Cell 的 didEndDisplaying。
-    // 旧容器真正反注册后，再对仍可见的新 Cell 重试；媒体不保存 Binding 或首次/复用状态。
+    // 旧容器真正反注册后，再对仍可见的新 Cell 重试；媒体无需记录首次展示或复用状态。
     [self continueDisplayingAdItemAfterCellDetached];
 }
 
@@ -639,9 +639,7 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
     ad.muteOnStart = YES;
 
     [self updateStatus:@"正在加载稳定广告条目" color:UIColor.systemBlueColor];
-    [self log:[NSString stringWithFormat:@"Load generation=%lu adUnitId=%@",
-                                         (unsigned long)self.adItem.generation,
-                                         adUnitId]];
+    [self log:[NSString stringWithFormat:@"Load adUnitId=%@", adUnitId]];
     [ad ysifly_loadAdWithRequestConfig:[YSIFLYADUtil mediaSampleRequestConfig]];
 }
 
@@ -716,9 +714,8 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
                 return;
             }
             self.attachedAdCell = cell;
-            [self updateStatus:@"SDK 托管挂载成功" color:UIColor.systemGreenColor];
-            [self log:[NSString stringWithFormat:@"attach success generation=%lu（首次/复用无需媒体判断）",
-                                               (unsigned long)generation]];
+            [self updateStatus:@"广告挂载成功" color:UIColor.systemGreenColor];
+            [self log:@"attach success：广告已挂载到当前 Cell"];
         }];
     return YES;
 }
@@ -775,8 +772,7 @@ forRowAtIndexPath:(NSIndexPath *)indexPath {
         return;
     }
 
-    [self log:[NSString stringWithFormat:@"didLoad generation=%lu materialType=%ld %@",
-                                         (unsigned long)self.adItem.generation,
+    [self log:[NSString stringWithFormat:@"didLoad materialType=%ld %@",
                                          (long)ad.materialType,
                                          [YSIFLYADUtil bidInfoSummaryForAd:ad]]];
     [self updateStatus:@"广告已加载，等待广告 Cell" color:[YSIFLYADUtil demoIndigoColor]];

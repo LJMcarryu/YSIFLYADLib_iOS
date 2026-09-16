@@ -370,12 +370,18 @@ jobs:
           IFLY_PRIVATE_SOURCE_TOKEN: ${{ secrets.IFLY_PRIVATE_SOURCE_TOKEN }}
           PRIVATE_SOURCE_REPOSITORY: LJMcarryu/IFLYADLibDemo
         run: |
-          python3 - <<'PY'
+          release_http_control_dir="$(mktemp -d "${RUNNER_TEMP}/release-http-control.XXXXXX")"
+          git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/github_http_retry.py" > "${release_http_control_dir}/github_http_retry.py"
+          RELEASE_HTTP_RETRY_DIR="${release_http_control_dir}" python3 - <<'PY'
           import json
           import os
           import re
+          import sys
           import urllib.request
           from pathlib import Path
+
+          sys.path.insert(0, os.environ["RELEASE_HTTP_RETRY_DIR"])
+          from github_http_retry import call_with_retry
 
           release_state = json.loads(Path("release-state.json").read_text(encoding="utf-8"))
           binary_source_commit = release_state["binarySourceCommit"]
@@ -400,8 +406,10 @@ jobs:
                   "X-GitHub-Api-Version": "2022-11-28",
               },
           )
-          with urllib.request.urlopen(request, timeout=180) as response:
-              comparison = json.load(response)
+          def request_once():
+              with urllib.request.urlopen(request, timeout=180) as response:
+                  return json.load(response)
+          comparison = call_with_retry(request_once)
 
           assert comparison.get("status") == "ahead", comparison.get("status")
           assert comparison.get("ahead_by", 0) > 0
@@ -650,9 +658,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.DRAFT_RELEASE_READ_TOKEN }}
         run: |
           rm -rf "${RUNNER_TEMP}/ys-release"
-          git show \
-            "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" |
-            python3 - \
+          release_download_control_dir="$(mktemp -d "${RUNNER_TEMP}/release-download-control.XXXXXX")"
+          git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/github_http_retry.py" > "${release_download_control_dir}/github_http_retry.py"
+          git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" > "${release_download_control_dir}/download_release_assets.py"
+          python3 "${release_download_control_dir}/download_release_assets.py" \
               --mode draft_candidate \
               --repository "${GITHUB_REPOSITORY}" \
               --version "${RELEASE_TAG}" \
@@ -672,9 +681,10 @@ jobs:
             -u GITHUB_AUTH_TOKEN \
             -u ACTIONS_RUNTIME_TOKEN \
             bash -e -o pipefail -c '
-              git show \
-                "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" |
-                python3 - \
+              release_download_control_dir="$(mktemp -d "${RUNNER_TEMP}/release-download-control.XXXXXX")"
+              git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/github_http_retry.py" > "${release_download_control_dir}/github_http_retry.py"
+              git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" > "${release_download_control_dir}/download_release_assets.py"
+              python3 "${release_download_control_dir}/download_release_assets.py" \
                   --mode formal_release \
                   --repository "${GITHUB_REPOSITORY}" \
                   --version "${RELEASE_TAG}" \
@@ -1044,9 +1054,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.DRAFT_RELEASE_READ_TOKEN }}
         run: |
           rm -rf "${RUNNER_TEMP}/ys-release"
-          git show \
-            "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" |
-            python3 - \
+          release_download_control_dir="$(mktemp -d "${RUNNER_TEMP}/release-download-control.XXXXXX")"
+          git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/github_http_retry.py" > "${release_download_control_dir}/github_http_retry.py"
+          git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" > "${release_download_control_dir}/download_release_assets.py"
+          python3 "${release_download_control_dir}/download_release_assets.py" \
               --mode draft_candidate \
               --repository "${GITHUB_REPOSITORY}" \
               --version "${RELEASE_TAG}" \
@@ -1198,9 +1209,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.DRAFT_RELEASE_READ_TOKEN }}
         run: |
           rm -rf "${RUNNER_TEMP}/ys-release"
-          git show \
-            "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" |
-            python3 - \
+          release_download_control_dir="$(mktemp -d "${RUNNER_TEMP}/release-download-control.XXXXXX")"
+          git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/github_http_retry.py" > "${release_download_control_dir}/github_http_retry.py"
+          git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" > "${release_download_control_dir}/download_release_assets.py"
+          python3 "${release_download_control_dir}/download_release_assets.py" \
               --mode draft_candidate \
               --repository "${GITHUB_REPOSITORY}" \
               --version "${RELEASE_TAG}" \

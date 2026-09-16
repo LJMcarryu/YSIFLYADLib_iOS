@@ -45,7 +45,7 @@
     y += 36;
 
     UILabel *descLabel = [YSIFLYADUtil
-        createSectionTitleWithText:@"本工程演示媒体侧常用接入流程：初始化、加载、展示、回调、销毁。示例代码只使用 SDK 公开 API。"
+        createSectionTitleWithText:@"先配置自己的广告位，再按加载、展示、回调、销毁顺序体验。接入步骤和排错方法见示例 README。"
                              frame:CGRectMake(margin, y, contentWidth, 52)];
     descLabel.textAlignment = NSTextAlignmentCenter;
     [scrollView addSubview:descLabel];

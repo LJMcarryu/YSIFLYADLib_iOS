@@ -1,92 +1,92 @@
-# YSIFLYADLibSimple
+# YS 广告接入示例
 
-这是 `YSIFLYADLib` 的 iOS 接入示例工程，用于演示 YS 媒体定制 SDK 的常见广告样式和基础生命周期处理。
+本工程使用 `YSIFLYADLib 6.3.5`，演示开屏、Banner、插屏和自渲染信息流，支持信息流列表复用及视频素材。SDK 不包含激励广告。
 
-当前目录对应正式版 `6.3.5`，源码和 `Podfile` 均使用 NativeFeed SDK 托管 API；
-正式签名资产、checksum 和 A/B 元数据已冻结。
+先按本文运行和替换广告位；将能力接入自己的 App 时，参考[SDK 接入说明](../README.md)与各页面代码。
 
-当前 demo 覆盖：
+## 从下载到运行
 
-- 开屏广告
-- Banner 广告
-- 插屏广告
-- 自渲染信息流广告（含 `UITableView` Cell 复用与原广告恢复）
-- 信息流视频素材展示
+准备 macOS、Xcode、CocoaPods 和可访问 GitHub Releases 的网络。最低部署目标为 iOS 11.0。使用模拟器可检查安装、链接和页面；真实广告填充、跳转和 ATT 请用真机联调。
 
-YS 变体为 model B 单包，包含开屏、Banner、插屏、信息流和视频能力，不包含激励广告能力。本示例已移除激励视频入口和相关代码。
-
-## 运行方式
-
-可在本目录直接消费 `6.3.5` tag 与同版本 Release 资产：
-
-```sh
+```bash
+git clone https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
+cd YSIFLYADLib_iOS/YSIFLYADLibSimple
 pod install
 open YSIFLYADLibSimple.xcworkspace
 ```
 
-打开 workspace 后选择 `YSIFLYADLibSimple` scheme 运行。
+1. 在 Xcode 选择 `YSIFLYADLibSimple` scheme 和模拟器或已连接的 iPhone。
+2. 真机运行前，在 App target 的 **Signing & Capabilities** 选择自己的 Team；必要时将 Bundle Identifier 改为自己的标识。
+3. 按下文替换广告位，确认后台授权的 App 信息与当前 App 一致，然后运行。
+4. 首页应显示 `SDK Version: 6.3.5`。示例的 `Podfile` 固定使用正式版 `6.3.5`，示例页面可以随本仓库更新。
 
-## 接入要点
+使用 CocoaPods 后始终打开 `.xcworkspace`。它自动加入 `YSAdvSDK.bundle`（含隐私清单）和 `-ObjC`；不需再手工嵌入静态 framework。其他安装方式见[SDK 接入说明](../README.md#安装)。
 
-`Podfile` 已固定到已发布的 `6.3.5` tag，示例工程最低支持 iOS 11.0：
+## 配置广告位与请求
 
-```ruby
-pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.3.5/YSIFLYADLib.podspec'
-```
+打开 [`YSIFLYAdPrefixHeader.pch`](YSIFLYADLibSimple/Supporting%20Files/YSIFLYAdPrefixHeader.pch)，将需要体验的宏替换为媒体获分配的广告位 ID。仓库内的示例 ID 不保证填充；图片、视频等结果以广告位配置和实际返回为准。
 
-`6.2.2` 延续 `6.2.1` 的**静态 framework**交付：代码随 App 静态链接、无需 Embed；`YSAdvSDK.bundle`（含 `PrivacyInfo.xcprivacy`）由 CocoaPods podspec 或 SwiftPM 资源包装 target 自动拷入 App。最终 App 链接需要 `-ObjC`：CocoaPods podspec 同时向 pod target 与 aggregate/user target 注入，SwiftPM 和手动接入需在 App target 的 `OTHER_LDFLAGS` 添加。只有手动接入时需要自行把该 bundle 加入 Copy Bundle Resources。CocoaPods podspec 显式链接 `AdSupport`、弱链接 `AppTrackingTransparency`；SwiftPM 与手动接入依靠 XCFramework 目标文件携带的 linker options，最低 iOS 11.0 不变。
+| 宏 | 对应页面/选项 |
+| --- | --- |
+| `__SPLASH_NATIVE_AD_UNIT_ID__` | 开屏 / 图片开屏 |
+| `__SPLASH_VIDEO_AD_UNIT_ID__` | 开屏 / 视频开屏 |
+| `__BANNER_AD_UNIT_ID__` | Banner |
+| `__INTERSTITIAL_AD_UNIT_ID__` | 插屏 |
+| `__TYPED_ONE_NATIVE_AD_UNIT_ID__` | 自渲染信息流 / 单图 |
+| `__TYPED_MORE_NATIVE_AD_UNIT_ID__` | 自渲染信息流 / 多图 |
+| `__FEED_VIDEO_AD_UNIT_ID__` | 自渲染信息流 / 视频 |
 
-自渲染示例除延续 `6.1.0` 的严格响应数据公开契约外，还演示 `6.2.2` 的 SDK 托管列表复用生命周期：
+公共请求参数在 [`YSIFLYADUtil.m`](YSIFLYADLibSimple/Supporting%20Files/YSIFLYADUtil.m) 的 `mediaSampleRequestConfig` 中：示例超时为 5 秒，`settleType = @1`、`bidFloor = @0.01`、`interactStatus = @1`。这些是演示值，业务接入请按平台约定调整，勿将示例价格作为正式结算配置。App 名称与版本从宿主信息读取。
 
-- 通用竞价信息从 `ad.bidInfo.price/dealId` 获取，不再调用 `ecpm`。
-- NativeFeed 使用 `ctaText`、`appName` 和归一后的 `templateId/materialType`；多图按两至三张处理。
-- `Exposure` / `Unknown` 显式传空 `clickViews`，避免 `nil` 回退为整容器可点击。
-- 数据层用稳定 ID 只持有同一个 `YSIFLYNativeFeedAd`；Cell 不持 Session、Binding 或首次/复用状态。
-- Cell 展示且媒体 UI 就绪后调用 Ad `ysifly_attachWithViewBinder:error:`；在
-  `didEndDisplaying` / `prepareForReuse` 通过
-  `[YSIFLYNativeFeedAd ysifly_detachAdFromContainerView:containerView]` 反注册容器。
-- SDK 内部处理同 Ad 串行迁移、同容器幂等、同容器新广告接管和迟到回调隔离；同一条目滚回后不重新请求广告。
-- 曝光前后都可恢复原广告；已曝光逻辑广告不重复曝光。TTL / 视频 `end_time` 到期不强拆当前
-  活动容器，detach 后下一次 attach 返回 `71506`，此时淘汰数据项并补请求。
-- 永久淘汰或离开页面时先反注册容器、置空 delegate，再释放最后一个 Ad 强引用即可；
-  `ysifly_destroy` 仅在仍持有 Ad 但希望提前取消或终止时可选调用。视频容器交给 SDK，
-  不自行创建 `AVPlayer`。
-- 视频 detach/attach 会保留内容进度与既有播放意图；显式 `ysifly_pausePlay` /
-  `ysifly_stopPlay` 后不会因回屏自动起播，只有 `ysifly_resumePlay` /
-  `ysifly_startPlay` 才重新申请播放。
-- `6.2.3` 新增的外部 CTA 能力默认关闭；`6.2.4` 进一步接受同 window/scene 内同 Cell、专属紧包 wrapper 或几何紧凑相邻的 window-local CTA。绑定时固定归属与祖先路径；共享、固定悬浮、离屏仍可点击、运行中 reparent 或归属不明继续以 71503 拒绝。固定单容器可按需调用 `ysifly_detachFromCurrentContainer`，复用列表仍按具体容器 detach。
-- `6.3.5` 显式开启外部 CTA 后允许 view 尚未挂载、零尺寸或等待后续布局，放宽 container 非页面根祖先并优先保留媒体子视图交互；attach 与点击拒绝使用结构化 `71503/<point>` 诊断。点击时仍要求独占 lease、同 window/scene、非页面根和有效可见交互状态。
+SDK 不要求额外 App ID 初始化。广告位须与媒体获授权的 App 和广告形式匹配。启动配置见 [`AppDelegate.m`](YSIFLYADLibSimple/AppDelegate.m)，首页入口见 [`ViewController.m`](YSIFLYADLibSimple/ViewController.m)。
 
-从 `6.2.1` 升级到 `6.2.2` 时，须删除 DisplaySession / Binding 及旧 bind/unbind/end 调用，
-改为上述 Ad attach 与容器 detach。若从 `6.1.0` 或更早版本升级，还需注意
-`6.2.0` 已引入的行为变化：
+## 隐私与网络设置
 
-- `jumpDirectly` 已成为兼容 no-op；SDK 不再使用 `canOpenURL:` 预检，DeepLink 以 `openURL` 完成回调判定，失败时仍回退 landing page。
-- iOS 14 及以上只有 ATT 已授权时才接受系统或媒体显式 IDFA；授权前设置的显式值会被丢弃，授权后必须重新设置。
-- NativeFeed 公开白标方法为 `ysifly_reportMediaShakeTriggeredWithError:`；YS 变体未启用优酷媒体摇一摇能力，调用返回 `NO` 和 `71512`，示例不把该方法作为摇一摇入口。
+- 示例在 App 激活后申请 ATT，并在每次请求时检查授权、过滤全零 IDFA。拒绝 ATT 时继续以空 IDFA 请求；不要为了取得 IDFA 重复弹窗。
+- 示例不包含生产 App 的隐私同意页面。接入自己的 App 时，应按用户授权和业务要求安排 SDK 使用时机；`ysifly_setPersonalizedEnabled:` 只记录状态，不会代替隐私流程或停止广告请求。
+- [`Info.plist`](YSIFLYADLibSimple/Info.plist) 含 `NSUserTrackingUsageDescription` 和用于测试素材的 ATS 例外。生产 App 请使用准确的用途文案，并按实际网络需求收窄 ATS 配置。
+- 示例开启日志便于查看回调。上线前按需关闭 `ysifly_setLogEnabled:`，反馈问题时隐藏设备标识、Token 和业务敏感数据。
 
-## API 命名约定
+## 页面与操作对照
 
-- SDK 类型使用 `YSIFLY*` 前缀，例如 `YSIFLYSplashAd`、`YSIFLYBannerAd`、`YSIFLYInterstitialAd`、`YSIFLYNativeFeedAd`。
-- SDK 公开方法使用 `ysifly_*` 前缀，例如 `ysifly_loadAd`、`ysifly_showInView:`、`ysifly_destroy`。
-- delegate 属性保持点语法，例如 `ad.delegate = self`。
-- 初始化方法保持系统风格，例如 `initWithAdUnitId:` 不加 `ysifly_` 前缀。
-- 伞头使用 `<YSIFLYADLib/YSIFLYADLib.h>`。
+| 首页入口 | 示例文件 | 操作与观察重点 |
+| --- | --- | --- |
+| 开屏广告 | [YSIFLYSplashViewController.m](YSIFLYADLibSimple/biz/splash/YSIFLYSplashViewController.m) | 选择图片/视频，点击 `Load`，等 Ready 后点击 `Show`；观察底部品牌区、跳过和关闭 |
+| Banner 广告 | [YSIFLYBannerViewController.m](YSIFLYADLibSimple/biz/banner/YSIFLYBannerViewController.m) | `Load` → Ready → `Show`；广告显示在页面内的 Banner 容器 |
+| 插屏广告 | [YSIFLYInterstitialViewController.m](YSIFLYADLibSimple/biz/interstitial/YSIFLYInterstitialViewController.m) | 选择半屏/全屏，`Load` → Ready → `Show`；观察展示、曝光与关闭回调 |
+| 自渲染信息流 | [YSIFLYNativeViewController.m](YSIFLYADLibSimple/biz/native/YSIFLYNativeViewController.m) | 广告行进入屏幕后自动加载；切换单图/多图/视频后点“加载 / 换一条”；离屏再回屏检查原广告恢复 |
 
-## 目录说明
+开屏、Banner、插屏页面中的 `Show` 初始禁用，Ready 且广告有效后启用；“检查状态”记录有效性与公开竞价信息；`Destroy` 终止当前对象。再次点 `Load` 会先清理旧对象，再新建广告请求。演示开屏手动展示，实际启动场景由宿主在合适时机展示。
 
-```text
-YSIFLYADLibSimple/
-  YSIFLYADLibSimple.xcodeproj
-  YSIFLYADLibSimple/
-    AppDelegate.*
-    ViewController.*
-    biz/
-      splash/
-      banner/
-      interstitial/
-      native/
-    Supporting Files/
-  Podfile
-  README.md
-```
+信息流页面把一条广告插入普通内容列表。数据层持有广告对象，Cell 在素材 UI 准备好后调用 `ysifly_attachWithViewBinder:error:`。离屏和 `prepareForReuse` 都按具体容器同步调用 `ysifly_detachAdFromContainerView:`；滚回时复用原广告对象。“永久淘汰”释放当前广告对象，点“加载 / 换一条”可请求新广告；空广告行再次进入屏幕时也会自动请求。不要将离屏操作替换为 `ysifly_destroy`。
+
+信息流单图/多图由示例下载并显示，视频容器交给 SDK。标题、广告标识、关闭按钮与可点击区域见 Cell 的 `renderAd:` 和 `viewBinderForAd:`；`Exposure` / `Unknown` 素材使用空 `clickViews`。业务点击和跳转交给 SDK，媒体无需为 CTA 再加跳转逻辑。
+
+## 如何确认接入成功
+
+构建成功、展示成功和线上有填充是不同层面的结果，可依次检查：
+
+1. **安装与启动**：`pod install` 成功，workspace 构建通过，App 首页显示 `6.3.5` 和四种广告入口。
+2. **内置渲染**：加载后看到 `DidLoad`，随后 `DidReady`；点击 `Show` 后广告可见，日志有展示/曝光回调；关闭后页面可继续操作。
+3. **自渲染**：有 `nativeFeedAdDidLoad`，素材显示且挂载成功，进入有效可见状态后收到曝光回调；视频素材在曝光后按播放策略播放。
+4. **列表复用**：广告离屏再回屏能恢复；同一逻辑广告不重复触发曝光回调。换一条后旧图片或旧回调不应覆盖新广告。
+5. **交互与退出**：真机验证可点击素材的点击、跳转、返回；退出页面后不再展示该页广告。网络失败或无填充时应显示错误并允许主动重试。
+
+`DidLoad` 仅表示响应解析成功；开屏、Banner、插屏仍须等待 `DidReady`。信息流没有 Ready 回调，由媒体完成素材 UI 再 attach。收到失败回调且页面仍可操作，表示失败路径已执行，不能据此认定展示成功。
+
+## 常见问题
+
+| 现象 | 检查方法 |
+| --- | --- |
+| `pod install` 下载失败 | 确认能访问 `raw.githubusercontent.com` 和本版本 GitHub Release；保留失败 URL/错误后重试，检查代理、证书和网络限制 |
+| `No such module` / 找不到头文件 | 确认依赖安装完成，打开的是 workspace，且当前选择 `YSIFLYADLibSimple` scheme |
+| 真机签名失败 | 配置自己的 Team、Bundle Identifier 与设备授权；这类错误发生在运行广告请求之前 |
+| 首页版本不是 `6.3.5` | 核对 `Podfile`、安装输出和 `Pods/Manifest.lock`；清理旧构建后重新从 workspace 运行 |
+| Show 不可点击 | 等待 Ready，查看失败回调；`DidLoad` 不等于素材就绪，失效实例需要重新加载 |
+| 无填充 / 请求超时 | 核对广告位、App 信息、后台授权和网络；示例 ID 或模拟器不保证填充，不要连续无间隔重试 |
+| 信息流挂载失败 | 查看错误码和描述，检查主线程、素材完整性、容器布局及视频 `videoView`；完整规则见根 README |
+| 信息流回屏为空 | 确认数据层仍持同一个 Ad，离屏只按具体容器 detach；如果已过期，释放旧对象后请求新广告 |
+| IDFA 为空 | 检查 ATT 状态；拒绝/未决定时为空是预期行为，授权后在新请求中重新读取 |
+| 视频/图标缺失 | 核对 App 中存在一份 `YSAdvSDK.bundle`，并检查素材下载错误；不要重复拷贝资源或重复接入不同 YS 包 |
+
+反馈请使用 [Issues](https://github.com/LJMcarryu/YSIFLYADLib_iOS/issues)，附 SDK/iOS/Xcode 版本、真机或模拟器、页面与操作顺序、错误码和脱敏后的日志。版本变化见[更新记录](../CHANGELOG.md)。

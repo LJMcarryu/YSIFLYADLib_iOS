@@ -19,13 +19,15 @@ job 结论；summary 对上游失败继续失败关闭。
 
 <!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.5","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.5"} -->
 
+`6.3.5` 已于 2026-09-14T12:39:06Z 正式公开，发布后的 [CocoaPods / SwiftPM 消费验证](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/34844585266)为 `success`；本仓 `release-state.json` 为 `6.3.5/CLOSED`。Tag 和发布资产保持不可变。
+
 - `releaseState`：`FORMAL`
 - `binarySourceCommit`（SDK 二进制源码提交）：`82d8cab58eba588104eee9bc89063952a277af65`
 - `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`b1bc50e272c29dd817cfcee8bbeeb9d60dfaca89`
 - `candidateId`：`17cccada18787f54c2faca204769d245a3ee29adf40f6c85c679896c28f16ba4`
 
 `6.3.5` 正式签名资产、checksum 和 A/B 已完成冻结。仓库根 `release-state.json` 由编排器
-从上一正式版 `6.3.1/CLOSED` 生成不可变候选时推进为 `6.3.5/FROZEN`。
+从上一正式版 `6.3.1/CLOSED` 生成候选时推进为 `6.3.5/FROZEN`，正式消费成功后推进为 `6.3.5/CLOSED`。
 当前最新公开正式版为
 [`6.3.5`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.5)。
 
@@ -97,7 +99,7 @@ CocoaPods Demo，同时通过完整 `pod spec lint`。该分发验收不代表�
 `LJMcarryu/IFLYADLibDemo` 的 compare API。该 Token 只用于验证 A/B 祖先关系和变更路径，
 不得传给本公开仓 Release 资产查询或下载。Secret 缺失时正式 tag/Release 必须失败。
 
-GitHub Release 正文必须从“当前状态”逐字复制两行 A/B 规范声明，且每个提交只出现一次。
+GitHub Release 正文必须从本版发布状态逐字复制两行 A/B 规范声明，且每个提交只出现一次。
 
 `workflow_dispatch` 的 `validation_mode` 分为三种：
 
