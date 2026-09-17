@@ -4,6 +4,10 @@
 
 先按本文运行和替换广告位；将能力接入自己的 App 时，参考[SDK 接入说明](../README.md)与各页面代码。
 
+> `6.3.6` 当前是待联调候选，尚未发布；本示例的 `Podfile` 继续固定公开正式版 `6.3.5`，因此直接运行示例时不会获得候选行为。历史 Tag、Release 和资产保持不变。
+>
+> 使用后续候选产物联调时，公开 API 方法签名不变。展示、落地页、外跳回流、曝光判断和 UI 生命周期应归属广告的实际来源 window/Scene；无来源时只允许唯一且明确的前台应用 Scene，不跨 Scene 随机兜底，独立落地页始终属于来源 Scene。开屏 rootVC 仍须入窗；Scene 宿主的 `customWindow` 必须可见、尺寸有限且为正、已关联 Scene，并与 `rootVC.window` 同 Scene，可以是非 key、高 `windowLevel`、无 rootVC。非法输入展示失败，修正后可以重试。
+
 ## 从下载到运行
 
 准备 macOS、Xcode、CocoaPods 和可访问 GitHub Releases 的网络。最低部署目标为 iOS 11.0。使用模拟器可检查安装、链接和页面；真实广告填充、跳转和 ATT 请用真机联调。

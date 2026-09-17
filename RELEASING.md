@@ -1,4 +1,4 @@
-# 6.3.5 发布维护说明
+# 发布维护说明
 
 本文件只维护 YS 公开分发仓的发布状态和可机器校验的私有源码溯源，不包含 SDK 私有源码。
 
@@ -14,6 +14,12 @@
 既有 run；候选与正式 Release 使用不同并发组。重型验证 job 最长运行 55 分钟，结束后由无
 Token、只读的 summary job 汇总 Candidate、Release、checkout commit、三资产 SHA-256 和全部
 job 结论；summary 对上游失败继续失败关闭。
+
+## 6.3.6 候选状态
+
+`6.3.6` 当前仅为待联调候选，尚未发布，也没有正式 Tag、Release、资产或 checksum。当前公开正式版仍为 `6.3.5`，本仓 `release-state.json` 继续保持 `6.3.5/CLOSED`；只有完成联调和冻结后，才由私有源码仓编排器推进后续状态。已发布的 Tag、Release 和资产不覆盖、不移动。
+
+候选行为将展示、落地页、外跳回流、曝光判断和 UI 生命周期绑定到实际来源 window/Scene；无来源时只允许唯一且明确的前台应用 Scene，不跨 Scene 随机兜底，独立落地页始终归属来源 Scene。开屏 rootVC 仍须入窗；Scene 宿主的 `customWindow` 必须可见、尺寸有限且为正、已关联 Scene，并与 `rootVC.window` 同 Scene，可以是非 key、高 `windowLevel`、无 rootVC。非法输入展示失败，修正后可重试。公开 API 方法签名不变。
 
 ## 6.3.5 发布状态
 
