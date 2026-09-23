@@ -5,11 +5,11 @@
 
 `YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有源码仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
 
-## 6.4.0 候选（待联调）
+## [6.4.0] - 冻结与发布记录
 
-<!-- ifly-release-candidate: {"schemaVersion":1,"version":"6.4.0","releaseState":"CANDIDATE","publicationState":"UNPUBLISHED","repository":"LJMcarryu/YSIFLYADLib_iOS","currentFormalVersion":"6.3.5"} -->
+<!-- ifly-release-status: {"schemaVersion":1,"version":"6.4.0","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.0"} -->
 
-`6.4.0` 尚未发布，本节仅记录待联调候选行为。当前公开正式版仍为 `6.3.5`；既有 Tag、Release 和资产保持不可变。
+`6.4.0` 的正式分发资料与签名资产已经冻结；公开时间和消费结论以 `release-state.json.publication` 与 [Release 6.4.0](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.0) 的实际状态为准。
 
 ### 变更
 
@@ -19,8 +19,6 @@
 - 公开 API 方法签名不变。
 
 ## [6.3.5] - 2026-09-14
-
-<!-- ifly-release-status: {"schemaVersion":1,"version":"6.3.5","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.5"} -->
 
 正式发布于 2026-09-14；本版本的消费结果见 [RELEASING](RELEASING.md)。历史章节只描述各自版本，不替代当前接入契约。
 
