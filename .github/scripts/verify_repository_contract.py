@@ -11,8 +11,8 @@ import sys
 from pathlib import Path
 
 
-VERSION = "6.3.5"
-PREVIOUS_VERSION = "6.3.1"
+VERSION = "6.4.0"
+PREVIOUS_VERSION = "6.3.5"
 REPOSITORY = "LJMcarryu/YSIFLYADLib_iOS"
 HISTORICAL = {
     "2c2d14bc635ae4fe9784934ea93b039c03c2d244449fff74f3857fff7b35bbdd",

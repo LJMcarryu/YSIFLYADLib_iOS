@@ -43,8 +43,8 @@ REPOSITORY_CONTRACT = load_module(
     ROOT / ".github/scripts/verify_repository_contract.py",
 )
 
-VERSION = "6.3.5"
-PREVIOUS_VERSION = "6.3.1"
+VERSION = "6.4.0"
+PREVIOUS_VERSION = "6.3.5"
 BINARY_COMMIT = "a" * 40
 METADATA_COMMIT = "b" * 40
 CANDIDATE_ID = "d" * 64
