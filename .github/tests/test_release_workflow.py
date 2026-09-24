@@ -43,8 +43,8 @@ REPOSITORY_CONTRACT = load_module(
     ROOT / ".github/scripts/verify_repository_contract.py",
 )
 
-VERSION = "6.3.5"
-PREVIOUS_VERSION = "6.3.1"
+VERSION = "6.4.0"
+PREVIOUS_VERSION = "6.3.5"
 BINARY_COMMIT = "a" * 40
 METADATA_COMMIT = "b" * 40
 CANDIDATE_ID = "d" * 64
@@ -369,13 +369,13 @@ class ReleaseModeContractTests(unittest.TestCase):
 
     def test_repository_stages_635_over_allowed_lifecycle_and_keeps_history(self) -> None:
         contract = MODE.read_local_contract(ROOT)
-        self.assertEqual(contract["version"], VERSION)
         self.assertIn(
-            (contract["state_version"], contract["phase"]),
+            (contract["version"], contract["state_version"], contract["phase"]),
             {
-                (PREVIOUS_VERSION, "CLOSED"),
-                (VERSION, "FROZEN"),
-                (VERSION, "CLOSED"),
+                (PREVIOUS_VERSION, PREVIOUS_VERSION, "CLOSED"),
+                (VERSION, PREVIOUS_VERSION, "CLOSED"),
+                (VERSION, VERSION, "FROZEN"),
+                (VERSION, VERSION, "CLOSED"),
             },
         )
         MODE.validate_formal(contract)
@@ -1120,6 +1120,7 @@ class WorkflowStructureTests(unittest.TestCase):
 
     def test_docs_drift_is_isolated_but_checksum_drift_fails_machine_scope(self) -> None:
         original_read = REPOSITORY_CONTRACT.read
+        repository_version = MODE.read_local_contract(ROOT)["version"]
         REPOSITORY_CONTRACT.verify_docs(ROOT, "repository")
 
         def docs_drift(root: Path, relative: str) -> str:
@@ -1165,9 +1166,13 @@ class WorkflowStructureTests(unittest.TestCase):
         def version_drift(root: Path, relative: str) -> str:
             value = original_read(root, relative)
             if relative == "YSIFLYADLib.podspec":
+                drift_version = (
+                    VERSION if repository_version == PREVIOUS_VERSION
+                    else PREVIOUS_VERSION
+                )
                 return re.sub(
-                    rf"(s\.version\s*=\s*['\"]){re.escape(VERSION)}",
-                    rf"\g<1>{PREVIOUS_VERSION}",
+                    rf"(s\.version\s*=\s*['\"]){re.escape(repository_version)}",
+                    rf"\g<1>{drift_version}",
                     value,
                     count=1,
                 )
@@ -1181,6 +1186,7 @@ class WorkflowStructureTests(unittest.TestCase):
 
     def test_repository_contract_keeps_only_previous_or_current_closed_state(self) -> None:
         original_read = REPOSITORY_CONTRACT.read
+        repository_version = MODE.read_local_contract(ROOT)["version"]
         closed = json.loads(original_read(ROOT, "release-state.json"))
         closed["phase"] = "CLOSED"
 
@@ -1188,7 +1194,14 @@ class WorkflowStructureTests(unittest.TestCase):
             def read(root: Path, relative: str) -> str:
                 if relative == "release-state.json":
                     return json.dumps({**closed, "version": version})
-                return original_read(root, relative)
+                value = original_read(root, relative)
+                if relative in {
+                    "Package.swift",
+                    "YSIFLYADLib.podspec",
+                    "YSIFLYADLibSimple/Podfile",
+                }:
+                    return value.replace(repository_version, version)
+                return value
 
             return read
 
@@ -1206,14 +1219,26 @@ class WorkflowStructureTests(unittest.TestCase):
 
     def test_release_contracts_accept_only_current_frozen_state(self) -> None:
         original_read = REPOSITORY_CONTRACT.read
+        repository_version = MODE.read_local_contract(ROOT)["version"]
         frozen = json.loads(original_read(ROOT, "release-state.json"))
         frozen.update({"version": VERSION, "phase": "FROZEN", "publication": None})
 
-        def with_state(value: dict[str, object]):
+        def with_state(value: dict[str, object], version: str = VERSION):
             def read(root: Path, relative: str) -> str:
                 if relative == "release-state.json":
                     return json.dumps(value)
-                return original_read(root, relative)
+                content = original_read(root, relative)
+                if relative in {
+                    "Package.swift",
+                    "YSIFLYADLib.podspec",
+                    "YSIFLYADLibSimple/Podfile",
+                    "README.md",
+                    "CHANGELOG.md",
+                    "RELEASING.md",
+                    "YSIFLYADLibSimple/README.md",
+                }:
+                    return content.replace(repository_version, version)
+                return content
 
             return read
 
@@ -1241,6 +1266,15 @@ class WorkflowStructureTests(unittest.TestCase):
                     REPOSITORY_CONTRACT.verify_machine(
                         ROOT, release_kind, self.podspec_json
                     )
+
+            with mock.patch.object(
+                REPOSITORY_CONTRACT,
+                "read",
+                side_effect=with_state(frozen, PREVIOUS_VERSION),
+            ), self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+                REPOSITORY_CONTRACT.verify_machine(
+                    ROOT, release_kind, self.podspec_json
+                )
 
     def test_podspec_comments_cannot_substitute_for_parsed_link_contract(self) -> None:
         podspec_source = (ROOT / "YSIFLYADLib.podspec").read_text(encoding="utf-8")
