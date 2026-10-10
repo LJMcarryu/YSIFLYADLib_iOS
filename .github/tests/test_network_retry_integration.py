@@ -43,7 +43,11 @@ class NetworkRetryWorkflowTests(unittest.TestCase):
             legacy = git(fixture, "rev-parse", "HEAD")
             scripts = fixture / ".github/scripts"
             scripts.mkdir(parents=True)
-            for filename in ("download_release_assets.py", "github_http_retry.py"):
+            for filename in (
+                "download_release_assets.py",
+                "github_http_retry.py",
+                "release_metadata_control.py",
+            ):
                 (scripts / filename).write_bytes((ROOT / ".github/scripts" / filename).read_bytes())
             git(fixture, "add", ".github")
             git(fixture, "commit", "-qm", "control")
@@ -58,6 +62,11 @@ class NetworkRetryWorkflowTests(unittest.TestCase):
                     bootstrap = run[start:end] + " --help"
                     self.assertIn("${WORKFLOW_CONTROL_SHA}:.github/scripts/github_http_retry.py", bootstrap)
                     self.assertIn("${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py", bootstrap)
+                    if "--mode formal_release" in run:
+                        self.assertIn(
+                            "${WORKFLOW_CONTROL_SHA}:.github/scripts/release_metadata_control.py",
+                            bootstrap,
+                        )
                     result = subprocess.run(
                         ["bash", "-e", "-o", "pipefail", "-c", bootstrap],
                         cwd=fixture, capture_output=True, text=True, timeout=10,

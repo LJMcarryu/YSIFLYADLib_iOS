@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       validation_mode:
-        description: 验证模式；repository 兼容旧调用，非空 release_tag 自动推导 formal
+        description: 验证模式；repository 同时传 release_tag/formal_release_id 时推导 formal
         required: false
         default: repository
         type: choice
@@ -23,7 +23,12 @@ on:
           - draft_candidate
           - formal_release
       release_tag:
-        description: formal_release 必填；repository 传入时按旧调用自动推导正式复验
+        description: formal_release 必填；必须同时提供 formal_release_id
+        required: false
+        default: ''
+        type: string
+      formal_release_id:
+        description: 正式复验的精确 Release ID；控制 API 认证查询，资产仍匿名下载
         required: false
         default: ''
         type: string
@@ -67,7 +72,7 @@ permissions:
   contents: read
 
 env:
-  RELEASE_TARGET_VERSION: 6.4.0
+  RELEASE_TARGET_VERSION: 6.4.0 # release-control-version: target
 
 concurrency:
   group: >-
@@ -85,6 +90,7 @@ jobs:
       mode: ${{ steps.resolve.outputs.mode }}
       checkout_ref: ${{ steps.resolve.outputs.checkout_ref }}
       release_tag: ${{ steps.resolve.outputs.release_tag }}
+      formal_release_id: ${{ steps.resolve.outputs.formal_release_id }}
       candidate_release_id: ${{ steps.resolve.outputs.candidate_release_id }}
       candidate_id: ${{ steps.resolve.outputs.candidate_id }}
       candidate_branch: ${{ steps.resolve.outputs.candidate_branch }}
@@ -97,8 +103,10 @@ jobs:
           EVENT_REF: ${{ github.ref }}
           EVENT_REF_NAME: ${{ github.ref_name }}
           RELEASE_EVENT_TAG: ${{ github.event.release.tag_name || '' }}
+          RELEASE_EVENT_ID: ${{ github.event.release.id || '' }}
           REQUESTED_MODE: ${{ inputs.validation_mode || '' }}
           INPUT_RELEASE_TAG: ${{ inputs.release_tag || '' }}
+          INPUT_FORMAL_RELEASE_ID: ${{ inputs.formal_release_id || '' }}
           INPUT_CANDIDATE_RELEASE_ID: ${{ inputs.candidate_release_id || '' }}
           INPUT_CANDIDATE_ID: ${{ inputs.candidate_id || '' }}
           INPUT_DISPATCH_NONCE: ${{ inputs.dispatch_nonce || '' }}
@@ -118,6 +126,7 @@ jobs:
           event_ref_name = os.environ["EVENT_REF_NAME"]
           requested = os.environ["REQUESTED_MODE"].strip() or "repository"
           release_tag = os.environ["INPUT_RELEASE_TAG"].strip()
+          formal_release_id = os.environ["INPUT_FORMAL_RELEASE_ID"].strip()
           candidate_release_id = os.environ["INPUT_CANDIDATE_RELEASE_ID"].strip()
           candidate_id = os.environ["INPUT_CANDIDATE_ID"].strip()
           dispatch_nonce = os.environ["INPUT_DISPATCH_NONCE"].strip()
@@ -139,6 +148,7 @@ jobs:
               assert event == "workflow_dispatch"
               assert requested == "repository"
               assert not release_tag and not candidate_release_id and not candidate_id
+              assert not formal_release_id
               assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", canary_tag)
               assert re.fullmatch(r"[1-9][0-9]*", canary_release_id)
               assert re.fullmatch(r"[0-9a-f]{64}", canary_candidate_id)
@@ -155,10 +165,12 @@ jobs:
           elif event == "release":
               mode = "formal_release"
               release_tag = os.environ["RELEASE_EVENT_TAG"].strip()
+              formal_release_id = os.environ["RELEASE_EVENT_ID"].strip()
               candidate_release_id = ""
               candidate_id = ""
               dispatch_nonce = ""
               assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", release_tag)
+              assert re.fullmatch(r"[1-9][0-9]*", formal_release_id)
               assert release_tag == target_version, "release 事件版本与当前分发基线不一致"
               checkout_ref = release_tag
           elif event == "workflow_dispatch":
@@ -170,6 +182,7 @@ jobs:
               if requested == "draft_candidate":
                   mode = "draft_candidate"
                   assert not release_tag, "draft candidate 不得同时提供 release_tag"
+                  assert not formal_release_id, "draft candidate 不得提供 formal_release_id"
                   assert re.fullmatch(r"[1-9][0-9]*", candidate_release_id), (
                       "draft candidate 必须提供十进制 candidate_release_id"
                   )
@@ -207,6 +220,9 @@ jobs:
                   assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", release_tag), (
                       "正式复验必须提供 x.y.z release_tag"
                   )
+                  assert re.fullmatch(r"[1-9][0-9]*", formal_release_id), (
+                      "正式复验必须提供十进制 formal_release_id"
+                  )
                   assert release_tag == target_version, "正式复验版本与当前分发基线不一致"
                   checkout_ref = release_tag
               else:
@@ -215,8 +231,10 @@ jobs:
                   )
                   assert not candidate_id, "repository 模式不得提供 candidate_id"
                   assert not dispatch_nonce, "repository 模式不得提供 dispatch_nonce"
-                  if release_tag:
-                      # 兼容旧 workflow_dispatch：仅传 release_tag 即正式复验。
+                  if release_tag or formal_release_id:
+                      assert release_tag and formal_release_id, (
+                          "repository 正式复验必须同时提供 release_tag 与 formal_release_id"
+                      )
                       assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", release_tag), (
                           "旧式 release_tag 必须为 x.y.z"
                       )
@@ -229,6 +247,7 @@ jobs:
           else:
               mode = "repository"
               release_tag = ""
+              formal_release_id = ""
               candidate_release_id = ""
               candidate_id = ""
               dispatch_nonce = ""
@@ -239,6 +258,7 @@ jobs:
               handle.write(f"mode={mode}\n")
               handle.write(f"checkout_ref={checkout_ref}\n")
               handle.write(f"release_tag={release_tag}\n")
+              handle.write(f"formal_release_id={formal_release_id}\n")
               handle.write(f"candidate_release_id={candidate_release_id}\n")
               handle.write(f"candidate_id={candidate_id}\n")
               handle.write(f"candidate_branch={candidate_branch}\n")
@@ -308,6 +328,31 @@ jobs:
               assert current <= target, "main CLOSED 版本不得高于当前分发基线"
           else:
               assert current == target, "非 CLOSED 状态必须绑定当前分发基线"
+          PY
+
+      - name: 校验版本控制状态拓扑
+        env:
+          VALIDATION_MODE: ${{ needs.resolve-validation-mode.outputs.mode }}
+          RELEASE_TAG: ${{ needs.resolve-validation-mode.outputs.release_tag }}
+        run: |
+          python3 - <<'PY'
+          import os, subprocess, sys
+          from pathlib import Path
+          sys.path.insert(0, ".github/scripts")
+          from release_metadata_control import read_release_control
+          mode = os.environ["VALIDATION_MODE"]
+          state_path = Path("release-state.json")
+          if mode == "formal_release":
+              state_path = Path(os.environ["RUNNER_TEMP"]) / "release-control-state.json"
+              with state_path.open("wb") as output:
+                  subprocess.run(
+                      ["git", "show", f"refs/tags/{os.environ['RELEASE_TAG']}:release-state.json"],
+                      check=True, stdout=output,
+                  )
+          read_release_control(Path(".github/scripts/release-control.json"),
+              repository="${{ github.repository }}", channel="ys",
+              release_state_path=state_path, validation_mode=mode)
+          print("release-control 版本契约校验通过")
           PY
 
       - name: Checkout 被验证的发布 ref
@@ -674,21 +719,28 @@ jobs:
 
       - name: 无 Token 匿名下载已发布正式 Release 精确三资产
         if: env.RELEASE_MODE == 'formal_release'
+        env:
+          GITHUB_TOKEN: ${{ github.event_name == 'workflow_dispatch' && github.token || '' }}
+          FORMAL_RELEASE_ID: ${{ github.event.release.id || inputs.formal_release_id }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           env \
             -u GH_TOKEN \
-            -u GITHUB_TOKEN \
             -u GITHUB_AUTH_TOKEN \
             -u ACTIONS_RUNTIME_TOKEN \
             bash -e -o pipefail -c '
               release_download_control_dir="$(mktemp -d "${RUNNER_TEMP}/release-download-control.XXXXXX")"
               git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/github_http_retry.py" > "${release_download_control_dir}/github_http_retry.py"
+              git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/release_metadata_control.py" > "${release_download_control_dir}/release_metadata_control.py"
               git show "${WORKFLOW_CONTROL_SHA}:.github/scripts/download_release_assets.py" > "${release_download_control_dir}/download_release_assets.py"
               python3 "${release_download_control_dir}/download_release_assets.py" \
                   --mode formal_release \
                   --repository "${GITHUB_REPOSITORY}" \
                   --version "${RELEASE_TAG}" \
                   --expected-commit "${EXPECTED_CHECKOUT_COMMIT}" \
+                  --formal-release-id "${FORMAL_RELEASE_ID}" \
+                  --event-name "${EVENT_NAME}" \
+                  --event-path "${GITHUB_EVENT_PATH}" \
                   --release-metadata-output "${RUNNER_TEMP}/ys-release-metadata.json" \
                   --destination "${RUNNER_TEMP}/ys-release"
             '
@@ -1435,6 +1487,6 @@ jobs:
           fi
 
 # 普通 PR/main/tag push 与空 release_tag 的 repository 模式只执行本地门禁。
-# repository + 非空 release_tag 兼容旧调用并推导 formal_release；正式资产始终无 Token 匿名下载。
+# repository + release_tag/formal_release_id 精确身份可推导 formal_release；正式资产始终无 Token 匿名下载。
 # draft candidate 仅允许从精确 release-candidate 分支手动触发，未公开二进制不上传 Actions artifact；前置 job
 # 只传递哈希，两个并行 consumer 各自在唯一 Token 步骤重新下载并绑定后消费。

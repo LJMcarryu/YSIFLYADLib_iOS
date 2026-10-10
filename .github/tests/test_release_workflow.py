@@ -43,7 +43,9 @@ REPOSITORY_CONTRACT = load_module(
     ROOT / ".github/scripts/verify_repository_contract.py",
 )
 
-VERSION = "6.4.0"
+VERSION = json.loads(
+    (ROOT / ".github/scripts/release-control.json").read_text(encoding="utf-8")
+)["targetVersion"]
 PREVIOUS_VERSION = "6.3.5"
 BINARY_COMMIT = "a" * 40
 METADATA_COMMIT = "b" * 40
@@ -425,8 +427,10 @@ class ReleaseDownloaderTests(unittest.TestCase):
             "checksums.txt": b"checksums",
         }
 
-    def download_for_url(self, url: str, _headers, timeout: int = 300) -> bytes:
+    def download_for_url(self, url: str, headers, timeout: int = 300) -> bytes:
         del timeout
+        if "/releases/download/" in url:
+            self.assertNotIn("Authorization", headers)
         for name, contents in self.contents.items():
             if url.endswith("/" + name):
                 return contents
@@ -450,12 +454,23 @@ class ReleaseDownloaderTests(unittest.TestCase):
         }
         state["publication"] = None
         release_state_path.write_text(json.dumps(state), encoding="utf-8")
+        formal = mode == "formal_release"
+        event_path = temporary / "event.json"
+        if formal:
+            event_path.write_text(json.dumps({
+                "action": "published",
+                "repository": {"full_name": state["repository"]},
+                "release": release_fixture("formal_release", self.contents),
+            }), encoding="utf-8")
         return argparse.Namespace(
             mode=mode,
             repository="LJMcarryu/YSIFLYADLib_iOS",
             version=VERSION,
             expected_commit="c" * 40,
             candidate_release_id="12345" if mode == "draft_candidate" else "",
+            formal_release_id="12345" if formal else "",
+            event_name="release" if formal else "",
+            event_path=event_path if formal else None,
             candidate_id=CANDIDATE_ID if mode == "draft_candidate" else "",
             target_branch=CANDIDATE_BRANCH if mode == "draft_candidate" else "",
             release_state=release_state_path,
@@ -502,7 +517,6 @@ class ReleaseDownloaderTests(unittest.TestCase):
             release = release_fixture("formal_release", self.contents)
             with (
                 mock.patch.dict(os.environ, {}, clear=True),
-                mock.patch.object(DOWNLOAD, "request_json", return_value=release),
                 mock.patch.object(
                     DOWNLOAD, "download_bytes", side_effect=self.download_for_url
                 ) as download,
@@ -512,7 +526,6 @@ class ReleaseDownloaderTests(unittest.TestCase):
             arguments.release_metadata_output.unlink()
             with (
                 mock.patch.dict(os.environ, {}, clear=True),
-                mock.patch.object(DOWNLOAD, "request_json", return_value=release),
                 mock.patch.object(
                     DOWNLOAD,
                     "download_bytes",
@@ -522,9 +535,12 @@ class ReleaseDownloaderTests(unittest.TestCase):
                 DOWNLOAD.run(arguments)
 
             leaked = self.arguments(temporary / "leaked", "formal_release")
-            with mock.patch.dict(
-                os.environ, {"GITHUB_TOKEN": "must-not-exist"}, clear=True
-            ), self.assertRaises(DOWNLOAD.DownloadError):
+            with (
+                mock.patch.dict(os.environ, {"GITHUB_TOKEN": "control-only"}, clear=True),
+                mock.patch.object(
+                    DOWNLOAD, "download_bytes", side_effect=self.download_for_url
+                ),
+            ):
                 DOWNLOAD.run(leaked)
 
     def test_asset_download_retries_timeout_and_uses_atomic_part(self) -> None:
@@ -825,8 +841,10 @@ class WorkflowStructureTests(unittest.TestCase):
         event_ref: str | None = None,
         event_ref_name: str | None = None,
         release_event_tag: str = "",
+        release_event_id: str = "",
         requested_mode: str = "repository",
         release_tag: str = "",
+        formal_release_id: str = "",
         candidate_release_id: str = "",
         candidate_id: str = "",
         dispatch_nonce: str = "",
@@ -856,8 +874,10 @@ class WorkflowStructureTests(unittest.TestCase):
                     "EVENT_REF": event_ref,
                     "EVENT_REF_NAME": event_ref_name,
                     "RELEASE_EVENT_TAG": release_event_tag,
+                    "RELEASE_EVENT_ID": release_event_id,
                     "REQUESTED_MODE": requested_mode,
                     "INPUT_RELEASE_TAG": release_tag,
+                    "INPUT_FORMAL_RELEASE_ID": formal_release_id,
                     "INPUT_CANDIDATE_RELEASE_ID": candidate_release_id,
                     "INPUT_CANDIDATE_ID": candidate_id,
                     "INPUT_DISPATCH_NONCE": dispatch_nonce,
@@ -902,9 +922,15 @@ class WorkflowStructureTests(unittest.TestCase):
                 "consume-cocoapods-release",
             },
         )
-        self.assertEqual(len(token_steps), 4)
-        self.assertNotIn("${{ github.token }}", self.source)
+        self.assertEqual(len(token_steps), 5)
         for job_name, step in token_steps:
+            if step.get("name") == "无 Token 匿名下载已发布正式 Release 精确三资产":
+                self.assertEqual(
+                    step["env"]["GITHUB_TOKEN"],
+                    "${{ github.event_name == 'workflow_dispatch' && github.token || '' }}",
+                )
+                self.assertIn("--formal-release-id", step["run"])
+                continue
             if job_name == "control-plane-canary":
                 self.assertNotIn("if", step)
             else:
@@ -913,7 +939,7 @@ class WorkflowStructureTests(unittest.TestCase):
                 step["env"]["GITHUB_TOKEN"],
                 "${{ secrets.DRAFT_RELEASE_READ_TOKEN }}",
             )
-        self.assertIn("-u GITHUB_TOKEN", self.source)
+        self.assertIn("--formal-release-id", self.source)
 
     def test_candidate_inputs_branch_and_exact_run_names_are_bound(self) -> None:
         inputs = self.workflow["true"]["workflow_dispatch"]["inputs"]
@@ -1415,7 +1441,7 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertNotIn(".github/scripts/validate_release_mode.py", old_tag_files)
         self.assertNotIn(".github/scripts/download_release_assets.py", old_tag_files)
 
-    def test_legacy_release_tag_infers_formal_and_conflicts_fail_closed(self) -> None:
+    def test_release_tag_and_exact_id_infer_formal_and_conflicts_fail_closed(self) -> None:
         validation_input = self.workflow["true"]["workflow_dispatch"]["inputs"][
             "validation_mode"
         ]
@@ -1428,11 +1454,13 @@ class WorkflowStructureTests(unittest.TestCase):
                 result, values = self.run_resolver(
                     requested_mode=requested_mode,
                     release_tag=VERSION,
+                    formal_release_id="12345",
                 )
                 self.assertEqual(result.returncode, 0, result.stdout)
                 self.assertEqual(values["mode"], "formal_release")
                 self.assertEqual(values["checkout_ref"], VERSION)
                 self.assertEqual(values["release_tag"], VERSION)
+                self.assertEqual(values["formal_release_id"], "12345")
 
         result, values = self.run_resolver(requested_mode="repository")
         self.assertEqual(result.returncode, 0, result.stdout)

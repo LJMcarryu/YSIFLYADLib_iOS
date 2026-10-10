@@ -21,10 +21,9 @@ from typing import Any, Mapping
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from github_http_retry import call_with_retry, retry_delay
+from github_http_retry import call_with_retry, failure_classification, retry_delay
 
 
-TOKEN_NAMES = ("GH_TOKEN", "GITHUB_TOKEN", "GITHUB_AUTH_TOKEN", "ACTIONS_RUNTIME_TOKEN")
 DOWNLOAD_MAX_ATTEMPTS = 5
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
 VERSION = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
@@ -243,6 +242,8 @@ def download_asset(
             "X-GitHub-Api-Version": "2022-11-28",
         }
     else:
+        from release_metadata_control import formal_release_metadata
+
         url = str(asset["browser_download_url"])
         headers = {"User-Agent": "YSIFLYADLib-anonymous-release-gate"}
     temporary = destination.with_name(destination.name + ".part")
@@ -308,6 +309,10 @@ def run(arguments: argparse.Namespace) -> dict[str, str]:
 
     token = os.environ.get("GITHUB_TOKEN", "").strip()
     if mode == "draft_candidate":
+        require(not arguments.formal_release_id,
+                "draft candidate 不得提供 formal_release_id")
+        require(not arguments.event_name and arguments.event_path is None,
+                "draft candidate 不得伪造正式事件来源")
         require(
             re.fullmatch(r"[1-9][0-9]*", arguments.candidate_release_id) is not None,
             "candidate_release_id 非十进制正整数",
@@ -326,20 +331,21 @@ def run(arguments: argparse.Namespace) -> dict[str, str]:
             "User-Agent": "YSIFLYADLib-draft-candidate-gate",
             "X-GitHub-Api-Version": "2022-11-28",
         }
+        release = request_json(api_url, api_headers)
     else:
-        leaked = [name for name in TOKEN_NAMES if os.environ.get(name)]
-        require(not leaked, f"正式匿名复验环境不得包含凭据变量: {leaked}")
+        from release_metadata_control import formal_release_metadata
+
         require(not arguments.candidate_release_id, "正式复验不得提供 candidate_release_id")
         require(not arguments.candidate_id, "正式复验不得提供 candidate_id")
         require(not arguments.target_branch, "正式复验不得提供 target_branch")
-        api_url = f"https://api.github.com/repos/{repository}/releases/tags/{version}"
-        api_headers = {
-            "Accept": "application/vnd.github+json",
-            "User-Agent": "YSIFLYADLib-anonymous-release-gate",
-            "X-GitHub-Api-Version": "2022-11-28",
-        }
-
-    release = request_json(api_url, api_headers)
+        release = formal_release_metadata(
+            repository=repository,
+            tag=version,
+            release_id=arguments.formal_release_id,
+            event_name=arguments.event_name,
+            event_path=arguments.event_path,
+            token=token,
+        )
     resolved_target_commit = None
     if mode == "draft_candidate" and release.get("target_commitish") == arguments.target_branch:
         ref_url = (
@@ -382,6 +388,9 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--version", required=True)
     result.add_argument("--expected-commit", required=True)
     result.add_argument("--candidate-release-id", default="")
+    result.add_argument("--formal-release-id", default="")
+    result.add_argument("--event-name", default="")
+    result.add_argument("--event-path", type=Path)
     result.add_argument("--candidate-id", default="")
     result.add_argument("--target-branch", default="")
     result.add_argument("--release-state", type=Path, default=Path("release-state.json"))
@@ -394,7 +403,7 @@ def main() -> int:
     try:
         hashes = run(parser().parse_args())
     except (DownloadError, OSError, ValueError, json.JSONDecodeError) as exc:
-        print(f"FAIL {exc}", file=sys.stderr)
+        print(f"FAIL[{failure_classification(exc)}] {exc}", file=sys.stderr)
         return 1
     print(json.dumps(hashes, ensure_ascii=False, sort_keys=True))
     return 0
