@@ -2,29 +2,18 @@
   "schemaVersion": 1,
   "channel": "ys",
   "repository": "LJMcarryu/YSIFLYADLib_iOS",
-  "version": "6.4.0",
-  "phase": "CLOSED",
-  "binarySourceCommit": "916a363297f31e696621130e7c88c10eef91b879",
-  "releaseMetadataCommit": "71ab1c891d3ba0785d9f6bc9d6c5432964a3338d",
+  "version": "6.4.1",
+  "phase": "FROZEN",
+  "binarySourceCommit": "360ef07e20f0f78e01191c37c842e7cd4fc0911b",
+  "releaseMetadataCommit": "d61011b05efe690f0618ec0d3a758c524c7bf57a",
   "artifactInventory": {
     "count": 3,
-    "sha256": "c750bf8431f14b0e9825e4baaf9a757f838a2366c1591bf6c376456ceadb6f2a"
+    "sha256": "68019d1833f11c6116b789fffad89148fd86ee8038462a6d110e9b2e00c9f64b"
   },
   "appleReview": {
     "requiredForRelease": false,
     "statusAtFreeze": "not-run",
     "evidenceIncluded": false
   },
-  "publication": {
-    "releaseId": 394880020,
-    "tagName": "6.4.0",
-    "tagObjectSha": "e170183a472d72450ae284b786492259f05ed3b9",
-    "tagCommitSha": "085b358267cc39e7c92f120609c4eb54254a7eaf",
-    "releaseUrl": "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.0",
-    "publishedAt": "2026-09-24T03:23:50Z",
-    "formalConsumerRunId": 35951273840,
-    "formalConsumerRunUrl": "https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/35951273840",
-    "conclusion": "success",
-    "verifiedAt": "2026-09-24T06:17:31Z"
-  }
+  "publication": null
 }
