@@ -15,6 +15,12 @@
 Token、只读的 summary job 汇总 Candidate、Release、checkout commit、三资产 SHA-256 和全部
 job 结论；summary 对上游失败继续失败关闭。
 
+## 6.4.1 候选状态
+
+<!-- ifly-release-candidate: {"schemaVersion":1,"version":"6.4.1","releaseState":"CANDIDATE","publicationState":"UNPUBLISHED","repository":"LJMcarryu/YSIFLYADLib_iOS","currentFormalVersion":"6.4.0"} -->
+
+`6.4.1` 当前为发布前候选，尚未发布。当前公开正式版仍为 `6.4.0`；历史 Tag、Release 和资产保持不可变。本候选文案不包含构建或 SDK 测试结论。
+
 ## 6.4.0 冻结与发布记录
 
 <!-- ifly-release-status: {"schemaVersion":1,"version":"6.4.0","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.0"} -->
