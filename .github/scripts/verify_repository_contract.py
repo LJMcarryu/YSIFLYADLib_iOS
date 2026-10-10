@@ -11,9 +11,9 @@ import sys
 from pathlib import Path
 
 
-VERSION = "6.4.0"
-PREVIOUS_VERSION = "6.3.5"
 REPOSITORY = "LJMcarryu/YSIFLYADLib_iOS"
+CHANNEL = "ys"
+VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 HISTORICAL = {
     "2c2d14bc635ae4fe9784934ea93b039c03c2d244449fff74f3857fff7b35bbdd",
     "73a1e82ffee9c01d63f1e6a391c732e8837c422d23ab60846c92e8f2c167ad08",
@@ -57,21 +57,65 @@ def verify_release_status(label: str, document: str, version: str) -> None:
     require(marker == expected, f"{label} 发布状态标记漂移: {marker}")
 
 
-def state(root: Path, release_kind: str) -> dict[str, object]:
+def release_control(root: Path) -> dict[str, object]:
+    value = json.loads(read(root, ".github/scripts/release-control.json"))
+    require(isinstance(value, dict), "release-control 根必须是对象")
+    expected = {
+        "schemaVersion", "state", "channel", "repository",
+        "closedVersion", "targetVersion",
+    }
+    require(set(value) == expected,
+            f"release-control 字段漂移: {sorted(set(value) ^ expected)}")
+    require(value["schemaVersion"] == 1,
+            "仅支持 release-control schemaVersion=1")
+    require(value["channel"] == CHANNEL, "release-control 渠道不匹配")
+    require(value["repository"] == REPOSITORY,
+            "release-control repository 不匹配")
+    closed = value["closedVersion"]
+    target = value["targetVersion"]
+    require(isinstance(closed, str) and VERSION_RE.fullmatch(closed) is not None,
+            "release-control closedVersion 非法")
+    require(isinstance(target, str) and VERSION_RE.fullmatch(target) is not None,
+            "release-control targetVersion 非法")
+    control_state = value["state"]
+    require(control_state in {"BOOTSTRAP_CLOSED", "CANDIDATE"},
+            f"release-control state 非法: {control_state!r}")
+    if control_state == "BOOTSTRAP_CLOSED":
+        require(target == closed,
+                "BOOTSTRAP_CLOSED 的 targetVersion 必须等于 closedVersion")
+    else:
+        require(target != closed, "CANDIDATE 的 targetVersion 不得复用 closedVersion")
+    return value
+
+
+def state(
+    root: Path, release_kind: str, control: dict[str, object]
+) -> dict[str, object]:
     value = json.loads(read(root, "release-state.json"))
-    require(value.get("channel") == "ys", "release-state 渠道不匹配")
+    require(value.get("channel") == CHANNEL, "release-state 渠道不匹配")
+    require(value.get("repository") == REPOSITORY,
+            "release-state repository 不匹配")
     phase = value.get("phase")
     state_version = value.get("version")
-    if release_kind in {"draft_candidate", "formal_release"}:
-        require(state_version == VERSION, "release-state 版本不匹配")
+    closed = control["closedVersion"]
+    target = control["targetVersion"]
+    control_state = control["state"]
+    if control_state == "BOOTSTRAP_CLOSED":
+        require(release_kind == "repository",
+                "BOOTSTRAP_CLOSED 只允许 repository 验证")
+        require(state_version == closed and phase == "CLOSED",
+                "BOOTSTRAP_CLOSED 必须绑定 closedVersion/CLOSED")
+    elif release_kind in {"draft_candidate", "formal_release"}:
+        require(state_version == target, "release-state 版本不匹配")
         require(phase == "FROZEN", f"{release_kind} 只允许 release-state FROZEN")
-    elif release_kind == "repository" and phase == "CLOSED":
+    elif release_kind == "repository":
+        require(phase == "CLOSED", "CANDIDATE repository 只允许 CLOSED 状态")
         require(
-            state_version in {PREVIOUS_VERSION, VERSION},
-            "main 只允许保留上一正式版或当前版 CLOSED 状态",
+            state_version in {closed, target},
+            "CANDIDATE repository 只允许 closedVersion 或 targetVersion CLOSED",
         )
     else:
-        require(state_version == VERSION, "release-state 版本不匹配")
+        raise ContractError(f"非法验证模式: {release_kind}")
     return value
 
 
@@ -82,16 +126,16 @@ def one(pattern: str, text: str, label: str) -> str:
 
 
 def distribution_version(
-    machine: dict[str, object], release_kind: str, podspec: str
+    control: dict[str, object], machine: dict[str, object],
+    release_kind: str, podspec: str
 ) -> str:
     version = one(r"s\.version\s*=\s*['\"]([^'\"]+)", podspec, "podspec version")
-    allowed = (VERSION,)
+    allowed = (control["targetVersion"],)
     if (
         release_kind == "repository"
-        and machine["phase"] == "CLOSED"
-        and machine["version"] == PREVIOUS_VERSION
+        and machine["version"] == control["closedVersion"]
     ):
-        allowed = (PREVIOUS_VERSION, VERSION)
+        allowed = tuple({control["closedVersion"], control["targetVersion"]})
     require(version in allowed, f"podspec 版本错误: {version}")
     return version
 
@@ -101,12 +145,13 @@ def verify_machine(
 ) -> None:
     require(release_kind in {"repository", "draft_candidate", "formal_release"},
             "非法验证模式")
-    machine = state(root, release_kind)
+    control = release_control(root)
+    machine = state(root, release_kind, control)
     package = read(root, "Package.swift")
     podspec = read(root, "YSIFLYADLib.podspec")
     podfile = read(root, "YSIFLYADLibSimple/Podfile")
     podspec_json = json.loads(podspec_json_path.read_text(encoding="utf-8"))
-    version = distribution_version(machine, release_kind, podspec)
+    version = distribution_version(control, machine, release_kind, podspec)
     package_url = one(r'url:\s*"([^"]*YSIFLYADLib\.xcframework\.zip)"',
                       package, "SwiftPM URL")
     pod_url = one(r"s\.source\s*=\s*\{\s*:http\s*=>\s*['\"]([^'\"]+)",
@@ -163,9 +208,10 @@ def verify_machine(
 
 
 def verify_docs(root: Path, release_kind: str) -> None:
-    machine = state(root, release_kind)
+    control = release_control(root)
+    machine = state(root, release_kind, control)
     version = distribution_version(
-        machine, release_kind, read(root, "YSIFLYADLib.podspec")
+        control, machine, release_kind, read(root, "YSIFLYADLib.podspec")
     )
     documents = {
         name: read(root, name)

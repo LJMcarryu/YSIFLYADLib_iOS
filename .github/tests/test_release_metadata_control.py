@@ -107,17 +107,34 @@ class ReleaseMetadataSourceTests(unittest.TestCase):
 
 
 class ReleaseVersionContractTests(unittest.TestCase):
-    def test_checked_in_bootstrap_contract(self) -> None:
+    def test_checked_in_release_control_contract(self) -> None:
         state = json.loads((ROOT / "release-state.json").read_text(encoding="utf-8"))
+        validation_modes = {
+            "CLOSED": "repository",
+            "FROZEN": "draft_candidate",
+        }
+        self.assertIn(state.get("phase"), validation_modes)
         value = CONTROL.read_release_control(
             ROOT / ".github/scripts/release-control.json",
             repository=REPOSITORY,
             channel=CHANNEL,
             release_state_path=ROOT / "release-state.json",
-            validation_mode="repository",
+            validation_mode=validation_modes[state["phase"]],
         )
-        self.assertEqual(value["state"], "BOOTSTRAP_CLOSED")
-        self.assertEqual(value["targetVersion"], state["version"])
+        if value["state"] == "BOOTSTRAP_CLOSED":
+            self.assertEqual(value["closedVersion"], state["version"])
+            self.assertEqual(value["targetVersion"], value["closedVersion"])
+        else:
+            self.assertEqual(value["state"], "CANDIDATE")
+            self.assertNotEqual(value["targetVersion"], value["closedVersion"])
+            if state["phase"] == "CLOSED":
+                self.assertIn(
+                    state["version"],
+                    {value["closedVersion"], value["targetVersion"]},
+                )
+            else:
+                self.assertEqual(state["phase"], "FROZEN")
+                self.assertEqual(state["version"], value["targetVersion"])
 
     def test_control_state_validation_mode_phase_topology(self) -> None:
         candidate = {

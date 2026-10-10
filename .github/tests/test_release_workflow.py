@@ -43,10 +43,15 @@ REPOSITORY_CONTRACT = load_module(
     ROOT / ".github/scripts/verify_repository_contract.py",
 )
 
-VERSION = json.loads(
+RELEASE_CONTROL = json.loads(
     (ROOT / ".github/scripts/release-control.json").read_text(encoding="utf-8")
-)["targetVersion"]
-PREVIOUS_VERSION = "6.3.5"
+)
+VERSION = RELEASE_CONTROL["targetVersion"]
+CLOSED_VERSION = RELEASE_CONTROL["closedVersion"]
+CANDIDATE_VERSION = VERSION
+if RELEASE_CONTROL["state"] == "BOOTSTRAP_CLOSED":
+    major, minor, patch = (int(part) for part in CLOSED_VERSION.split("."))
+    CANDIDATE_VERSION = f"{major}.{minor}.{patch + 1}"
 BINARY_COMMIT = "a" * 40
 METADATA_COMMIT = "b" * 40
 CANDIDATE_ID = "d" * 64
@@ -374,8 +379,8 @@ class ReleaseModeContractTests(unittest.TestCase):
         self.assertIn(
             (contract["version"], contract["state_version"], contract["phase"]),
             {
-                (PREVIOUS_VERSION, PREVIOUS_VERSION, "CLOSED"),
-                (VERSION, PREVIOUS_VERSION, "CLOSED"),
+                (CLOSED_VERSION, CLOSED_VERSION, "CLOSED"),
+                (VERSION, CLOSED_VERSION, "CLOSED"),
                 (VERSION, VERSION, "FROZEN"),
                 (VERSION, VERSION, "CLOSED"),
             },
@@ -963,7 +968,8 @@ class WorkflowStructureTests(unittest.TestCase):
         self.assertEqual(values["checkout_ref"], CANDIDATE_BRANCH)
         self.assertEqual(values["candidate_branch"], CANDIDATE_BRANCH)
 
-        wrong_version_branch = f"release-candidate/{PREVIOUS_VERSION}-{CANDIDATE_ID}"
+        wrong_version = CLOSED_VERSION if VERSION != CLOSED_VERSION else "0.0.0"
+        wrong_version_branch = f"release-candidate/{wrong_version}-{CANDIDATE_ID}"
         result, _ = self.run_resolver(
             requested_mode="draft_candidate",
             candidate_release_id="12345",
@@ -1147,7 +1153,13 @@ class WorkflowStructureTests(unittest.TestCase):
     def test_docs_drift_is_isolated_but_checksum_drift_fails_machine_scope(self) -> None:
         original_read = REPOSITORY_CONTRACT.read
         repository_version = MODE.read_local_contract(ROOT)["version"]
-        REPOSITORY_CONTRACT.verify_docs(ROOT, "repository")
+        checked_in_state = json.loads(original_read(ROOT, "release-state.json"))
+        release_kind = (
+            "draft_candidate"
+            if checked_in_state["phase"] == "FROZEN"
+            else "repository"
+        )
+        REPOSITORY_CONTRACT.verify_docs(ROOT, release_kind)
 
         def docs_drift(root: Path, relative: str) -> str:
             value = original_read(root, relative)
@@ -1161,10 +1173,10 @@ class WorkflowStructureTests(unittest.TestCase):
 
         with mock.patch.object(REPOSITORY_CONTRACT, "read", side_effect=docs_drift):
             REPOSITORY_CONTRACT.verify_machine(
-                ROOT, "repository", self.podspec_json
+                ROOT, release_kind, self.podspec_json
             )
             with self.assertRaises(REPOSITORY_CONTRACT.ContractError):
-                REPOSITORY_CONTRACT.verify_docs(ROOT, "repository")
+                REPOSITORY_CONTRACT.verify_docs(ROOT, release_kind)
 
         for invalid_checksum in (
             "not-a-checksum",
@@ -1186,19 +1198,15 @@ class WorkflowStructureTests(unittest.TestCase):
                 REPOSITORY_CONTRACT, "read", side_effect=checksum_drift
             ), self.assertRaises(REPOSITORY_CONTRACT.ContractError):
                 REPOSITORY_CONTRACT.verify_machine(
-                    ROOT, "repository", self.podspec_json
+                    ROOT, release_kind, self.podspec_json
                 )
 
         def version_drift(root: Path, relative: str) -> str:
             value = original_read(root, relative)
             if relative == "YSIFLYADLib.podspec":
-                drift_version = (
-                    VERSION if repository_version == PREVIOUS_VERSION
-                    else PREVIOUS_VERSION
-                )
                 return re.sub(
                     rf"(s\.version\s*=\s*['\"]){re.escape(repository_version)}",
-                    rf"\g<1>{drift_version}",
+                    r"\g<1>99.0.0",
                     value,
                     count=1,
                 )
@@ -1207,7 +1215,7 @@ class WorkflowStructureTests(unittest.TestCase):
         with mock.patch.object(REPOSITORY_CONTRACT, "read", side_effect=version_drift):
             with self.assertRaises(REPOSITORY_CONTRACT.ContractError):
                 REPOSITORY_CONTRACT.verify_machine(
-                    ROOT, "repository", self.podspec_json
+                    ROOT, release_kind, self.podspec_json
                 )
 
     def test_repository_contract_keeps_only_previous_or_current_closed_state(self) -> None:
@@ -1231,13 +1239,37 @@ class WorkflowStructureTests(unittest.TestCase):
 
             return read
 
-        for version in (PREVIOUS_VERSION, VERSION):
+        for version in (CLOSED_VERSION, VERSION):
             with self.subTest(version=version), mock.patch.object(
                 REPOSITORY_CONTRACT, "read", side_effect=with_version(version)
             ):
                 REPOSITORY_CONTRACT.verify_machine(ROOT, "repository", self.podspec_json)
 
-        for version in ("6.3.0", "6.3.6"):
+        if VERSION != CLOSED_VERSION:
+            def target_state_with_closed_assets(
+                root: Path, relative: str
+            ) -> str:
+                if relative == "release-state.json":
+                    return json.dumps({**closed, "version": VERSION})
+                value = original_read(root, relative)
+                if relative in {
+                    "Package.swift",
+                    "YSIFLYADLib.podspec",
+                    "YSIFLYADLibSimple/Podfile",
+                }:
+                    return value.replace(repository_version, CLOSED_VERSION)
+                return value
+
+            with mock.patch.object(
+                REPOSITORY_CONTRACT,
+                "read",
+                side_effect=target_state_with_closed_assets,
+            ), self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+                REPOSITORY_CONTRACT.verify_machine(
+                    ROOT, "repository", self.podspec_json
+                )
+
+        for version in ("0.0.0", "99.0.0"):
             with self.subTest(version=version), mock.patch.object(
                 REPOSITORY_CONTRACT, "read", side_effect=with_version(version)
             ), self.assertRaises(REPOSITORY_CONTRACT.ContractError):
@@ -1247,10 +1279,22 @@ class WorkflowStructureTests(unittest.TestCase):
         original_read = REPOSITORY_CONTRACT.read
         repository_version = MODE.read_local_contract(ROOT)["version"]
         frozen = json.loads(original_read(ROOT, "release-state.json"))
-        frozen.update({"version": VERSION, "phase": "FROZEN", "publication": None})
+        frozen.update({
+            "version": CANDIDATE_VERSION,
+            "phase": "FROZEN",
+            "publication": None,
+        })
 
-        def with_state(value: dict[str, object], version: str = VERSION):
+        def with_state(
+            value: dict[str, object], version: str = CANDIDATE_VERSION
+        ):
             def read(root: Path, relative: str) -> str:
+                if relative == ".github/scripts/release-control.json":
+                    return json.dumps({
+                        **RELEASE_CONTROL,
+                        "state": "CANDIDATE",
+                        "targetVersion": CANDIDATE_VERSION,
+                    })
                 if relative == "release-state.json":
                     return json.dumps(value)
                 content = original_read(root, relative)
@@ -1278,7 +1322,7 @@ class WorkflowStructureTests(unittest.TestCase):
                 REPOSITORY_CONTRACT.verify_docs(ROOT, release_kind)
 
             for invalid in (
-                {**frozen, "version": PREVIOUS_VERSION},
+                {**frozen, "version": CLOSED_VERSION},
                 *(
                     {**frozen, "phase": phase}
                     for phase in ("PREPARING", "PUBLISHED", "VERIFIED", "CLOSED")
@@ -1296,7 +1340,7 @@ class WorkflowStructureTests(unittest.TestCase):
             with mock.patch.object(
                 REPOSITORY_CONTRACT,
                 "read",
-                side_effect=with_state(frozen, PREVIOUS_VERSION),
+                side_effect=with_state(frozen, CLOSED_VERSION),
             ), self.assertRaises(REPOSITORY_CONTRACT.ContractError):
                 REPOSITORY_CONTRACT.verify_machine(
                     ROOT, release_kind, self.podspec_json
@@ -1306,36 +1350,54 @@ class WorkflowStructureTests(unittest.TestCase):
         podspec_source = (ROOT / "YSIFLYADLib.podspec").read_text(encoding="utf-8")
         for marker in ("AdSupport", "AppTrackingTransparency", "-ObjC"):
             self.assertIn(marker, podspec_source)
+        checked_in_state = json.loads(
+            (ROOT / "release-state.json").read_text(encoding="utf-8")
+        )
+        release_kind = (
+            "draft_candidate"
+            if checked_in_state["phase"] == "FROZEN"
+            else "repository"
+        )
         parsed = json.loads(self.podspec_json.read_text(encoding="utf-8"))
         mutations = (
-            ("frameworks", lambda value: value.__setitem__("frameworks", [])),
+            (
+                "frameworks",
+                lambda value: value.__setitem__("frameworks", []),
+                "podspec JSON 缺少 AdSupport 强链接声明",
+            ),
             (
                 "weak_frameworks",
                 lambda value: value.__setitem__("weak_frameworks", []),
+                "podspec JSON 缺少 AppTrackingTransparency 弱链接声明",
             ),
             (
                 "pod_target_xcconfig",
                 lambda value: value.__setitem__(
                     "pod_target_xcconfig", {"OTHER_LDFLAGS": "$(inherited)"}
                 ),
+                "podspec JSON pod_target_xcconfig.OTHER_LDFLAGS 缺少 -ObjC",
             ),
             (
                 "user_target_xcconfig",
                 lambda value: value.__setitem__(
                     "user_target_xcconfig", {"OTHER_LDFLAGS": "$(inherited)"}
                 ),
+                "podspec JSON user_target_xcconfig.OTHER_LDFLAGS 缺少 -ObjC",
             ),
         )
         with tempfile.TemporaryDirectory(prefix="ys-bad-podspec-json-") as directory:
             bad_path = Path(directory) / "podspec.json"
-            for label, mutate in mutations:
+            for label, mutate, expected_error in mutations:
                 with self.subTest(field=label):
                     bad = copy.deepcopy(parsed)
                     mutate(bad)
                     bad_path.write_text(json.dumps(bad), encoding="utf-8")
-                    with self.assertRaises(REPOSITORY_CONTRACT.ContractError):
+                    with self.assertRaisesRegex(
+                        REPOSITORY_CONTRACT.ContractError,
+                        re.escape(expected_error),
+                    ):
                         REPOSITORY_CONTRACT.verify_machine(
-                            ROOT, "repository", bad_path
+                            ROOT, release_kind, bad_path
                         )
 
     def test_asset_gate_fans_out_to_parallel_isolated_consumers(self) -> None:
