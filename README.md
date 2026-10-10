@@ -1,16 +1,20 @@
 # YS 广告 iOS SDK
 
-`YSIFLYADLib` 为 YS 媒体提供开屏、Banner、插屏和自渲染信息流，支持信息流单图、多图和视频素材，不包含激励广告。当前正式版本为 [6.4.0](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.0)，最低支持 iOS 11.0。
+`YSIFLYADLib` 为 YS 媒体提供开屏、Banner、插屏和自渲染信息流，支持信息流单图、多图和视频素材，不包含激励广告。当前正式版本为 [6.4.1](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1)，最低支持 iOS 11.0。
 
-<!-- ifly-release-status: {"schemaVersion":1,"version":"6.4.0","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.0"} -->
+## 6.4.1 冻结与发布记录
 
-## 6.4.1 候选状态
+<!-- ifly-release-status: {"schemaVersion":1,"version":"6.4.1","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1"} -->
 
-<!-- ifly-release-candidate: {"schemaVersion":1,"version":"6.4.1","releaseState":"CANDIDATE","publicationState":"UNPUBLISHED","repository":"LJMcarryu/YSIFLYADLib_iOS","currentFormalVersion":"6.4.0"} -->
+`6.4.1` 的正式分发资料由同版本冻结库存生成。当前正式版本：[`6.4.1`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1)；公开时间和消费验证结论以 `release-state.json.publication` 与同版本 GitHub Release 的实际状态为准。
 
-`6.4.1` 当前为发布前候选，尚未发布。当前公开正式版仍为 `6.4.0`；历史 Tag、Release 和资产保持不可变。本候选文案不包含构建或 SDK 测试结论。
+- 本版聚焦发布工程优化，包括发布入口、不可变回执复用、确定性脚本回归分片、匿名下载恢复、正式消费恢复、摘要日志和运行观测。
+- SDK 与 UI 行为继承 `6.4.0`，没有新增公开 API。
+- 历史 Tag、Release 和资产保持不可变。
 
 ## 6.4.0 冻结与发布记录
+
+> 以下为 `6.4.0` 历史记录；其中“当前”“本版”均只指该历史版本。
 
 `6.4.0` 的正式分发资料与签名资产已经冻结；是否已完成公开及消费验证，以 `release-state.json.publication` 和同版本 GitHub Release 的实际状态为准。
 
@@ -38,7 +42,7 @@
 
 ## 安装
 
-三种方式选择一种，生产项目固定到正式版本 `6.4.0`。
+三种方式选择一种，生产项目固定到正式版本 `6.4.1`。
 
 ### CocoaPods
 
@@ -49,7 +53,7 @@ platform :ios, '11.0'
 target 'YourApp' do
   use_frameworks!
   pod 'YSIFLYADLib',
-      :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.4.0/YSIFLYADLib.podspec'
+      :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.4.1/YSIFLYADLib.podspec'
 end
 ```
 
@@ -68,11 +72,11 @@ open YourApp.xcworkspace
 https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
 ```
 
-选择 **Exact Version** `6.4.0`，将产品 `YSIFLYADLib` 加入 App target；在该 target 的 **Other Linker Flags** 保留 `$(inherited)` 并添加 `-ObjC`。SwiftPM 自动投递 `YSAdvSDK.bundle`。
+选择 **Exact Version** `6.4.1`，将产品 `YSIFLYADLib` 加入 App target；在该 target 的 **Other Linker Flags** 保留 `$(inherited)` 并添加 `-ObjC`。SwiftPM 自动投递 `YSAdvSDK.bundle`。
 
 ### 手动集成
 
-从 [Release 6.4.0](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.0) 下载 `YSIFLYADLib-6.4.0.zip`：
+从 [Release 6.4.1](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1) 下载本版本完整包；精确文件名以该 Release 的真实资产清单为准：
 
 1. 将 `YSIFLYADLib.xcframework` 加入 App target，选择 **Do Not Embed**。
 2. 将 `YSAdvSDK.bundle` 加入 **Copy Bundle Resources**，确认最终 App 只有一份。
