@@ -2,11 +2,11 @@
 
 本文件只维护 YS 公开分发仓的发布状态和可机器校验的私有源码溯源，不包含 SDK 私有源码。
 
-## 6.4.2 候选状态（尚未发布）
+## 6.4.2 冻结与发布记录
 
-<!-- ifly-release-candidate: {"schemaVersion":1,"version":"6.4.2","releaseState":"CANDIDATE","publicationState":"UNPUBLISHED","repository":"LJMcarryu/YSIFLYADLib_iOS","currentFormalVersion":"6.4.1"} -->
+<!-- ifly-release-status: {"schemaVersion":1,"version":"6.4.2","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.2"} -->
 
-`6.4.2` 为候选版本，尚未发布。当前公开正式版和生产依赖仍为 [`6.4.1`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1)；历史 Tag、Release 和资产保持不可变。
+`6.4.2` 的正式分发资料以同版本真实冻结 manifest 为准。当前正式版本：[`6.4.2`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.2)；公开时间和消费验证结论以 `release-state.json.publication` 与同版本 GitHub Release 的实际状态为准。历史 Tag、Release 和资产保持不可变。
 
 ## 正式发布唯一入口
 
@@ -23,7 +23,7 @@ job 结论；summary 对上游失败继续失败关闭。
 
 ## 6.4.1 冻结与发布记录
 
-<!-- ifly-release-status: {"schemaVersion":1,"version":"6.4.1","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1"} -->
+> 以下为 `6.4.1` 历史记录；其中“当前”“本版”均只指该历史版本。
 
 `6.4.1` 的正式签名资产、checksum 与分发资料以本版本真实冻结 manifest 为准。当前正式版本为 [6.4.1](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1)；公开时间和消费验证结论以 `release-state.json.publication` 和同版本 GitHub Release 的实际状态为准。
 
@@ -152,7 +152,7 @@ SwiftPM 消费 runner 和 CocoaPods 消费 runner。前置 job 只输出三个 S
 
 正式 Release 固定且只能包含以下三个资产：
 
-- `YSIFLYADLib-6.3.5.zip`
+- `YSIFLYADLib-6.4.2.zip`
 - `YSIFLYADLib.xcframework.zip`
 - `checksums.txt`
 
