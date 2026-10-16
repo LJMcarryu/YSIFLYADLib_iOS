@@ -1,5 +1,11 @@
 # YS 广告 iOS SDK
 
+## 6.4.2 候选状态（尚未发布）
+
+<!-- ifly-release-candidate: {"schemaVersion":1,"version":"6.4.2","releaseState":"CANDIDATE","publicationState":"UNPUBLISHED","repository":"LJMcarryu/YSIFLYADLib_iOS","currentFormalVersion":"6.4.1"} -->
+
+`6.4.2` 为候选版本，尚未发布。当前公开正式版和生产依赖仍为 [`6.4.1`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1)；历史 Tag、Release 和资产保持不可变。
+
 `YSIFLYADLib` 为 YS 媒体提供开屏、Banner、插屏和自渲染信息流，支持信息流单图、多图和视频素材，不包含激励广告。当前正式版本为 [6.4.1](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1)，最低支持 iOS 11.0。
 
 ## 6.4.1 冻结与发布记录
