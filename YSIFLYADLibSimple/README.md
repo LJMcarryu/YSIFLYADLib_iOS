@@ -1,14 +1,10 @@
 # YS 广告接入示例
 
-> `6.4.2` 的正式分发资料以同版本真实冻结 manifest 为准。当前正式版本：[`6.4.2`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.2)；公开时间和消费验证结论以 `release-state.json.publication` 与同版本 GitHub Release 的实际状态为准。历史 Tag、Release 和资产保持不可变。
-
 本工程使用 `YSIFLYADLib 6.4.2`，演示开屏、Banner、插屏和自渲染信息流，支持信息流列表复用及视频素材。SDK 不包含激励广告。
 
 先按本文运行和替换广告位；将能力接入自己的 App 时，参考[SDK 接入说明](../README.md)与各页面代码。
 
-> 本示例的 `Podfile` 固定正式版本 `6.4.2`。版本公开状态与消费验证结论以 `release-state.json.publication` 和同版本 GitHub Release 的实际状态为准。
->
-> `6.4.2` 继承 `6.4.0` 的公开 API 与 UI 行为，没有新增公开 API。展示、落地页、外跳回流、曝光判断和 UI 生命周期应归属广告的实际来源 window/Scene；无来源时只允许唯一且明确的前台应用 Scene，不跨 Scene 随机兜底，独立落地页始终属于来源 Scene。开屏 rootVC 仍须入窗；Scene 宿主的 `customWindow` 必须可见、尺寸有限且为正、已关联 Scene，并与 `rootVC.window` 同 Scene，可以是非 key、高 `windowLevel`、无 rootVC。非法输入展示失败，修正后可以重试。
+本示例的 `Podfile` 固定版本为 `6.4.2`；窗口与 Scene 的接入条件见[广告加载与展示](../docs/接入指南/广告加载与展示.md#展示窗口与-scene)。
 
 ## 从下载到运行
 
@@ -26,7 +22,7 @@ open YSIFLYADLibSimple.xcworkspace
 3. 按下文替换广告位，确认后台授权的 App 信息与当前 App 一致，然后运行。
 4. 首页应显示 `SDK Version: 6.4.2`。示例的 `Podfile` 固定使用正式版 `6.4.2`，示例页面可以随本仓库更新。
 
-使用 CocoaPods 后始终打开 `.xcworkspace`。它自动加入 `YSAdvSDK.bundle`（含隐私清单）和 `-ObjC`；不需再手工嵌入静态 framework。其他安装方式见[SDK 接入说明](../README.md#安装)。
+使用 CocoaPods 后始终打开 `.xcworkspace`。它自动加入 `YSAdvSDK.bundle`（含隐私清单）和 `-ObjC`；不需再手工嵌入静态 framework。其他安装方式见[SDK 接入说明](../docs/接入指南/安装与资源配置.md)。
 
 ## 配置广告位与请求
 
@@ -72,7 +68,7 @@ SDK 不要求额外 App ID 初始化。广告位须与媒体获授权的 App 和
 
 构建成功、展示成功和线上有填充是不同层面的结果，可依次检查：
 
-1. **安装与启动**：`pod install` 成功，workspace 构建通过，App 首页显示 `6.3.5` 和四种广告入口。
+1. **安装与启动**：`pod install` 成功，workspace 构建通过，App 首页显示的 SDK 版本与本示例 `Podfile` 固定版本一致，并有四种广告入口。
 2. **内置渲染**：加载后看到 `DidLoad`，随后 `DidReady`；点击 `Show` 后广告可见，日志有展示/曝光回调；关闭后页面可继续操作。
 3. **自渲染**：有 `nativeFeedAdDidLoad`，素材显示且挂载成功，进入有效可见状态后收到曝光回调；视频素材在曝光后按播放策略播放。
 4. **列表复用**：广告离屏再回屏能恢复；同一逻辑广告不重复触发曝光回调。换一条后旧图片或旧回调不应覆盖新广告。
@@ -87,10 +83,10 @@ SDK 不要求额外 App ID 初始化。广告位须与媒体获授权的 App 和
 | `pod install` 下载失败 | 确认能访问 `raw.githubusercontent.com` 和本版本 GitHub Release；保留失败 URL/错误后重试，检查代理、证书和网络限制 |
 | `No such module` / 找不到头文件 | 确认依赖安装完成，打开的是 workspace，且当前选择 `YSIFLYADLibSimple` scheme |
 | 真机签名失败 | 配置自己的 Team、Bundle Identifier 与设备授权；这类错误发生在运行广告请求之前 |
-| 首页版本不是 `6.3.5` | 核对 `Podfile`、安装输出和 `Pods/Manifest.lock`；清理旧构建后重新从 workspace 运行 |
+| 首页 SDK 版本与 `Podfile` 固定版本不一致 | 核对 `Podfile`、安装输出和 `Pods/Manifest.lock`；清理旧构建后重新从 workspace 运行 |
 | Show 不可点击 | 等待 Ready，查看失败回调；`DidLoad` 不等于素材就绪，失效实例需要重新加载 |
 | 无填充 / 请求超时 | 核对广告位、App 信息、后台授权和网络；示例 ID 或模拟器不保证填充，不要连续无间隔重试 |
-| 信息流挂载失败 | 查看错误码和描述，检查主线程、素材完整性、容器布局及视频 `videoView`；完整规则见根 README |
+| 信息流挂载失败 | 查看错误码和描述，检查主线程、素材完整性、容器布局及视频 `videoView`；完整规则见[信息流接入指南](../docs/接入指南/广告加载与展示.md#自渲染信息流) |
 | 信息流回屏为空 | 确认数据层仍持同一个 Ad，离屏只按具体容器 detach；如果已过期，释放旧对象后请求新广告 |
 | IDFA 为空 | 检查 ATT 状态；拒绝/未决定时为空是预期行为，授权后在新请求中重新读取 |
 | 视频/图标缺失 | 核对 App 中存在一份 `YSAdvSDK.bundle`，并检查素材下载错误；不要重复拷贝资源或重复接入不同 YS 包 |
