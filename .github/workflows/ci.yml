@@ -539,14 +539,14 @@ jobs:
           ):
               assert required in native, required
 
-          readme = Path("README.md").read_text(encoding="utf-8")
+          guide = Path("docs/接入指南/广告加载与展示.md").read_text(encoding="utf-8")
           for required in (
               "allowsExternalClickViews",
               "ysifly_nativeFeedAd:didRejectClickWithError:",
               "YSIFLYAdErrorCodeNativeFeedClickViewsInvalid",
               "ysifly_detachFromCurrentContainer",
           ):
-              assert required in readme, required
+              assert required in guide, required
 
           for forbidden in (
               "YSIFLYNativeFeedDisplaySession",

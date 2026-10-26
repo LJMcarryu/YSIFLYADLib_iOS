@@ -401,12 +401,13 @@ class ReleaseModeContractTests(unittest.TestCase):
         self.assertIn("## [6.3.1] - 2026-09-01", documents["CHANGELOG.md"])
         self.assertIn(
             "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2",
-            documents["README.md"],
+            documents["CHANGELOG.md"],
         )
         self.assertIn(
             "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.3",
-            documents["README.md"],
+            documents["CHANGELOG.md"],
         )
+        self.assertIn("[更新记录](CHANGELOG.md)", documents["README.md"])
         self.assertIn(
             "757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d",
             documents["RELEASING.md"],
@@ -741,6 +742,72 @@ class CocoaPodsFixtureTests(unittest.TestCase):
 
 
 class WorkflowStructureTests(unittest.TestCase):
+    NATIVE_SOURCE = "YSIFLYADLibSimple/YSIFLYADLibSimple/biz/native/YSIFLYNativeViewController.m"
+    NATIVE_GUIDE = "docs/接入指南/广告加载与展示.md"
+    NATIVE_DOC_MARKERS = (
+        "allowsExternalClickViews",
+        "ysifly_nativeFeedAd:didRejectClickWithError:",
+        "YSIFLYAdErrorCodeNativeFeedClickViewsInvalid",
+        "ysifly_detachFromCurrentContainer",
+    )
+
+    def run_native_gate(self, root: Path) -> subprocess.CompletedProcess[str]:
+        step, = [
+            step for step in self.jobs["verify-repository"]["steps"]
+            if step.get("name") == "校验 NativeFeed 托管 API 与 Demo 复用乱序防护"
+        ]
+        return subprocess.run(
+            ["bash", "--noprofile", "--norc", "-eo", "pipefail", "-c", step["run"]],
+            cwd=root, capture_output=True, text=True,
+        )
+
+    def write_native_fixture(self, root: Path) -> None:
+        for relative in (self.NATIVE_SOURCE, self.NATIVE_GUIDE, "README.md"):
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes((ROOT / relative).read_bytes())
+
+    def test_native_gate_runs_actual_workflow_shell(self) -> None:
+        result = self.run_native_gate(ROOT)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_native_gate_requires_each_authoritative_guide_marker(self) -> None:
+        for marker in self.NATIVE_DOC_MARKERS:
+            with self.subTest(marker=marker), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.write_native_fixture(root)
+                guide = root / self.NATIVE_GUIDE
+                source = guide.read_text(encoding="utf-8")
+                self.assertIn(marker, source)
+                guide.write_text(source.replace(marker, "REMOVED_API"), encoding="utf-8")
+                (root / "README.md").write_text("\n".join(self.NATIVE_DOC_MARKERS), encoding="utf-8")
+                result = self.run_native_gate(root)
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn(marker, result.stderr)
+
+    def test_native_gate_keeps_source_history_rejection(self) -> None:
+        for marker in ("YSIFLYNativeFeedDisplaySession", "YSIFLYNativeFeedAdBinding"):
+            with self.subTest(marker=marker), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.write_native_fixture(root)
+                path = root / self.NATIVE_SOURCE
+                path.write_text(path.read_text(encoding="utf-8") + "\n" + marker, encoding="utf-8")
+                result = self.run_native_gate(root)
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertIn(marker, result.stderr)
+
+    def test_native_gate_keeps_source_attach_requirement(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_native_fixture(root)
+            path = root / self.NATIVE_SOURCE
+            source = path.read_text(encoding="utf-8")
+            self.assertIn("ysifly_attachWithViewBinder:", source)
+            path.write_text(source.replace("ysifly_attachWithViewBinder:", "REMOVED_API"), encoding="utf-8")
+            result = self.run_native_gate(root)
+            self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("ysifly_attachWithViewBinder:", result.stderr)
+
     @classmethod
     def setUpClass(cls) -> None:
         command = [
