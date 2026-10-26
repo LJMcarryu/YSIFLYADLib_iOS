@@ -72,7 +72,7 @@ permissions:
   contents: read
 
 env:
-  RELEASE_TARGET_VERSION: 6.4.2 # release-control-version: target
+  RELEASE_TARGET_VERSION: 6.4.4 # release-control-version: target
 
 concurrency:
   group: >-
