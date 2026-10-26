@@ -3,7 +3,7 @@
   "channel": "ys",
   "repository": "LJMcarryu/YSIFLYADLib_iOS",
   "version": "6.4.4",
-  "phase": "FROZEN",
+  "phase": "CLOSED",
   "binarySourceCommit": "25ebc73166c9596822cfcf4e93d74fc6c98bd5e4",
   "releaseMetadataCommit": "56aaeb4d5b76858b266981d30afd76bff6a73ad2",
   "artifactInventory": {
@@ -15,5 +15,16 @@
     "statusAtFreeze": "not-run",
     "evidenceIncluded": false
   },
-  "publication": null
+  "publication": {
+    "releaseId": 424092416,
+    "tagName": "6.4.4",
+    "tagObjectSha": "56c6dbc0acc1621ce0504a43b68042eb53287475",
+    "tagCommitSha": "b69dfe20ba7e27e9bd9c1a475e1ef4f53f5796b1",
+    "releaseUrl": "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.4",
+    "publishedAt": "2026-10-26T10:47:25Z",
+    "formalConsumerRunId": 40310140626,
+    "formalConsumerRunUrl": "https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/40310140626",
+    "conclusion": "success",
+    "verifiedAt": "2026-10-26T10:49:28Z"
+  }
 }
