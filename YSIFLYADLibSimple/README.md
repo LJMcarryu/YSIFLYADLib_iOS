@@ -1,15 +1,11 @@
 # YS 广告接入示例
 
-## 6.4.4 候选
 
-`6.4.4` 为候选，尚未发布；当前公开正式版和生产依赖保持 `6.4.2`。历史 Tag、Release 和资产保持不可变。
-
-
-本工程使用 `YSIFLYADLib 6.4.2`，演示开屏、Banner、插屏和自渲染信息流，支持信息流列表复用及视频素材。SDK 不包含激励广告。
+本工程使用 `YSIFLYADLib 6.4.4`，演示开屏、Banner、插屏和自渲染信息流，支持信息流列表复用及视频素材。SDK 不包含激励广告。
 
 先按本文运行和替换广告位；将能力接入自己的 App 时，参考[SDK 接入说明](../README.md)与各页面代码。
 
-本示例的 `Podfile` 固定版本为 `6.4.2`；窗口与 Scene 的接入条件见[广告加载与展示](../docs/接入指南/广告加载与展示.md#展示窗口与-scene)。
+本示例的 `Podfile` 固定版本为 `6.4.4`；窗口与 Scene 的接入条件见[广告加载与展示](../docs/接入指南/广告加载与展示.md#展示窗口与-scene)。
 
 ## 从下载到运行
 
@@ -25,7 +21,7 @@ open YSIFLYADLibSimple.xcworkspace
 1. 在 Xcode 选择 `YSIFLYADLibSimple` scheme 和模拟器或已连接的 iPhone。
 2. 真机运行前，在 App target 的 **Signing & Capabilities** 选择自己的 Team；必要时将 Bundle Identifier 改为自己的标识。
 3. 按下文替换广告位，确认后台授权的 App 信息与当前 App 一致，然后运行。
-4. 首页应显示 `SDK Version: 6.4.2`。示例的 `Podfile` 固定使用正式版 `6.4.2`，示例页面可以随本仓库更新。
+4. 首页应显示 `SDK Version: 6.4.4`。示例的 `Podfile` 固定使用正式版 `6.4.4`，示例页面可以随本仓库更新。
 
 使用 CocoaPods 后始终打开 `.xcworkspace`。它自动加入 `YSAdvSDK.bundle`（含隐私清单）和 `-ObjC`；不需再手工嵌入静态 framework。其他安装方式见[SDK 接入说明](../docs/接入指南/安装与资源配置.md)。
 
