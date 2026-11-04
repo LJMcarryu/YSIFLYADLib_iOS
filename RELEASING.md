@@ -11,9 +11,7 @@
 
 ## 6.4.2 冻结与发布记录
 
-> 以下为 `6.4.2` 历史记录；其中“当前”“本版”均只指该历史版本。
-
-`6.4.2` 的正式分发资料以同版本真实冻结 manifest 为准。当前正式版本：[`6.4.2`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.2)；公开时间和消费验证结论以 `release-state.json.publication` 与同版本 GitHub Release 的实际状态为准。历史 Tag、Release 和资产保持不可变。
+历史记录见[历史发布记录](docs/需求设计/发布验收/历史发布记录.md#642-冻结与发布记录)。
 
 ## 正式发布唯一入口
 
@@ -30,95 +28,27 @@ job 结论；summary 对上游失败继续失败关闭。
 
 ## 6.4.1 冻结与发布记录
 
-> 以下为 `6.4.1` 历史记录；其中“当前”“本版”均只指该历史版本。
-
-`6.4.1` 的正式签名资产、checksum 与分发资料以本版本真实冻结 manifest 为准。当前正式版本为 [6.4.1](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1)；公开时间和消费验证结论以 `release-state.json.publication` 和同版本 GitHub Release 的实际状态为准。
-
-本版聚焦发布工程优化；SDK 与 UI 行为继承 `6.4.0`，没有新增公开 API。历史 Tag、Release 和资产保持不可变。
+历史记录见[历史发布记录](docs/需求设计/发布验收/历史发布记录.md#641-冻结与发布记录)。
 
 ## 6.4.0 冻结与发布记录
 
-> 以下为 `6.4.0` 历史记录；其中“当前”“本版”均只指该历史版本。
-
-`6.4.0` 的正式签名资产、checksum 与分发资料已经冻结。当前正式版本为 [6.4.0](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.0)；是否已完成公开及消费验证，以 `release-state.json.publication` 和同版本 GitHub Release 的实际状态为准。
-
-本版将展示、落地页、外跳回流、曝光判断和 UI 生命周期绑定到实际来源 window/Scene；无来源时只允许唯一且明确的前台应用 Scene，不跨 Scene 随机兜底，独立落地页始终归属来源 Scene。开屏 rootVC 仍须入窗；Scene 宿主的 `customWindow` 必须可见、尺寸有限且为正、已关联 Scene，并与 `rootVC.window` 同 Scene，可以是非 key、高 `windowLevel`、无 rootVC。非法输入展示失败，修正后可重试。公开 API 方法签名不变。
+历史记录见[历史发布记录](docs/需求设计/发布验收/历史发布记录.md#640-冻结与发布记录)。
 
 ## 6.3.5 发布状态
 
-`6.3.5` 已于 2026-09-14T12:39:06Z 正式公开，发布后的 [CocoaPods / SwiftPM 消费验证](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/34844585266)为 `success`；本仓 `release-state.json` 为 `6.3.5/CLOSED`。Tag 和发布资产保持不可变。
-
-- `releaseState`：`FORMAL`
-- `binarySourceCommit`（SDK 二进制源码提交）：`82d8cab58eba588104eee9bc89063952a277af65`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`b1bc50e272c29dd817cfcee8bbeeb9d60dfaca89`
-- `candidateId`：`17cccada18787f54c2faca204769d245a3ee29adf40f6c85c679896c28f16ba4`
-
-`6.3.5` 正式签名资产、checksum 和 A/B 已完成冻结。仓库根 `release-state.json` 由编排器
-从上一正式版 `6.3.1/CLOSED` 生成候选时推进为 `6.3.5/FROZEN`，正式消费成功后推进为 `6.3.5/CLOSED`。
-当前最新公开正式版为
-[`6.3.5`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.5)。
-
-`releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结。
-公开可用性以同版本 GitHub Release 和发布后 CI 为准。
-
-冻结资产校验值：
-
-- `YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256：`562a1c680c87479196ccaea71423392cb491f8c170b26ead96764345a28dfd7c`
-- `YSIFLYADLib-6.3.5.zip` 的 SHA-256：`90e2ff30a1fa9836fb7545f7feb8d7fd02ac4432f49f32e62716d7ca3b84cff1`
-- `checksums.txt` 的 SHA-256：`ab3ac30a219190d7d39cb5cb83ae33ef1ac273a7981a970d4412512d5aaccdd2`
-
-Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、
-`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
-
-`6.3.5` 不沿用历史风险授权；主动扫描策略固定为 `failOn=high`、`failOnWarning=true`、
-`strict=true`、`requireManual=true` 且接受名单为空。扫描状态不改写正式发布状态，未扫描不得表述为通过。
+历史记录见[历史发布记录](docs/需求设计/发布验收/历史发布记录.md#635-发布状态)。
 
 ## 6.3.1 历史正式事实
 
-`6.3.1` 的源码、元数据、三资产摘要与变更说明保留在 [CHANGELOG](CHANGELOG.md#631---2026-09-01)；[GitHub Release 6.3.1](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.3.1) 及其已发布资产保持不可变，不作为 `6.3.5` 的验证证据。
+历史记录见[历史发布记录](docs/需求设计/发布验收/历史发布记录.md#631-历史正式事实)。
 
 ## 6.2.4 历史正式事实
 
-`6.2.4` 已于 2026-08-17 正式公开；annotated tag 解引用到
-`43b6eadeb3431e5bceb0befd4610f9cb7313b3b6`，Release 为非草稿、非预发布且精确包含 3 个资产。
-[正式消费 Run 32027223627](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/32027223627) 已完成匿名下载、SwiftPM、CocoaPods、Demo 与发布契约验证并返回 `success`。
-其二进制源码提交为 `b0f745d582ce2bed5110702cff972be4153e5038`，发布元数据提交为
-`7b08118b43a0c4441de4c76a64f34fa54b3fe889`。
+历史记录见[历史发布记录](docs/需求设计/发布验收/历史发布记录.md#624-历史正式事实)。
 
 ## 6.2.3 历史正式事实
 
-`6.2.3` 已于 2026-08-16 正式公开；annotated tag 解引用到
-`b28e14d684d0178969c7a026a79614613773e160`，Release 为非草稿、非预发布且精确包含 3 个资产。
-[正式消费 Run 31939685915](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31939685915) 已完成匿名下载、SwiftPM、CocoaPods、Demo 与发布契约验证并返回 `success`。
-其二进制源码提交为 `ea0240e620b57d7275e486199099c648f51de257`，发布元数据提交为
-`0f26b7647e6c1aadb32eca68b24f6845639a59c2`。
-以下为 `6.2.2` 历史正式事实：该版本已于 2026 年 8 月 10 日通过
-<https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2> 正式公开，Release 非草稿、
-非预发布，资产库存严格为以下 3 项。
-
-`6.2.2` 冻结资产摘要：
-
-- `YSIFLYADLib.xcframework.zip`：`757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d`
-- `YSIFLYADLib-6.2.2.zip`：`25812612d0e88115ad0db5ebdbf81bd533afdf1ee7bd828d4ae93d78bca26411`
-- `checksums.txt`：`6d98e0508571a9f25438ab4295e20db50df01f42e5e6480974f5a5c885535c7b`
-
-[published CI 31347052226](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31347052226)
-结论为 `success`：使用不带 GitHub 凭据的公开 URL 匿名查询并下载全部 3 项资产，完成
-SHA-256、SwiftPM checksum、双包同源和公开 API 校验，并实际构建 SwiftPM 产品、最小消费端和
-CocoaPods Demo，同时通过完整 `pod spec lint`。该分发验收不代表最终宿主合规、
-`Validate App` 或 Apple 审核通过。
-
-`6.2.2` 按当版已确认范围原样归档 `SRC-004`、`SRC-008`、`SRC-009`、`SRC-011`、`NET-001`、
-`RRA-003`、`TRACK-001`、`TRACK-002`、`ADS-011`、`EXPORT-001` 启发式残余风险，并以
-`failOn=high`、`failOnWarning=false`、`strict=false`、`requireManual=false` 发布。该确认不适用于
-`6.2.3` 或最终宿主；`6.2.3` 不沿用历史风险授权。`6.2.3` 主动扫描策略固定为
-`failOn=high`、`failOnWarning=true`、`strict=true`、`requireManual=true` 且接受名单为空；扫描状态
-不改写正式发布状态，也不得把未扫描表述为通过。
-
-`6.2.3` 冻结资产校验值：SwiftPM checksum 为 `84c77f4b9930f892086e08ec9f4185af474eab72a403905f4c5d9257936667a2`，`YSIFLYADLib-6.2.3.zip` 的 SHA-256 为 `904de36f02046e7612bec459bb432b203aa44cb21fd12ba5511f6c8b5bd1179e`。
-
-正式态回填后，`releaseMetadataCommit` 必须是 `binarySourceCommit` 的后代；两者之间只允许修改
-`Package.swift`、`README.md`、`CONTEXT.md` 和 `docs/**`，不能改变 SDK 二进制输入。
+历史记录见[历史发布记录](docs/需求设计/发布验收/历史发布记录.md#623-历史正式事实)。
 
 ## CI 凭据与 Release 正文
 
@@ -126,31 +56,32 @@ CocoaPods Demo，同时通过完整 `pod spec lint`。该分发验收不代表�
 `LJMcarryu/IFLYADLibDemo` 的 compare API。该 Token 只用于验证 A/B 祖先关系和变更路径，
 不得传给本公开仓 Release 资产查询或下载。Secret 缺失时正式 tag/Release 必须失败。
 
-GitHub Release 正文必须从本版发布状态逐字复制两行 A/B 规范声明，且每个提交只出现一次。
+正式态采用两提交模型：二进制从提交 A 构建；提交 B 必须是 A 的后代，且 A→B 只允许修改 `Package.swift`、`README.md`、`CONTEXT.md` 和 `docs/**`。当前 A/B 以目标版本 `release-state.json` 的 `binarySourceCommit` / `releaseMetadataCommit` 为准。GitHub Release 正文必须按本版真实状态使用两行 A/B 规范声明，且每个提交只出现一次；不能使用历史归档中的提交。
 
-`workflow_dispatch` 的 `validation_mode` 分为三种：
+`workflow_dispatch` 的 `validation_mode` 分为三种。`releaseState=FORMAL` 是文档分发状态，不是机器阶段；
+`release-state.json.phase` 另行记录 `FROZEN` / `CLOSED`。模式由控制合同绑定版本和阶段：
 
-- `repository`（默认）：`release_tag` 为空时只跑仓库、清单、资源和 Demo 源码门禁，
-  不访问 Release。为兼容旧的手动/API 调用，如果只传非空 `release_tag`，工作流自动
-  推导为 `formal_release`；与 `candidate_release_id` 组合则拒绝执行。
+- `repository`（默认）：`release_tag` 与 `formal_release_id` 均为空时只跑仓库、清单、资源和 Demo 源码门禁，
+  `release-state.json.phase` 必须为 `CLOSED` 且版本符合控制合同，不访问 Release。兼容旧的手动/API 调用时，
+  必须同时提供目标版本 `release_tag` 与对应的正整数 `formal_release_id`，工作流才推导为 `formal_release`；只传其中一项或与 `candidate_release_id` 组合均拒绝执行。
 - `draft_candidate`：只能从不可覆盖的
   `release-candidate/<version>-<candidateId>` 分支触发，并同时传同仓 draft Release 的十进制
   `candidate_release_id`、64 位小写 `candidate_id` 和 32 位小写 `dispatch_nonce`。checkout 必须
-  等于触发事件的 `github.sha`；该提交必须已经包含最终真实 checksum、`releaseState=FORMAL`
+  等于触发事件的 `github.sha`；该提交的 `release-state.json.phase` 必须为 `FROZEN`，
+  文档 `releaseState=FORMAL`，并已经包含最终真实 checksum
   和两个不同的真实 A/B 提交。draft 的 `tag_name` 必须等于清单版本，`target_commitish` 只能
   绑定该候选分支或触发时的精确提交，但不要求 tag 已存在、Release 已公开。Draft Release
   仍保持 `draft=true`、`published_at=null`，后续 publish 直接使用同一不可变候选提交，不再
   回填清单或切换提交。Draft run name 固定为
   `draft-candidate:<candidateId>:<releaseId>:<dispatchNonce>`。
-- `formal_release`：必须传 `release_tag`，checkout 必须绑定该 annotated tag，且本地状态必须为
-  `FORMAL`。Release `published` 事件自动采用此模式。
+- `formal_release`：手动调用必须同时提供目标版本 `release_tag` 与对应的正整数 `formal_release_id`，checkout 必须绑定该 annotated tag，且本地状态必须为
+  `release-state.json.phase=FROZEN`，文档 `releaseState=FORMAL`。Release `published` 事件自动采用此模式，并从事件取得版本与 Release ID。
 
 draft candidate 的 `GITHUB_TOKEN` 只注入三个各自独立的下载步骤：前置资产门禁、
 SwiftPM 消费 runner 和 CocoaPods 消费 runner。前置 job 只输出三个 SHA-256，不把未公开
 二进制上传为 Actions artifact；两个并行消费 job 各自重新下载，在无 Token 步骤中与前置
 哈希逐一绑定后才构建。checkout、本地门禁、哈希校验、lint 和构建均不注入该 Token。
-普通 push、PR、tag push 不会进入 draft 资产 job。正式复验继续在显式移除
-`GH_TOKEN`、`GITHUB_TOKEN`、`GITHUB_AUTH_TOKEN` 和 `ACTIONS_RUNTIME_TOKEN` 后匿名查询并下载公开资产。
+普通 push、PR、tag push 不会进入 draft 资产 job。正式元数据来自 Release `published` 事件，或手动复验时通过 `GITHUB_TOKEN` 按精确 Release ID 认证查询；二进制资产始终通过不带 `Authorization` 的公开 URL 匿名下载。
 工作流默认权限只保留 `contents: read`，不 checkout 的模式解析 job 使用空权限。
 
 发布模式的控制脚本和 SwiftPM 本地消费 fixture 固定取自本次
@@ -159,7 +90,7 @@ SwiftPM 消费 runner 和 CocoaPods 消费 runner。前置 job 只输出三个 S
 
 正式 Release 固定且只能包含以下三个资产：
 
-- `YSIFLYADLib-6.4.2.zip`
+- `YSIFLYADLib-<目标版本>.zip`
 - `YSIFLYADLib.xcframework.zip`
 - `checksums.txt`
 
@@ -177,10 +108,9 @@ CocoaPods 消费 job 生成的临时 podspec 使用已验证 zip 的 `file://` U
 普通 main、PR 和 tag push 只执行 `pod ipc spec` 等本地门禁，不能依赖尚未对外可见的 Release
 资产。正式模式使用不带 `Authorization` 或 GitHub 凭据的公开 URL 下载全部三项，再执行完整复验。
 
-`6.3.5` 还必须验证 NativeFeed 外部 CTA 默认关闭；显式开启时允许 permissive attach，container
-非页面根祖先与媒体交互优先策略生效，attach/点击拒绝返回结构化 `71503/<point>` 白标诊断；
-独占 lease、同 window/scene、页面根排除、点击时可见性以及 `ysifly_detachFromCurrentContainer`
-契约保持一致。公开头、二进制 selector 和文档必须同步。
+NativeFeed 回归按目标版本计划、公开头与 API 变更确定；历史专项验收见[历史发布记录](docs/需求设计/发布验收/历史发布记录.md#635-nativefeed-专项验收)。
+
+Apple Review 为主动可选扫描，策略以目标版本计划为准；未运行记录 `not-run`，不得表述为扫描或 Apple 审核通过，历史版本风险授权不沿用。
 
 首次启用候选分支控制面前，必须把只包含 workflow、控制脚本和测试的 bootstrap 提交独立合入
 远端 `main`，且该提交不得同时修改版本、`Package.swift` 或 `YSIFLYADLib.podspec`。默认分支先具备

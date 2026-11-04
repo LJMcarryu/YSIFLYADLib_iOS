@@ -408,21 +408,26 @@ class ReleaseModeContractTests(unittest.TestCase):
             documents["CHANGELOG.md"],
         )
         self.assertIn("[更新记录](CHANGELOG.md)", documents["README.md"])
+        archive_path = "docs/需求设计/发布验收/历史发布记录.md"
+        history = (ROOT / archive_path).read_text(encoding="utf-8")
+        self.assertIn(f"{archive_path}#623-历史正式事实", documents["RELEASING.md"])
+        self.assertIn(f"{archive_path}#635-发布状态", documents["RELEASING.md"])
         self.assertIn(
             "757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d",
-            documents["RELEASING.md"],
+            history,
         )
         self.assertNotEqual(
             contract["checksum"],
             "73a1e82ffee9c01d63f1e6a391c732e8837c422d23ab60846c92e8f2c167ad08",
         )
+        historical_635 = history.split("## 6.3.5 发布状态\n", 1)[1].split("\n## ", 1)[0]
         for marker in (
             "`failOnWarning=true`",
             "`strict=true`",
             "`requireManual=true`",
             "接受名单为空",
         ):
-            self.assertIn(marker, documents["RELEASING.md"])
+            self.assertIn(marker, historical_635)
 
 
 class ReleaseDownloaderTests(unittest.TestCase):
