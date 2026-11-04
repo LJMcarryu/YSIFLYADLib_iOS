@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import io
 import ast
 import copy
 import hashlib
@@ -432,23 +433,33 @@ class ReleaseModeContractTests(unittest.TestCase):
 
 class ReleaseDownloaderTests(unittest.TestCase):
     def setUp(self) -> None:
+        # 纯逻辑测试显式使用同步执行器；真实硬期限在独立测试中验证。
+        self.enterContext(mock.patch("github_http_retry.execute_in_worker",
+            side_effect=lambda path, name, args, **kw: getattr(DOWNLOAD, name)(**args)))
         self.contents = {
             f"YSIFLYADLib-{VERSION}.zip": b"combined",
             "YSIFLYADLib.xcframework.zip": b"spm",
             "checksums.txt": b"checksums",
         }
 
-    def download_for_url(self, url: str, headers, timeout: int = 300) -> bytes:
+    def response(self, payload, url="https://release-assets.githubusercontent.com/object"):
+        response = io.BytesIO(payload)
+        response.geturl = lambda: url
+        return response
+
+    def download_for_url(self, request, timeout: int = 300):
         del timeout
+        url = request.full_url
+        headers = dict(request.header_items())
         if "/releases/download/" in url:
             self.assertNotIn("Authorization", headers)
         for name, contents in self.contents.items():
             if url.endswith("/" + name):
-                return contents
+                return self.response(contents, url)
         asset_id = url.rsplit("/", 1)[-1]
         names = sorted(self.contents)
         if asset_id.isdigit() and 1 <= int(asset_id) <= len(names):
-            return self.contents[names[int(asset_id) - 1]]
+            return self.response(self.contents[names[int(asset_id) - 1]], url)
         raise AssertionError(url)
 
     def arguments(self, temporary: Path, mode: str) -> argparse.Namespace:
@@ -502,7 +513,7 @@ class ReleaseDownloaderTests(unittest.TestCase):
                     side_effect=[release, {"object": {"sha": "c" * 40}}],
                 ),
                 mock.patch.object(
-                    DOWNLOAD, "download_bytes", side_effect=self.download_for_url
+                    DOWNLOAD, "open_url", side_effect=self.download_for_url
                 ),
             ):
                 hashes = DOWNLOAD.run(arguments)
@@ -529,7 +540,7 @@ class ReleaseDownloaderTests(unittest.TestCase):
             with (
                 mock.patch.dict(os.environ, {}, clear=True),
                 mock.patch.object(
-                    DOWNLOAD, "download_bytes", side_effect=self.download_for_url
+                    DOWNLOAD, "open_url", side_effect=self.download_for_url
                 ) as download,
             ):
                 DOWNLOAD.run(arguments)
@@ -539,7 +550,7 @@ class ReleaseDownloaderTests(unittest.TestCase):
                 mock.patch.dict(os.environ, {}, clear=True),
                 mock.patch.object(
                     DOWNLOAD,
-                    "download_bytes",
+                    "open_url",
                     side_effect=AssertionError("已校验缓存不得再次下载"),
                 ),
             ):
@@ -549,7 +560,7 @@ class ReleaseDownloaderTests(unittest.TestCase):
             with (
                 mock.patch.dict(os.environ, {"GITHUB_TOKEN": "control-only"}, clear=True),
                 mock.patch.object(
-                    DOWNLOAD, "download_bytes", side_effect=self.download_for_url
+                    DOWNLOAD, "open_url", side_effect=self.download_for_url
                 ),
             ):
                 DOWNLOAD.run(leaked)
@@ -568,8 +579,8 @@ class ReleaseDownloaderTests(unittest.TestCase):
             with (
                 mock.patch.object(
                     DOWNLOAD,
-                    "download_bytes",
-                    side_effect=[TimeoutError("TLS handshake timeout"), payload],
+                    "open_url",
+                    side_effect=[TimeoutError("TLS handshake timeout"), self.response(payload)],
                 ) as download,
                 mock.patch.object(DOWNLOAD.time, "sleep") as sleep,
             ):

@@ -21,7 +21,8 @@ from typing import Any, Mapping
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from github_http_retry import call_with_retry, failure_classification, retry_delay
+from github_http_retry import (call_with_retry, failure_classification, retry_delay,
+                               execute_in_worker, isolated_asset_download, read_json_response)
 
 
 DOWNLOAD_MAX_ATTEMPTS = 5
@@ -42,10 +43,18 @@ def require(condition: bool, message: str) -> None:
         raise DownloadError(message)
 
 
+def validate_download_url(url):
+    parsed = urlsplit(url)
+    host = (parsed.hostname or "").lower()
+    require(parsed.scheme == "https" and (host in {"api.github.com", "github.com"}
+            or host.endswith(".githubusercontent.com")), "下载 URL 必须位于 HTTPS GitHub 主机")
+
+
 class CrossHostCredentialSafeRedirect(urllib.request.HTTPRedirectHandler):
     """跟随 GitHub 资产重定向，但绝不把 API Authorization 带到对象存储。"""
 
     def redirect_request(self, request, file_pointer, code, message, headers, new_url):
+        validate_download_url(new_url)
         redirected = super().redirect_request(
             request, file_pointer, code, message, headers, new_url
         )
@@ -57,15 +66,23 @@ class CrossHostCredentialSafeRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def open_url(request: urllib.request.Request, timeout: int):
+    validate_download_url(request.full_url)
     opener = urllib.request.build_opener(CrossHostCredentialSafeRedirect())
     return opener.open(request, timeout=timeout)
 
 
-def request_json(url: str, headers: Mapping[str, str]) -> dict[str, Any]:
+def request_json(url: str, headers: Mapping[str, str], *, executor=None,
+                 timeout_seconds=180) -> dict[str, Any]:
+    runner = execute_in_worker if executor is None else executor
+    return runner(__file__, "_request_json_worker", {"url": url, "headers": dict(headers)},
+                  timeout_seconds=timeout_seconds)
+
+
+def _request_json_worker(url, headers):
     def request_once():
         request = urllib.request.Request(url, headers=dict(headers))
         with open_url(request, timeout=180) as response:
-            value = json.load(response)
+            value = read_json_response(response)
         require(isinstance(value, dict), "Release API 响应必须是字典")
         return value
     return call_with_retry(request_once)
@@ -208,62 +225,58 @@ def validate_release(
     return assets
 
 
-def download_bytes(url: str, headers: Mapping[str, str], timeout: int = 300) -> bytes:
-    request = urllib.request.Request(url, headers=dict(headers))
-    with open_url(request, timeout=timeout) as response:
-        return response.read()
+def download_asset(asset: Mapping[str, Any], destination: Path, *, mode: str,
+                   token: str, executor=None, timeout_seconds=300) -> str:
+    return isolated_asset_download(__file__, "_download_asset_worker", {
+        "asset": dict(asset), "destination": str(destination), "mode": mode, "token": token,
+    }, destination, executor=executor, timeout_seconds=timeout_seconds)
 
 
-def download_asset(
-    asset: Mapping[str, Any],
-    destination: Path,
-    *,
-    mode: str,
-    token: str,
-) -> str:
+def _download_asset_worker(asset, destination, *, mode, token):
+    destination = Path(destination)
     if destination.exists() or destination.is_symlink():
-        require(
-            destination.is_file() and not destination.is_symlink(),
-            f"缓存目标必须是普通文件: {destination}",
-        )
-        cached = hashlib.sha256(destination.read_bytes()).hexdigest()
-        if (
-            destination.stat().st_size == asset["size"]
-            and hmac.compare_digest(f"sha256:{cached}", str(asset["digest"]))
-        ):
-            return cached
+        require(destination.is_file() and not destination.is_symlink(),
+                "缓存目标必须是普通文件")
+        if destination.stat().st_size == asset["size"]:
+            digest = hashlib.sha256()
+            with destination.open("rb") as cached:
+                while chunk := cached.read(1024 * 1024):
+                    digest.update(chunk)
+            actual = digest.hexdigest()
+            if hmac.compare_digest(f"sha256:{actual}", str(asset["digest"])):
+                return {"digest": actual, "cached": True}
         destination.unlink()
+    require(mode in {"draft_candidate", "formal_release"}, "未知发布模式")
     if mode == "draft_candidate":
         url = str(asset["url"])
         headers = {
-            "Accept": "application/octet-stream",
-            "Authorization": f"Bearer {token}",
+            "Accept": "application/octet-stream", "Authorization": f"Bearer {token}",
             "User-Agent": "YSIFLYADLib-draft-candidate-gate",
             "X-GitHub-Api-Version": "2022-11-28",
         }
     else:
-        from release_metadata_control import formal_release_metadata
-
         url = str(asset["browser_download_url"])
         headers = {"User-Agent": "YSIFLYADLib-anonymous-release-gate"}
     temporary = destination.with_name(destination.name + ".part")
-    require(not temporary.is_symlink(), f"临时下载目标不得为符号链接: {temporary}")
+    require(not temporary.is_symlink(), "临时下载目标不得为符号链接")
     temporary.unlink(missing_ok=True)
     for attempt in range(1, DOWNLOAD_MAX_ATTEMPTS + 1):
         try:
-            contents = download_bytes(url, headers)
-            require(
-                len(contents) == asset["size"],
-                f"下载大小与 API 不一致: {asset['name']}",
-            )
-            digest = hashlib.sha256(contents).hexdigest()
-            require(
-                hmac.compare_digest(str(asset["digest"]), f"sha256:{digest}"),
-                f"API digest 不一致: {asset['name']}",
-            )
-            temporary.write_bytes(contents)
-            temporary.replace(destination)
-            return digest
+            request = urllib.request.Request(url, headers=headers)
+            digest = hashlib.sha256()
+            size = 0
+            with open_url(request, timeout=300) as response, temporary.open("xb") as output:
+                validate_download_url(response.geturl())
+                while chunk := response.read(1024 * 1024):
+                    size += len(chunk)
+                    require(size <= asset["size"], f"下载大小与 API 不一致: {asset['name']}")
+                    output.write(chunk)
+                    digest.update(chunk)
+            require(size == asset["size"], f"下载大小与 API 不一致: {asset['name']}")
+            actual = digest.hexdigest()
+            require(hmac.compare_digest(str(asset["digest"]), f"sha256:{actual}"),
+                    f"API digest 不一致: {asset['name']}")
+            return {"digest": actual, "cached": False}
         except Exception as error:
             temporary.unlink(missing_ok=True)
             if isinstance(error, DownloadError) or attempt == DOWNLOAD_MAX_ATTEMPTS:
