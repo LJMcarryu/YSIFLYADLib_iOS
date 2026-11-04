@@ -335,25 +335,11 @@ jobs:
           VALIDATION_MODE: ${{ needs.resolve-validation-mode.outputs.mode }}
           RELEASE_TAG: ${{ needs.resolve-validation-mode.outputs.release_tag }}
         run: |
-          python3 - <<'PY'
-          import os, subprocess, sys
-          from pathlib import Path
-          sys.path.insert(0, ".github/scripts")
-          from release_metadata_control import read_release_control
-          mode = os.environ["VALIDATION_MODE"]
-          state_path = Path("release-state.json")
-          if mode == "formal_release":
-              state_path = Path(os.environ["RUNNER_TEMP"]) / "release-control-state.json"
-              with state_path.open("wb") as output:
-                  subprocess.run(
-                      ["git", "show", f"refs/tags/{os.environ['RELEASE_TAG']}:release-state.json"],
-                      check=True, stdout=output,
-                  )
-          read_release_control(Path(".github/scripts/release-control.json"),
-              repository="${{ github.repository }}", channel="ys",
-              release_state_path=state_path, validation_mode=mode)
-          print("release-control 版本契约校验通过")
-          PY
+          python3 .github/scripts/validate_release_control.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --channel ys \
+            --validation-mode "$VALIDATION_MODE" \
+            --tag-state-mode formal_release
 
       - name: Checkout 被验证的发布 ref
         uses: actions/checkout@v4

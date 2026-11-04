@@ -1526,7 +1526,20 @@ class WorkflowStructureTests(unittest.TestCase):
         non_canary_jobs = {
             name: job for name, job in self.jobs.items() if name != "control-plane-canary"
         }
-        self.assertNotIn("python3 .github/scripts/", json.dumps(non_canary_jobs))
+        for job_name, job in non_canary_jobs.items():
+            latest_checkout = None
+            for step in job.get("steps", []):
+                if step.get("uses", "").startswith("actions/checkout@"):
+                    latest_checkout = step.get("with", {}).get("ref")
+                if "python3 .github/scripts/" not in step.get("run", ""):
+                    continue
+                self.assertEqual(job_name, "verify-repository")
+                self.assertEqual(step.get("name"), "校验版本控制状态拓扑")
+                self.assertEqual(latest_checkout, "${{ github.workflow_sha }}")
+                self.assertEqual(
+                    re.findall(r"python3 (\.github/scripts/[^\s]+)", step["run"]),
+                    [".github/scripts/validate_release_control.py"],
+                )
         expected_control_files = (
             ".github/scripts/validate_release_mode.py",
             ".github/scripts/download_release_assets.py",
