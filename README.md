@@ -7,7 +7,7 @@
 
 <!-- ifly-release-status: {"schemaVersion":1,"version":"6.4.4","releaseState":"FORMAL","distribution":"github-release","releaseUrl":"https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.4"} -->
 
-[运行示例](YSIFLYADLibSimple/README.md) · [安装指南](docs/接入指南/安装与资源配置.md) · [广告接入](docs/接入指南/广告加载与展示.md) · [更新记录](CHANGELOG.md) · [隐私与网络](docs/接入指南/隐私与网络.md) · [支持](https://github.com/LJMcarryu/YSIFLYADLib_iOS/issues) · [许可](LICENSE)
+[接入指南索引](docs/接入指南/README.md) · [运行示例](YSIFLYADLibSimple/README.md) · [安装指南](docs/接入指南/安装与资源配置.md) · [广告接入](docs/接入指南/广告加载与展示.md) · [更新记录](CHANGELOG.md) · [隐私与网络](docs/接入指南/隐私与网络.md) · [支持](https://github.com/LJMcarryu/YSIFLYADLib_iOS/issues) · [许可](LICENSE)
 
 ## 能力与接入身份
 

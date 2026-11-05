@@ -21,3 +21,6 @@ __pycache__/
 Pods/
 Podfile.lock
 *.xcworkspace
+
+# 公开仓统一构建与发布产物忽略规则
+*.framework

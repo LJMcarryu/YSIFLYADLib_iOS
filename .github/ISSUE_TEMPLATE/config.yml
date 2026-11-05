@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 接入指南
+    url: https://github.com/LJMcarryu/YSIFLYADLib_iOS#readme
+    about: 提交问题前请先阅读安装和排错文档。
