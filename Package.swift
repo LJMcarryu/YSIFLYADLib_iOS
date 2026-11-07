@@ -24,7 +24,7 @@ let package = Package(
             name: "YSIFLYADLib",
             // 6.4.6 冻结签名 zip 的 SwiftPM 校验值。
             url: "https://download-adsdk.voiceads.cn/ios_sdk/6.4.6/ys/YSIFLYADLib.xcframework.zip",
-            checksum: "3ae62c7ff389be1955c82df027f9dbd69245641801bc9b0a25dc99a16315838c"
+            checksum: "92b286716e8a37211036a6f648ac604288fef7d497115ef54f598b0b3c013a90"
         ),
         .target(
             name: "YSIFLYADLibResources",
