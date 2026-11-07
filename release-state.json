@@ -1,7 +1,7 @@
 {
   "schemaVersion": 4,
   "distributionBackend": "tos",
-  "phase": "FROZEN",
+  "phase": "CLOSED",
   "version": "6.4.6",
   "channel": "ys",
   "repository": "LJMcarryu/YSIFLYADLib_iOS",
@@ -29,5 +29,8 @@
       "sha256": "d33c8be216a5e3742dd752e8643796579a09e7bb8db3b5cd7f16d0552ee5de6c",
       "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.4.6/ys/checksums.txt"
     }
-  ]
+  ],
+  "distributionRevisionId": "60a16af6ee75200c41e849dc59f9f68cdae1deb47a5ef1373aea1c994b93ed70",
+  "verifyReceiptSha256": "ae526acd48a516bd3981db4938a2420fa71ab0ee4b72a51f3ea090cb7fab74c6",
+  "tagCommit": "5200297295b3a98fe8a3983b8a4be4280076aa83"
 }
