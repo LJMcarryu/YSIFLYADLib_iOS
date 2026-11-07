@@ -1,30 +1,33 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 4,
+  "distributionBackend": "tos",
+  "phase": "FROZEN",
+  "version": "6.4.6",
   "channel": "ys",
   "repository": "LJMcarryu/YSIFLYADLib_iOS",
-  "version": "6.4.4",
-  "phase": "CLOSED",
-  "binarySourceCommit": "25ebc73166c9596822cfcf4e93d74fc6c98bd5e4",
-  "releaseMetadataCommit": "56aaeb4d5b76858b266981d30afd76bff6a73ad2",
-  "artifactInventory": {
-    "count": 3,
-    "sha256": "461e3276038b0560800498c9e9703f376b9b81771bb4d5bbc76b73ea7f92e3dd"
-  },
-  "appleReview": {
-    "requiredForRelease": false,
-    "statusAtFreeze": "not-run",
-    "evidenceIncluded": false
-  },
-  "publication": {
-    "releaseId": 424092416,
-    "tagName": "6.4.4",
-    "tagObjectSha": "56c6dbc0acc1621ce0504a43b68042eb53287475",
-    "tagCommitSha": "b69dfe20ba7e27e9bd9c1a475e1ef4f53f5796b1",
-    "releaseUrl": "https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.4",
-    "publishedAt": "2026-10-26T10:47:25Z",
-    "formalConsumerRunId": 40310140626,
-    "formalConsumerRunUrl": "https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/40310140626",
-    "conclusion": "success",
-    "verifiedAt": "2026-10-26T10:49:28Z"
-  }
+  "artifactCandidateId": "8cb0e312dd3a74c036cb5ffa1dae7b7406514a95e94d9cddc848d4716f053441",
+  "binarySourceCommit": "b50f1af836e06ba61414d580c154617c24c34bfa",
+  "releaseMetadataCommit": "1b043f4b14fec0977c7431a51aa0bdde81474080",
+  "uploadInventorySha256": "7abf2b74a7746f4309aa4db1cdb097967d3896aed779e55973cc79444dbdcbef",
+  "channelInventorySha256": "815475c021cda35a39b192dc8bd7b44a7e86db10e5521fc4a1df943d3003a2a3",
+  "assets": [
+    {
+      "name": "YSIFLYADLib.xcframework.zip",
+      "size": 3274386,
+      "sha256": "92b286716e8a37211036a6f648ac604288fef7d497115ef54f598b0b3c013a90",
+      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.4.6/ys/YSIFLYADLib.xcframework.zip"
+    },
+    {
+      "name": "YSIFLYADLib-6.4.6.zip",
+      "size": 3307153,
+      "sha256": "580973ac035800abd7e0177722800d1cc6595bd1c3ddbe6772c53c7af54a3df5",
+      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.4.6/ys/YSIFLYADLib-6.4.6.zip"
+    },
+    {
+      "name": "checksums.txt",
+      "size": 290,
+      "sha256": "d33c8be216a5e3742dd752e8643796579a09e7bb8db3b5cd7f16d0552ee5de6c",
+      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.4.6/ys/checksums.txt"
+    }
+  ]
 }
