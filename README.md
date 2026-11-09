@@ -4,7 +4,7 @@
 
 <!-- ifly-release-status: {"version":"6.5.0","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.0/ys/fast-release-record.json"} -->
 
-资产上传摘要见[极速发布记录](https://download-adsdk.voiceads.cn/ios_sdk/6.5.0/ys/fast-release-record.json)，元数据提交以同版本 Tag 为准；公开状态为 `FAST_PUBLISHED`，不表示全量验收通过。CocoaPods trunk、Apple 人工审核和真实媒体验收未执行。
+资产上传摘要见[极速发布记录](https://download-adsdk.voiceads.cn/ios_sdk/6.5.0/ys/fast-release-record.json)，元数据提交以同版本 Tag 为准；公开状态为 `FAST_PUBLISHED`，不表示全量验收通过。CocoaPods trunk 已由极速入口自动发布；Apple 人工审核和真实媒体验收未执行。
 
 `YSIFLYADLib` 为 YS 媒体提供 iOS 开屏、Banner、插屏和自渲染信息流广告；本仓库包含分发清单、接入指南与示例。
 
@@ -52,7 +52,7 @@ pod install
 open YourApp.xcworkspace
 ```
 
-此版本使用上述 Podspec URL 安装，无需依赖 CocoaPods trunk 收录。CocoaPods 自动加入资源、`-ObjC` 和所需系统库；安装后始终打开 `.xcworkspace`。
+此版本使用上述 Podspec URL 安装，可直接使用官方 CocoaPods trunk，也可使用上述 Podspec URL。CocoaPods 自动加入资源、`-ObjC` 和所需系统库；安装后始终打开 `.xcworkspace`。
 
 SwiftPM 或手动集成见[安装与资源配置](docs/接入指南/安装与资源配置.md)。三种方式选择一种；代码导入 `#import <YSIFLYADLib/YSIFLYADLib.h>`。
 
