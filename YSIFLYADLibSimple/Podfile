@@ -1,4 +1,4 @@
-# 本示例固定使用 6.4.6；公开时间与消费验证结论以 release-state.json 和同版本 TOS release-record.json为准。
+# 本示例固定使用 6.5.0；极速发布未验证，verification=not-run。
 # 历史 Tag、Release 和资产保持不可变。
 
 source 'https://cdn.cocoapods.org/'
@@ -14,5 +14,5 @@ target 'YSIFLYADLibSimple' do
   use_frameworks!
   # 固定使用 6.4.6；CocoaPods 自动添加资源包和 -ObjC。
   # 静态 XCFramework 随 App 链接，无需 Embed。
-  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.4.6/YSIFLYADLib.podspec'
+  pod 'YSIFLYADLib', :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.5.0/YSIFLYADLib.podspec'
 end
