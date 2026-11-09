@@ -11,7 +11,7 @@
 
 
 
-[接入指南索引](docs/接入指南/README.md) · [运行示例](YSIFLYADLibSimple/README.md) · [安装指南](docs/接入指南/安装与资源配置.md) · [广告接入](docs/接入指南/广告加载与展示.md) · [更新记录](CHANGELOG.md) · [隐私与网络](docs/接入指南/隐私与网络.md) · [支持](https://github.com/LJMcarryu/YSIFLYADLib_iOS/issues) · [许可](LICENSE)
+[接入指南索引](docs/接入指南/README.md) · [运行示例](YSIFLYADLibSimple/README.md) · [安装指南](docs/接入指南/安装与资源配置.md) · [广告接入](docs/接入指南/广告加载与展示.md) · [更新记录](CHANGELOG.md) · [隐私与网络](docs/接入指南/隐私与网络.md) · [支持说明](https://download-adsdk.voiceads.cn/ys/index.html) · [许可](LICENSE)
 
 ## 能力与接入身份
 
@@ -76,7 +76,7 @@ SDK 无需额外 App ID 初始化。完成宿主隐私流程，使用平台分�
 
 `ysifly_setPersonalizedEnabled:` 仅记录状态，不改变数据处理、请求、填充、展示或点击行为，也不替代宿主同意流程与 ATT 授权。IDFA 只在授权后读取或传入；资源清单、ATS 与日志说明见[隐私与网络](docs/接入指南/隐私与网络.md)。
 
-接入失败先查[错误处理与反馈](docs/接入指南/错误处理与反馈.md)；仍需帮助时通过 [Issues](https://github.com/LJMcarryu/YSIFLYADLib_iOS/issues) 提供版本、操作步骤、错误码和脱敏日志。使用许可见 [LICENSE](LICENSE)。
+接入失败先查[错误处理与反馈](docs/接入指南/错误处理与反馈.md)；仍需帮助时通过双方约定的支持渠道提供版本、操作步骤、错误码和脱敏日志。使用许可见 [LICENSE](LICENSE)。
 
 <details>
 <summary>原章节入口</summary>

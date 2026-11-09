@@ -4,8 +4,8 @@
 
 ## 报告方式
 
-- 一般接入问题：在[公开 Issues](https://github.com/LJMcarryu/YSIFLYADLib_iOS/issues)提供版本、环境、复现步骤和脱敏日志。
-- 潜在安全问题：优先使用仓库 GitHub 页面 **Security → Report a vulnerability** 的私密通道；未启用该入口时，请先提交不含敏感细节的 Issue，请求私下沟通。
+- 一般接入问题：通过一般接入问题(https://download-adsdk.voiceads.cn/ys/index.html)提供版本、环境、复现步骤和脱敏日志。
+- 潜在安全问题：请先通过项目方约定的私密安全渠道联系；提交内容只保留复现所需信息，不要公开凭据、用户数据或完整请求。
 
 ## 报告内容
 
