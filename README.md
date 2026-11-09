@@ -1,6 +1,6 @@
 # YS 广告 iOS SDK
 
-> **6.5.0 极速发布未验证**：`verification=not-run`。本次仅编译、打包、上传 TOS，并同步公开清单和 Tag；不运行测试、匿名下载复验、SwiftPM/CocoaPods 消费验收或 CI。风险由发布者承担。
+> **6.5.0 发布回执状态为 `FAST_UNVERIFIED`**。本次已补充完成 CocoaPods trunk 安装、锁定版本和 iOS Simulator 构建验证；匿名下载复验、SwiftPM 消费验收、真机广告填充和 Apple 审核仍未执行。
 
 <!-- ifly-release-status: {"version":"6.5.0","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.0/ys/fast-release-record.json"} -->
 
@@ -34,7 +34,7 @@
 
 ## 安装
 
-推荐 CocoaPods，使用精确版本的 Podspec URL：
+推荐使用 CocoaPods 官方 trunk 的精确版本：
 
 ```ruby
 source 'https://cdn.cocoapods.org/'
@@ -42,8 +42,7 @@ platform :ios, '11.0'
 
 target 'YourApp' do
   use_frameworks!
-  pod 'YSIFLYADLib',
-      :podspec => 'https://raw.githubusercontent.com/LJMcarryu/YSIFLYADLib_iOS/6.5.0/YSIFLYADLib.podspec'
+  pod 'YSIFLYADLib', '6.5.0'
 end
 ```
 
@@ -52,7 +51,7 @@ pod install
 open YourApp.xcworkspace
 ```
 
-此版本使用上述 Podspec URL 安装，可直接使用官方 CocoaPods trunk，也可使用上述 Podspec URL。CocoaPods 自动加入资源、`-ObjC` 和所需系统库；安装后始终打开 `.xcworkspace`。
+此版本使用上述 CocoaPods 官方 trunk 安装，可直接使用官方 CocoaPods trunk。CocoaPods 自动加入资源、`-ObjC` 和所需系统库；安装后始终打开 `.xcworkspace`。
 
 SwiftPM 或手动集成见[安装与资源配置](docs/接入指南/安装与资源配置.md)。三种方式选择一种；代码导入 `#import <YSIFLYADLib/YSIFLYADLib.h>`。
 

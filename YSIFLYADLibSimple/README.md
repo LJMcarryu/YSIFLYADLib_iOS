@@ -81,7 +81,7 @@ SDK 不要求额外 App ID 初始化。广告位须与媒体获授权的 App 和
 
 | 现象 | 检查方法 |
 | --- | --- |
-| `pod install` 下载失败 | 确认能访问 `raw.githubusercontent.com` 和本版本 TOS 发布记录；保留失败 URL/错误后重试，检查代理、证书和网络限制 |
+| `pod install` 下载失败 | 确认能访问 CocoaPods trunk 和本版本 TOS 下载地址；保留失败信息后重试，检查代理、证书和网络限制 |
 | `No such module` / 找不到头文件 | 确认依赖安装完成，打开的是 workspace，且当前选择 `YSIFLYADLibSimple` scheme |
 | 真机签名失败 | 配置自己的 Team、Bundle Identifier 与设备授权；这类错误发生在运行广告请求之前 |
 | 首页 SDK 版本与 `Podfile` 固定版本不一致 | 核对 `Podfile`、安装输出和 `Pods/Manifest.lock`；清理旧构建后重新从 workspace 运行 |
