@@ -1,15 +1,15 @@
 # YS 广告接入示例
 
 > 本示例遵循公开仓 Demo 契约：固定 SDK 版本、独立 Podfile、可复现运行说明和脱敏问题反馈。
-本工程使用 `YSIFLYADLib 6.4.6`，演示开屏、Banner、插屏和自渲染信息流，支持信息流列表复用及视频素材。SDK 不包含激励广告。
+本工程使用 `YSIFLYADLib 6.5.0`，演示开屏、Banner、插屏和自渲染信息流，支持信息流列表复用及视频素材。SDK 不包含激励广告。
 
 先按本文运行和替换广告位；将能力接入自己的 App 时，参考[SDK 接入说明](../README.md)与各页面代码。
 
-本示例的 `Podfile` 固定版本为 `6.4.6`；窗口与 Scene 的接入条件见[广告加载与展示](../docs/接入指南/广告加载与展示.md#展示窗口与-scene)。
+本示例的 `Podfile` 固定版本为 `6.5.0`；窗口与 Scene 的接入条件见[广告加载与展示](../docs/接入指南/广告加载与展示.md#展示窗口与-scene)。
 
 ## 从下载到运行
 
-准备 macOS、Xcode、CocoaPods 和可访问 GitHub Releases 的网络。最低部署目标为 iOS 11.0。使用模拟器可检查安装、链接和页面；真实广告填充、跳转和 ATT 请用真机联调。
+准备 macOS、Xcode、CocoaPods 和可访问 TOS 发布记录s 的网络。最低部署目标为 iOS 11.0。使用模拟器可检查安装、链接和页面；真实广告填充、跳转和 ATT 请用真机联调。
 
 ```bash
 git clone https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
@@ -21,7 +21,7 @@ open YSIFLYADLibSimple.xcworkspace
 1. 在 Xcode 选择 `YSIFLYADLibSimple` scheme 和模拟器或已连接的 iPhone。
 2. 真机运行前，在 App target 的 **Signing & Capabilities** 选择自己的 Team；必要时将 Bundle Identifier 改为自己的标识。
 3. 按下文替换广告位，确认后台授权的 App 信息与当前 App 一致，然后运行。
-4. 首页应显示 `SDK Version: 6.4.6`。示例的 `Podfile` 固定使用正式版 `6.4.6`，示例页面可以随本仓库更新。
+4. 首页应显示 `SDK Version: 6.5.0`。示例的 `Podfile` 固定使用正式版 `6.5.0`，示例页面可以随本仓库更新。
 
 使用 CocoaPods 后始终打开 `.xcworkspace`。它自动加入 `YSAdvSDK.bundle`（含隐私清单）和 `-ObjC`；不需再手工嵌入静态 framework。其他安装方式见[SDK 接入说明](../docs/接入指南/安装与资源配置.md)。
 
@@ -81,7 +81,7 @@ SDK 不要求额外 App ID 初始化。广告位须与媒体获授权的 App 和
 
 | 现象 | 检查方法 |
 | --- | --- |
-| `pod install` 下载失败 | 确认能访问 `raw.githubusercontent.com` 和本版本 GitHub Release；保留失败 URL/错误后重试，检查代理、证书和网络限制 |
+| `pod install` 下载失败 | 确认能访问 `raw.githubusercontent.com` 和本版本 TOS 发布记录；保留失败 URL/错误后重试，检查代理、证书和网络限制 |
 | `No such module` / 找不到头文件 | 确认依赖安装完成，打开的是 workspace，且当前选择 `YSIFLYADLibSimple` scheme |
 | 真机签名失败 | 配置自己的 Team、Bundle Identifier 与设备授权；这类错误发生在运行广告请求之前 |
 | 首页 SDK 版本与 `Podfile` 固定版本不一致 | 核对 `Podfile`、安装输出和 `Pods/Manifest.lock`；清理旧构建后重新从 workspace 运行 |
