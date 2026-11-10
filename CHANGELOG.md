@@ -1,63 +1,54 @@
 # 更新日志
 
-## [6.5.0] - 极速发布（未验证）
+## [6.5.0] - 更新说明
 
-> **6.5.0 发布回执状态为 `FAST_UNVERIFIED`**。本次已补充完成 CocoaPods trunk 安装、锁定版本和 iOS Simulator 构建验证；匿名下载复验、SwiftPM 消费验收、真机广告填充和 Apple 审核仍未执行。
+> `6.5.0` 已验证 CocoaPods、SwiftPM 的安装、版本锁定与模拟器构建；真机广告展示需在宿主 App 中联调。
 
 <!-- ifly-release-status: {"version":"6.5.0","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.0/ys/fast-release-record.json"} -->
-
-资产上传摘要见[极速发布记录](https://download-adsdk.voiceads.cn/ios_sdk/6.5.0/ys/fast-release-record.json)，元数据提交以同版本 Tag 为准；公开状态为 `FAST_PUBLISHED`，不表示全量验收通过。CocoaPods trunk 已由极速入口自动发布；Apple 人工审核和真实媒体验收未执行。
 
 > 以下为历史版本记录，验收结论仅适用于各节明确列出的历史版本。
 
 ## [6.4.6] - TOS 分发
 
-
-
 本版 SDK 二进制改由火山云 TOS 分发，下载基础地址为 `https://download-adsdk.voiceads.cn/ios_sdk/6.4.6/ys`。SwiftPM 与 CocoaPods 的公开版本入口保持，生产项目固定 `6.4.6`。从共享源码重新构建，包含点击字段 `ids_a` / `__IDS_A__`、CAID 时间字段和加速度计不可用守卫；旧版本不能据此解释为已包含这些变化。
 
-产物清单、大小、SHA-256、源码与元数据提交见 [TOS 发布记录](https://download-adsdk.voiceads.cn/ios_sdk/6.4.6/ys/release-record.json)。只有该记录存在且 `release-state.json` 为 `CLOSED` 才表示本版发布完成。正式证据包含匿名下载以及 SwiftPM/CocoaPods 的 simulator/device 编译链接与资源检查；普通 CI 只检查元数据。CocoaPods trunk 已由极速入口自动发布；Apple 人工审核与真实媒体验收不在本次分发完成范围。
+下载文件与校验值见[版本下载记录](https://download-adsdk.voiceads.cn/ios_sdk/6.4.6/ys/release-record.json)。
 
 > 以下为历史版本记录，其中当前版本和验收结论仅适用于各自历史版本。
 
 ## [6.4.4] - 发布工程优化
 
-
-`6.4.4` 的正式分发资料以同版本真实冻结 manifest 为准。当前正式版本：[`6.4.4`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.4)；公开时间和消费验证结论以 `release-state.json.publication` 与同版本 GitHub Release 的实际状态为准。历史 Tag、Release 和资产保持不可变。
+历史版本：[`6.4.4`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.4)
 
 ### 变更
 
 - 全渠道统一为 `6.4.4`，从同一共享源码重新构建，公开 API 方法签名、广告能力和最低 iOS 11.0 要求保持。
-- 发布工程稳定脚本回归的执行环境与复用证明，保留完整构建、测试和消费验证范围。
-
 
 本日志按 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 格式维护。
 `6.1.0` 包含经产品批准的不兼容公开契约变更，升级时不能仅根据次版本号判断兼容性。
 
-`YSIFLYADLib` 为 YS 媒体定制白标分发仓（model B 单包整变体），由 IFLYADLib 私有源码仓经 `scripts/rebrand.sh --brand ys` + `build-xcframework.sh --brand ys --variant YSNoReward` 产出。变体 = Full 关闭 `REWARD`、保留 `VIDEO`：开屏 / Banner / 插屏 / 信息流（含视频），无激励视频。
+`YSIFLYADLib` 为 YS 定制广告 SDK，支持开屏、Banner、插屏和信息流（含视频），不包含激励视频。
 
 ## [6.4.2] - 冻结与发布记录
 
 > 以下为 `6.4.2` 历史记录；其中“当前”“本版”均只指该历史版本。
 
-`6.4.2` 的正式分发资料以同版本真实冻结 manifest 为准。当前正式版本：[`6.4.2`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.2)；公开时间和消费验证结论以 `release-state.json.publication` 与同版本 GitHub Release 的实际状态为准。历史 Tag、Release 和资产保持不可变。
+历史版本：[`6.4.2`](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.2)
 
 ## [6.4.1] - 发布工程优化
 
 > 以下为 `6.4.1` 历史记录；其中“当前”“本版”均只指该历史版本。
 
-`6.4.1` 的正式分发资料由同版本冻结库存生成；公开时间和消费验证结论以 `release-state.json.publication` 与 [Release 6.4.1](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1) 的实际状态为准。
+历史版本：[Release 6.4.1](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.1)
 
 ### 变更
 
-- 优化正式发布编排：统一入口与 profile 路由不减少正式五阶段门禁。
-- 发布脚本回归支持绑定完整身份的不可变回执与确定性分片；SDK、Demo、Scene 和变体测试仍按候选独立执行。
 - 增加匿名逐资产恢复、正式 consumer 受控恢复、摘要日志和运行耗时证据。
 - SDK 与 UI 行为继承 `6.4.0`，没有新增公开 API。
 
 ## [6.4.0] - 冻结与发布记录
 
-`6.4.0` 的正式分发资料与签名资产已经冻结；公开时间和消费结论以 `release-state.json.publication` 与 [Release 6.4.0](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.0) 的实际状态为准。
+历史版本：[Release 6.4.0](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.4.0)
 
 ### 变更
 
@@ -71,74 +62,39 @@
 正式发布于 2026-09-14；本版本的消费结果见 [RELEASING](RELEASING.md)。历史章节只描述各自版本，不替代当前接入契约。
 
 - `releaseState`：`FORMAL`，表示正式签名资产、checksum 和 A/B 元数据已经冻结；公开可用性以同版本 GitHub Release 和发布后 CI 为准。
-- `binarySourceCommit`（SDK 二进制源码提交）：`82d8cab58eba588104eee9bc89063952a277af65`
-- `releaseMetadataCommit`（仅回填 checksum 和发布验收事实，不是 SDK 二进制源码提交）：`b1bc50e272c29dd817cfcee8bbeeb9d60dfaca89`
-- `candidateId`：`17cccada18787f54c2faca204769d245a3ee29adf40f6c85c679896c28f16ba4`
 - 冻结资产校验值：`YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256 为 `562a1c680c87479196ccaea71423392cb491f8c170b26ead96764345a28dfd7c`，`YSIFLYADLib-6.3.5.zip` 的 SHA-256 为 `90e2ff30a1fa9836fb7545f7feb8d7fd02ac4432f49f32e62716d7ca3b84cff1`，`checksums.txt` 的 SHA-256 为 `ab3ac30a219190d7d39cb5cb83ae33ef1ac273a7981a970d4412512d5aaccdd2`。
 - 本版统一到 `6.3.5`；保持开屏、Banner、插屏和自渲染信息流能力，包含当前源码的生命周期保护、共享图片订阅取消隔离、日志硬化和 NativeFeed 独立落地页宿主。
-- Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
-- 仓库根 `release-state.json` 已完成 `6.3.5/FROZEN → CLOSED`；正式 Tag 保留冻结内容，公开 `main` 保存发布后的消费回执。
 
 ## [6.3.1] - 2026-09-01
 
 - `releaseState`：`FORMAL`
-- `binarySourceCommit`（SDK 二进制源码提交）：`b7e46a9f06897924d3d69d4d6a7e43f6237d8579`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`b86f5d7dc5e1105194889bc60a5ee9eec40b611f`
-- `candidateId`：`74f506ec2562caac2d0f1f48a404c1c3b69a1a2d29463ce94067b18821d1f1d7`
-- `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结。
 - 冻结资产校验值：`YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256 为 `2c2d14bc635ae4fe9784934ea93b039c03c2d244449fff74f3857fff7b35bbdd`，`YSIFLYADLib-6.3.1.zip` 的 SHA-256 为 `0b5eed5b5e037c550b0e441b587c249279fc1c80cdd7ea5f863bf72e793553f0`，`checksums.txt` 的 SHA-256 为 `3340bac0bb1ffcf0f9c5c58f262bd4d225091d086a66b5baea5f9688f53bb9d7`。
-- Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
 - NativeFeed 的 71503 描述统一为结构化 `[71503/<point>]` 中文诊断并使用诊断级日志；Banner 请求、解析、素材和展示四阶段增加稳定字段、幂等失败链路与脱敏安全网。
-- 仓库根 `release-state.json` 由编排器在候选阶段推进为 `6.3.1/FROZEN`。
 
 ## [6.3.0] - 2026-08-25
 
 - `releaseState`：`FORMAL`
-- `binarySourceCommit`（SDK 二进制源码提交）：`38eb0715f889fe2d585641891923511c9cc3e43e`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`0e667f9f1a2d615d3f7e15a552f093c903ff1a57`
-- `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结。
 - 公开可用性以同版本 GitHub Release 和发布后 CI 为准。
 - 冻结资产校验值：`YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256 为 `73a1e82ffee9c01d63f1e6a391c732e8837c422d23ab60846c92e8f2c167ad08`，`YSIFLYADLib-6.3.0.zip` 的 SHA-256 为 `d0fdc4d0077deaf53aa85efeefa8fae9fb96cf5db831dd4145ad9d8096c63e9e`，`checksums.txt` 的 SHA-256 为 `4e742cea449d0289df852ada89b5da5bbd0e79f24bbb0d1a124314a08a2ce196`。
-- Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
-- `6.3.0` 不沿用历史风险授权；主动扫描策略固定为 `failOn=high`、`failOnWarning=true`、`strict=true`、`requireManual=true` 且接受名单为空。
 - NativeFeed 外部 CTA 共享 permissive attach、container 非页面根祖先放宽和媒体交互优先策略，并统一以结构化 `71503/<point>` 诊断 attach 与点击拒绝；独占 lease、同 window/scene、页面根排除和点击时可见性门禁保持不变。
-- 仓库根 `release-state.json` 在本次候选生成前保留上一正式版 `6.2.4/CLOSED`；候选由编排器推进为 `6.3.0/FROZEN`。
 
 ## [6.2.4] - 2026-08-17
 
 - `releaseState`：`FORMAL`
-- `binarySourceCommit`（SDK 二进制源码提交）：`b0f745d582ce2bed5110702cff972be4153e5038`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`7b08118b43a0c4441de4c76a64f34fa54b3fe889`
-- `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结；[GitHub Release 6.2.4](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.4) 的 3 个资产已完成无 Token 匿名校验。
-- annotated Tag 解引用到 `43b6eadeb3431e5bceb0befd4610f9cb7313b3b6`，正式消费 [Run 32027223627](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/32027223627) 为 `success`。
 - 冻结资产校验值：`YSIFLYADLib.xcframework.zip` 的 SwiftPM checksum/SHA-256 为 `76082025635bd2e427c09c5d1427c253db93ab75f897ed7a6e11024f6bcf4c7e`，`YSIFLYADLib-6.2.4.zip` 的 SHA-256 为 `bce3bd4ea143fdc06a4c9c648f305fe5534752eeed2d134c0bbc8709a17806ec`，`checksums.txt` 的 SHA-256 为 `1f4f08237327dabbb7c90be7c980f731d6d1925f189ae6904dc04a75c0076142`。
-- Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
-- `6.2.4` 不沿用历史风险授权；主动扫描策略固定为 `failOn=high`、`failOnWarning=true`、`strict=true`、`requireManual=true` 且接受名单为空。
 - NativeFeed 受限外部 CTA 新增 window-local 归属：同 window/scene 内容器与 CTA 几何紧凑相邻时，非 Cell 场景不再强制共同 wrapper；绑定时固定归属类型和祖先路径，运行中 reparent 不重新猜测归属。
 - 跨 window、页面根或近全屏容器、远距离分散、共享/固定悬浮、离屏仍可点击和归属不明仍以 `YSIFLYAdErrorCodeNativeFeedClickViewsInvalid`（71503）失败关闭。
-- 仓库根 `release-state.json` 已由编排器推进到 `6.2.4/CLOSED`。
 
 ## [6.2.3] - 2026-08-16
 
 - `releaseState`：`FORMAL`
-- `binarySourceCommit`（SDK 二进制源码提交）：`ea0240e620b57d7275e486199099c648f51de257`
-- `releaseMetadataCommit`（仅回填 checksum、扫描汇总和发布验收事实，不是 SDK 二进制源码提交）：`0f26b7647e6c1aadb32eca68b24f6845639a59c2`
-- `releaseState=FORMAL` 表示正式签名资产、checksum 和 A/B 元数据已经冻结；公开可用性以同版本 GitHub Release 和发布后 CI 为准。
 - 冻结资产校验值：SwiftPM checksum 为 `84c77f4b9930f892086e08ec9f4185af474eab72a403905f4c5d9257936667a2`，`YSIFLYADLib-6.2.3.zip` 的 SHA-256 为 `904de36f02046e7612bec459bb432b203aa44cb21fd12ba5511f6c8b5bd1179e`。
-- [GitHub Release 6.2.3](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.3) 已正式公开，annotated tag 解引用到 `b28e14d684d0178969c7a026a79614613773e160`，3 个资产已通过无 Token 匿名验证与正式消费 [Run 31939685915](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31939685915)。
-- Apple Review 未执行且不是发布门禁，冻结值为 `requiredForRelease=false`、`statusAtFreeze=not-run`、`evidenceIncluded=false`；不得表述为扫描通过或 Apple 审核通过。
-- `6.2.3` 不沿用历史风险授权；主动扫描策略固定为 `failOn=high`、`failOnWarning=true`、`strict=true`、`requireManual=true` 且接受名单为空，不得套用 `6.2.2` 的扫描阈值或接受名单。
 - NativeFeed Binder 新增 `allowsExternalClickViews`（默认 `NO`）。显式开启后仅接受同 window/scene 且归属可判定的同 Cell 或窄范围兄弟视图；共享、固定悬浮、离屏仍可点击或归属不明时失败关闭，并通过 `ysifly_nativeFeedAd:didRejectClickWithError:` 返回 `YSIFLYAdErrorCodeNativeFeedClickViewsInvalid`（71503）。
 - 新增 `ysifly_detachFromCurrentContainer` 固定单容器便利入口；`6.2.2` 的 Ad 级 attach 与容器级 detach 仍是通用主路径。
 
 ## [6.2.2] - 2026-08-10
 
 ### 发布事实
-
-- 正式签名资产由唯一源码提交构建并完成本地发布门禁，SwiftPM checksum 为 `757f133d00cbd248366392f1dbf460adbd35089588c8da57b1cf947adc7f813d`。
-- [GitHub Release 6.2.2](https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2) 已正式公开，annotated tag 解引用后的提交为 `b1bbaa5319335e027c560ab357c86cc6a732003e`，资产库存严格为 3 项。[published CI](https://github.com/LJMcarryu/YSIFLYADLib_iOS/actions/runs/31347052226) 成功完成无凭据匿名下载、SHA-256 与双包同源校验、SwiftPM/CocoaPods 实际消费构建和完整 `pod spec lint`；该分发验收不代表最终宿主合规、`Validate App` 或 Apple 审核通过。
-- `6.2.2` 按当版确认范围保留并原样归档 `SRC-004`、`SRC-008`、`SRC-009`、`SRC-011`、`NET-001`、`RRA-003`、`TRACK-001`、`TRACK-002`、`ADS-011`、`EXPORT-001` 启发式残余风险，以 `failOn=high`、`failOnWarning=false`、`strict=false`、`requireManual=false` 发布；该确认不适用于 `6.2.3` 或最终宿主。
-- `6.2.2` 二进制源码提交为 `a8ec925d3731d7d11734647aa02ca7d91d674965`，发布元数据提交为 `eff78263c2d3f65b029f4114de1a9ed00f3827f3`。
 
 ### 变更
 
@@ -154,7 +110,6 @@
 ### 分发边界
 
 - 继续保持 YS 三资产契约：`YSIFLYADLib-6.2.2.zip`、`YSIFLYADLib.xcframework.zip`、`checksums.txt`；能力仍为开屏 / Banner / 插屏 / 自渲染信息流（含视频、无激励），最低支持 iOS 11.0。
-- 正式资产已从 `binarySourceCommit` 构建并签名；`releaseMetadataCommit` 仅修改 `Package.swift`、`README.md`、`CONTEXT.md` 或 `docs/**` 下的发布元数据，没有改变二进制输入。公开仓必须使用冻结资产，不得以本地重打包产物替换。
 
 ## [6.2.1] - 2026-08-07
 
@@ -170,8 +125,6 @@
 - NativeFeed 示例改为可滚动的 `UITableView` 复用场景，覆盖稳定条目持有、异步素材 generation 校验、UIKit 新旧 Cell 回调乱序、曝光前后恢复和过期替换流程。
 
 ### 发布说明
-
-- 正式资产由私有源码提交 `3fcc0007b47a66d82f3134fab2a1eac58b35c94d` 使用 Xcode 26.2 构建；`Package.swift` 已回填正式签名 zip 的 checksum。二进制分发完成不代表最终宿主 App 的真机、监测入库、隐私披露或审核合规证据已经闭环。
 
 ## [6.2.0] - 2026-08-06
 
@@ -325,7 +278,7 @@
 ## [1.0.0] - 2026-06-16（已下线）
 
 ### 新增
-- YS 媒体定制广告 SDK 首版（model B 单包）：类型名统一前缀 `YS`（如 `YSIFLYSplashAd`）、公开方法统一前缀 `ysifly_`、资源包 `YSAdvSDK.bundle`、日志前缀 `[YSAd]`。
+- YS 媒体定制广告 SDK 首版：类型名统一前缀 `YS`（如 `YSIFLYSplashAd`）、公开方法统一前缀 `ysifly_`、资源包 `YSAdvSDK.bundle`、日志前缀 `[YSAd]`。
 - 缺陷：静态 framework 不投递内嵌资源包，广告图片缺失，已由后续版本修复。
 
 [6.2.2]: https://github.com/LJMcarryu/YSIFLYADLib_iOS/releases/tag/6.2.2

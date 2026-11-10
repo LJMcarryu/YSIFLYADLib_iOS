@@ -1,20 +1,12 @@
-## 变更说明
+## 改动说明
 
-- 
+说明修改内容与原因，关联 Issue（如有）。
 
-## 影响范围
+## 验证
 
-- [ ] 仅配置/文档/发布门禁
-- [ ] Demo
-- [ ] SDK 行为或公开 API
+说明已执行的检查或示例运行结果。
 
-## 验证结果
+- [ ] 文档链接与示例正确
+- [ ] 未提交密钥、设备标识、业务数据或构建产物
 
-- [ ] `python3 scripts/verify_public_contract.py`
-- [ ] `python3 -m unittest tests/test_public_contract.py -v`
-- [ ] 其他：
-
-## 发布注意事项
-
-- [ ] 已同步版本、Release 状态和文档链接
-- [ ] 未提交 Pods、构建产物、密钥或业务敏感数据
+安全漏洞请按 [SECURITY.md](../SECURITY.md) 私密上报。

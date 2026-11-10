@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: 接入指南
-    url: https://github.com/LJMcarryu/YSIFLYADLib_iOS#readme
-    about: 提交问题前请先阅读安装和排错文档。
+    url: https://download-adsdk.voiceads.cn/ys/
+    about: 安装、广告接入与常见问题。
+  - name: 安全漏洞上报
+    url: https://security.iflysec.com/front/bugForm
+    about: 安全漏洞请私密上报，不要提交公开 Issue。
