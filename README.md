@@ -2,7 +2,7 @@
 
 <!-- ifly-fast-release-notice:start -->
 
-当前版本：`6.5.0`。已验证 CocoaPods、SwiftPM 的安装、版本锁定与模拟器构建；真机广告展示需在宿主 App 中联调。
+当前版本：`6.5.0`。6.5.0 当前仅提供 CocoaPods 与手动集成；SwiftPM 暂停支持，预计 6.5.1 修复后恢复。真机广告展示需在宿主 App 中联调。
 
 <!-- ifly-release-status: {"version":"6.5.0","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.0/ys/fast-release-record.json"} -->
 
@@ -12,22 +12,21 @@
 
 [指南目录](docs/接入指南/README.md) · [运行示例](YSIFLYADLibSimple/README.md) · [安装指南](docs/接入指南/安装与资源配置.md) · [广告接入](docs/接入指南/广告加载与展示.md) · [更新记录](CHANGELOG.md) · [隐私与网络](docs/接入指南/隐私与网络.md) · [支持说明](#隐私支持与许可) · [许可](LICENSE)
 
-## 三种接入示例
+## 两种接入示例
 
 | 接入方式 | 独立示例 | 首次准备 |
 | --- | --- | --- |
 | CocoaPods | [YSIFLYADLibSimple](YSIFLYADLibSimple/README.md) | 在示例目录运行 `pod install` |
-| SwiftPM | [YSIFLYADLibSwiftPMSimple](YSIFLYADLibSwiftPMSimple/README.md) | 直接打开示例 workspace，Xcode 解析远程包 |
 | 手动集成 | [YSIFLYADLibManualSimple](YSIFLYADLibManualSimple/README.md) | 运行示例内 `准备SDK.py`，再打开 workspace |
 
-各示例固定的 SDK 版本与运行步骤以其 README 为准。一次只选择一种集成方式。
+各示例固定的 SDK 版本与运行步骤以其 README 为准。6.5.0 请选择 CocoaPods 或手动集成；SwiftPM 将在 6.5.1 修复后恢复。
 
 ## 能力与接入身份
 
 | 项目 | 说明 |
 | --- | --- |
 | 广告能力 | 开屏、Banner、插屏、自渲染信息流（单图、多图、视频）；不包含激励广告 |
-| CocoaPods / SwiftPM product | `YSIFLYADLib` |
+| CocoaPods product | `YSIFLYADLib` |
 | 代码模块 / 导入 | `YSIFLYADLib` / `#import <YSIFLYADLib/YSIFLYADLib.h>` |
 | 资源包 | `YSAdvSDK.bundle`，含 `PrivacyInfo.xcprivacy` |
 | API 命名 | 类型使用 `YSIFLY` 前缀；公开方法和 delegate 回调使用 `ysifly_` 前缀，初始化方法和属性不加此前缀 |
@@ -37,7 +36,7 @@
 
 ## 环境要求
 
-- iOS 11.0+；SwiftPM 清单要求 Swift tools 5.9。
+- iOS 11.0+。
 - 静态 XCFramework，包含设备与模拟器切片；App 最终链接需要 `-ObjC`，无需 **Embed & Sign**。
 - [环境与安装说明](docs/接入指南/安装与资源配置.md#环境要求)区分部署目标、清单要求与工具兼容范围。
 
@@ -62,7 +61,7 @@ open YourApp.xcworkspace
 
 此版本使用上述 CocoaPods 官方 trunk 安装，可直接使用官方 CocoaPods trunk。CocoaPods 自动加入资源、`-ObjC` 和所需系统库；安装后始终打开 `.xcworkspace`。
 
-SwiftPM 或手动集成见[安装与资源配置](docs/接入指南/安装与资源配置.md)。三种方式选择一种；代码导入 `#import <YSIFLYADLib/YSIFLYADLib.h>`。
+手动集成见[安装与资源配置](docs/接入指南/安装与资源配置.md)。两种方式选择一种；代码导入 `#import <YSIFLYADLib/YSIFLYADLib.h>`。
 
 ## 最小使用流程
 
@@ -100,7 +99,7 @@ SDK 无需额外 App ID 初始化。完成宿主隐私流程，使用平台分�
 
 <a id="swift-package-manager"></a>
 
-原“Swift Package Manager”内容见[对应指南](docs/接入指南/安装与资源配置.md#swift-package-manager)。
+6.5.0 暂停 SwiftPM 支持，相关入口将在 6.5.1 修复后恢复。
 
 <a id="手动集成"></a>
 
