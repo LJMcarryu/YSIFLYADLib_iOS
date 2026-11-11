@@ -12,6 +12,16 @@
 
 [指南目录](docs/接入指南/README.md) · [运行示例](YSIFLYADLibSimple/README.md) · [安装指南](docs/接入指南/安装与资源配置.md) · [广告接入](docs/接入指南/广告加载与展示.md) · [更新记录](CHANGELOG.md) · [隐私与网络](docs/接入指南/隐私与网络.md) · [支持说明](#隐私支持与许可) · [许可](LICENSE)
 
+## 三种接入示例
+
+| 接入方式 | 独立示例 | 首次准备 |
+| --- | --- | --- |
+| CocoaPods | [YSIFLYADLibSimple](YSIFLYADLibSimple/README.md) | 在示例目录运行 `pod install` |
+| SwiftPM | [YSIFLYADLibSwiftPMSimple](YSIFLYADLibSwiftPMSimple/README.md) | 直接打开示例 workspace，Xcode 解析远程包 |
+| 手动集成 | [YSIFLYADLibManualSimple](YSIFLYADLibManualSimple/README.md) | 运行示例内 `准备SDK.py`，再打开 workspace |
+
+各示例固定的 SDK 版本与运行步骤以其 README 为准。一次只选择一种集成方式。
+
 ## 能力与接入身份
 
 | 项目 | 说明 |
