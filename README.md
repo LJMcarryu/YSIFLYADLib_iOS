@@ -1,7 +1,7 @@
 # YS 广告 iOS SDK
 
 <!-- ifly-fast-release-notice:start -->
-当前版本：`6.5.1`。本版尚未完成安装、构建与广告展示验证，请先在宿主 App 中联调。
+当前版本：`6.5.1`。本版已通过 CocoaPods、SwiftPM、手动集成的安装及 arm64 模拟器/设备架构构建验证；真机广告展示仍需在宿主 App 中联调。
 
 <!-- ifly-release-status: {"version":"6.5.1","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.1/ys/fast-release-record.json"} -->
 
@@ -16,9 +16,10 @@
 | 接入方式 | 独立示例 | 首次准备 |
 | --- | --- | --- |
 | CocoaPods | [YSIFLYADLibSimple](YSIFLYADLibSimple/README.md) | 在示例目录运行 `pod install` |
+| SwiftPM | [YSIFLYADLibSwiftPMSimple](YSIFLYADLibSwiftPMSimple/README.md) | 打开 workspace，解析远程 6.5.1 包 |
 | 手动集成 | [YSIFLYADLibManualSimple](YSIFLYADLibManualSimple/README.md) | 运行示例内 `准备SDK.py`，再打开 workspace |
 
-各示例固定的 SDK 版本与运行步骤以其 README 为准。6.5.0 请选择 CocoaPods 或手动集成；SwiftPM 将在 6.5.1 修复后恢复。
+三种示例均固定使用 SDK `6.5.1`，具体运行步骤见各自 README。同一 App 只选择一种接入方式。
 
 ## 能力与接入身份
 
@@ -60,7 +61,7 @@ open YourApp.xcworkspace
 
 此版本使用上述 CocoaPods 官方 trunk 安装，可直接使用官方 CocoaPods trunk。CocoaPods 自动加入资源、`-ObjC` 和所需系统库；安装后始终打开 `.xcworkspace`。
 
-手动集成见[安装与资源配置](docs/接入指南/安装与资源配置.md)。两种方式选择一种；代码导入 `#import <YSIFLYADLib/YSIFLYADLib.h>`。
+手动集成见[安装与资源配置](docs/接入指南/安装与资源配置.md)。三种方式选择一种；代码导入 `#import <YSIFLYADLib/YSIFLYADLib.h>`。
 
 ## 最小使用流程
 
@@ -98,7 +99,7 @@ SDK 无需额外 App ID 初始化。完成宿主隐私流程，使用平台分�
 
 <a id="swift-package-manager"></a>
 
-6.5.0 暂停 SwiftPM 支持，相关入口将在 6.5.1 修复后恢复。
+SwiftPM 安装步骤见[安装与资源配置](docs/接入指南/安装与资源配置.md#swift-package-manager)。
 
 <a id="手动集成"></a>
 
