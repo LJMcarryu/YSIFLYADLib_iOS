@@ -11,7 +11,9 @@
 
 [指南目录](docs/接入指南/README.md) · [运行示例](YSIFLYADLibSimple/README.md) · [安装指南](docs/接入指南/安装与资源配置.md) · [广告接入](docs/接入指南/广告加载与展示.md) · [更新记录](CHANGELOG.md) · [隐私与网络](docs/接入指南/隐私与网络.md) · [支持说明](#隐私支持与许可) · [许可](LICENSE)
 
-## 两种接入示例
+## 三种接入示例
+
+最新示例请从 [main 分支源码 ZIP](https://github.com/LJMcarryu/YSIFLYADLib_iOS/archive/refs/heads/main.zip) 下载并解压，或克隆 main；下面各 README 说明进入哪个目录及如何运行。接入自己的 App 请从[安装指南](docs/接入指南/安装与资源配置.md)开始，包含完整下载、资源来源、Xcode 配置和安装检查。
 
 | 接入方式 | 独立示例 | 首次准备 |
 | --- | --- | --- |

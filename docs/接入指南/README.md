@@ -11,11 +11,17 @@
 
 ## 指南目录
 
-- [安装与资源配置](安装与资源配置.md)：CocoaPods、资源和手动集成、SwiftPM
+- [安装与资源配置](安装与资源配置.md)：CocoaPods、SwiftPM、手动下载与资源配置
 - [广告加载与展示](广告加载与展示.md)：请求、展示窗口、开屏、Banner、插屏和信息流
 - [竞价接入](竞价接入.md)：竞价请求和结果通知
 - [错误处理与反馈](错误处理与反馈.md)：错误分层、生命周期和反馈信息
 - [隐私与网络](隐私与网络.md)：隐私、ATT、网络和资源配置
+
+## 三种可运行示例
+
+- [CocoaPods 示例](../../YSIFLYADLibSimple/README.md)
+- [SwiftPM 示例](../../YSIFLYADLibSwiftPMSimple/README.md)
+- [手动示例](../../YSIFLYADLibManualSimple/README.md)
 
 ## 配套资料
 

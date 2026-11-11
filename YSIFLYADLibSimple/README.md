@@ -7,6 +7,12 @@
 
 本示例的 `Podfile` 固定版本为 `6.5.1`；窗口与 Scene 的接入条件见[广告加载与展示](../docs/接入指南/广告加载与展示.md#展示窗口与-scene)。
 
+## 下载入口与版本
+
+无需 Git 时，可下载 [GitHub main 分支源码 ZIP](https://github.com/LJMcarryu/YSIFLYADLib_iOS/archive/refs/heads/main.zip)，解压后进入 `YSIFLYADLib_iOS-main/YSIFLYADLibSimple/`，再执行下方安装命令。不要只下载 `.xcodeproj`。使用 Git 的命令见下文；已有副本先确认本页与 Podfile 都固定 SDK `6.5.1`。
+
+依赖安装后核对 `Podfile.lock` 中 `YSIFLYADLib` 为 `6.5.1`。版本找不到或锁文件冲突的处理见[安装指南](../docs/接入指南/安装与资源配置.md#cocoapods)。
+
 ## 从下载到运行
 
 准备 macOS、Xcode、CocoaPods 和可访问 CocoaPods trunk 和 TOS 下载地址的网络。最低部署目标为 iOS 11.0。使用模拟器可检查安装、链接和页面；真实广告填充、跳转和 ATT 请用真机联调。
@@ -21,7 +27,7 @@ open YSIFLYADLibSimple.xcworkspace
 1. 在 Xcode 选择 `YSIFLYADLibSimple` scheme 和模拟器或已连接的 iPhone。
 2. 真机运行前，在 App target 的 **Signing & Capabilities** 选择自己的 Team；必要时将 Bundle Identifier 改为自己的标识。
 3. 按下文替换广告位，确认后台授权的 App 信息与当前 App 一致，然后运行。
-4. 首页应显示 `SDK Version: 6.5.1`。示例的 `Podfile` 固定使用 `6.5.1`（未验证），示例页面可以随本仓库更新。
+4. 首页应显示 `SDK Version: 6.5.1`。示例的 `Podfile` 固定使用 `6.5.1`，示例页面可以随本仓库更新。
 
 使用 CocoaPods 后始终打开 `.xcworkspace`。它自动加入 `YSAdvSDK.bundle`（含隐私清单）和 `-ObjC`；不需再手工嵌入静态 framework。其他安装方式见[SDK 接入说明](../docs/接入指南/安装与资源配置.md)。
 
