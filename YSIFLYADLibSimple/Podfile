@@ -1,4 +1,4 @@
-# 本示例固定使用 6.5.1；请运行 pod install 生成锁文件。安装与运行需在宿主 App 中验证。
+# 本示例固定使用 6.5.2；请运行 pod install 生成锁文件。安装与运行需在宿主 App 中验证。
 # 历史 Tag、Release 和资产保持不可变。
 
 source 'https://cdn.cocoapods.org/'
@@ -14,5 +14,5 @@ target 'YSIFLYADLibSimple' do
   use_frameworks!
   # CocoaPods 固定使用 6.5.1，自动添加资源包和 -ObjC。
   # 静态 XCFramework 随 App 链接，无需 Embed。
-  pod 'YSIFLYADLib', '6.5.1'
+  pod 'YSIFLYADLib', '6.5.2'
 end

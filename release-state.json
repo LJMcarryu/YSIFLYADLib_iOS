@@ -4,31 +4,31 @@
   "distributionBackend": "tos",
   "phase": "FAST_PUBLISHED",
   "verification": "not-run",
-  "version": "6.5.1",
+  "version": "6.5.2",
   "channel": "ys",
   "repository": "LJMcarryu/YSIFLYADLib_iOS",
-  "releaseRecordUrl": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.1/ys/fast-release-record.json",
+  "releaseRecordUrl": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.2/ys/fast-release-record.json",
   "assets": [
     {
-      "name": "YSIFLYADLib-6.5.1.zip",
-      "size": 3306990,
-      "sha256": "b9f9767492f288b642e02bf9f807251f007579e4bab2f6aaece6e7e2b2c3a66d",
-      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.1/ys/YSIFLYADLib-6.5.1.zip",
-      "key": "ios_sdk/6.5.1/ys/YSIFLYADLib-6.5.1.zip"
+      "name": "YSIFLYADLib-6.5.2.zip",
+      "size": 3472109,
+      "sha256": "2aab6a57161a76016c4e396c632896c45982917b081bea8a130bcca41ecd75b0",
+      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.2/ys/YSIFLYADLib-6.5.2.zip",
+      "key": "ios_sdk/6.5.2/ys/YSIFLYADLib-6.5.2.zip"
     },
     {
       "name": "YSIFLYADLib.xcframework.zip",
-      "size": 3274277,
-      "sha256": "7ae8d28ab67ea8b36028c3f887e92475415564c57b4dd9e7a77745d29cc6a41f",
-      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.1/ys/YSIFLYADLib.xcframework.zip",
-      "key": "ios_sdk/6.5.1/ys/YSIFLYADLib.xcframework.zip"
+      "size": 3439396,
+      "sha256": "39530cc4295573463bb9fdfe717f9bae6d109496375c8c7f3bf36ecb9a75311e",
+      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.2/ys/YSIFLYADLib.xcframework.zip",
+      "key": "ios_sdk/6.5.2/ys/YSIFLYADLib.xcframework.zip"
     },
     {
       "name": "checksums.txt",
       "size": 290,
-      "sha256": "3f10018863ee6b5e490acc900e79ceab8268713e48c1949b4437512eabe6295b",
-      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.1/ys/checksums.txt",
-      "key": "ios_sdk/6.5.1/ys/checksums.txt"
+      "sha256": "c162825338560b3a684dff63ad77705d733351caa05a693bd43de8305a4fd1a0",
+      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.2/ys/checksums.txt",
+      "key": "ios_sdk/6.5.2/ys/checksums.txt"
     }
   ]
 }
