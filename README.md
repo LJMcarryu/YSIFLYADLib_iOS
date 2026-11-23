@@ -7,8 +7,6 @@
 
 <!-- ifly-fast-release-notice:end -->
 
-预发布候选：`6.5.3-beta.1`，仅供接入测试。生产环境默认继续使用 `6.5.2`。安装可用性与验收范围以同版发布记录为准；本说明不代表本版真机广告运行、宿主联调或 Apple 审核已通过。
-
 
 
 `YSIFLYADLib` 为 YS 媒体提供 iOS 开屏、Banner、插屏和自渲染信息流广告；本仓库包含分发清单、接入指南与示例。
@@ -22,10 +20,10 @@
 | 接入方式 | 独立示例 | 首次准备 |
 | --- | --- | --- |
 | CocoaPods | [YSIFLYADLibSimple](YSIFLYADLibSimple/README.md) | 在示例目录运行 `pod install` |
-| SwiftPM | [YSIFLYADLibSwiftPMSimple](YSIFLYADLibSwiftPMSimple/README.md) | 打开 workspace，解析远程 6.5.1 包 |
+| SwiftPM | [YSIFLYADLibSwiftPMSimple](YSIFLYADLibSwiftPMSimple/README.md) | 打开 workspace，解析远程 6.5.3 包 |
 | 手动集成 | [YSIFLYADLibManualSimple](YSIFLYADLibManualSimple/README.md) | 运行示例内 `准备SDK.py`，再打开 workspace |
 
-三种接入示例均固定预发布 SDK `6.5.3-beta.1`，用于测试接入。2026-11-19 已通过 Xcode 26.2 下的 arm64 模拟器与设备架构 Debug 构建，并核对版本锁、SDK 链接、资源和隐私清单；设备架构构建关闭代码签名，不代表真机安装、广告运行或 Apple 审核通过。生产 App 默认继续使用 `6.5.2`；运行步骤见各示例 README。同一 App 只选择一种接入方式。
+三种接入示例均已同步至 SDK `6.5.3`；本次快速发布未执行安装、构建与广告展示复验，请按发布回执在宿主 App 中联调。
 
 ## 能力与接入身份
 
@@ -46,9 +44,9 @@
 - 静态 XCFramework，包含设备与模拟器切片；App 最终链接需要 `-ObjC`，无需 **Embed & Sign**。
 - [环境与安装说明](docs/接入指南/安装与资源配置.md#环境要求)区分部署目标、清单要求与工具兼容范围。
 
-## 6.5.3-beta.1 预发布测试
+## 6.5.3 版本说明
 
-仅在测试分支中选用本预发布；常规生产接入继续使用下方 `6.5.2` 安装配置。完成同版发布后，需要测试时将 Podfile 中的对应依赖精确指定为：
+当前版本为 6.5.3；接入时将 Podfile 中的对应依赖精确指定为：
 
 ```ruby
 pod 'YSIFLYADLib', '6.5.3'
@@ -56,7 +54,7 @@ pod 'YSIFLYADLib', '6.5.3'
 
 保留既有资源与链接配置，重新执行 `pod install` 并检查 `Podfile.lock` 中的版本。SwiftPM 测试接入请选择 Exact Version `6.5.3`，不要使用浮动版本范围。
 
-本预发布移除 `YSIFLYNativeFeedAdData.marketURL` 和 `YSIFLYNativeFeedAdData.downloadURL`。使用这些属性的接入方须移除访问并重新编译适配层。`targetURL` 仅表示落地页地址，不能等价替代已移除的商店或下载地址；点击和跳转继续由 SDK 处理。详情见[NativeFeed 迁移说明](docs/接入指南/广告加载与展示.md#653-beta1-迁移)。
+6.5.3 移除 `YSIFLYNativeFeedAdData.marketURL` 和 `YSIFLYNativeFeedAdData.downloadURL`。使用这些属性的接入方须移除访问并重新编译适配层。`targetURL` 仅表示落地页地址，不能等价替代已移除的商店或下载地址；点击和跳转继续由 SDK 处理。详情见[NativeFeed 迁移说明](docs/接入指南/广告加载与展示.md#653-迁移)。
 
 ## 安装
 

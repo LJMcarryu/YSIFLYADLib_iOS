@@ -9,9 +9,9 @@
 
 ## 下载入口与版本
 
-无需 Git 时，可下载 [GitHub main 分支源码 ZIP](https://github.com/LJMcarryu/YSIFLYADLib_iOS/archive/refs/heads/main.zip)，解压后进入 `YSIFLYADLib_iOS-main/YSIFLYADLibSimple/`，再执行下方安装命令。不要只下载 `.xcodeproj`。使用 Git 的命令见下文；已有副本先确认本页与 Podfile 都固定 SDK `6.5.3-beta.1`。
+无需 Git 时，可下载 [GitHub main 分支源码 ZIP](https://github.com/LJMcarryu/YSIFLYADLib_iOS/archive/refs/heads/main.zip)，解压后进入 `YSIFLYADLib_iOS-main/YSIFLYADLibSimple/`，再执行下方安装命令。不要只下载 `.xcodeproj`。使用 Git 的命令见下文；已有副本先确认本页与 Podfile 都固定 SDK `6.5.3`。
 
-依赖安装后核对 `Podfile.lock` 中 `YSIFLYADLib` 为 `6.5.3-beta.1`。版本找不到或锁文件冲突的处理见[安装指南](../docs/接入指南/安装与资源配置.md#cocoapods)。
+依赖安装后核对 `Podfile.lock` 中 `YSIFLYADLib` 为 `6.5.3`。版本找不到或锁文件冲突的处理见[安装指南](../docs/接入指南/安装与资源配置.md#cocoapods)。
 
 ## 从下载到运行
 
@@ -100,6 +100,6 @@ SDK 不要求额外 App ID 初始化。广告位须与媒体获授权的 App 和
 
 先查[错误处理与反馈](../docs/接入指南/错误处理与反馈.md)；仍需帮助时通过双方约定的支持渠道反馈，附 SDK/iOS/Xcode 版本、真机或模拟器、页面与操作顺序、错误码和脱敏后的日志。版本变化见[更新记录](../CHANGELOG.md)。
 
-## 6.5.3-beta.1 接入验证
+## 6.5.3 快速发布说明
 
-2026-11-19，SDK `6.5.3-beta.1` 已通过 Xcode 26.2 / 17C52 下的 Debug、arm64 模拟器和设备架构构建，以及版本、链接、资源与隐私清单核对。构建使用 `CODE_SIGNING_ALLOWED=NO`；未验证真机安装、真实广告运行、签名分发或 Apple 审核。
+本示例已同步至 SDK `6.5.3`；本次快速发布未执行独立安装、构建与广告展示复验，请按发布回执在宿主 App 中联调。

@@ -7,7 +7,7 @@ import PackageDescription
 
 let package = Package(
     name: "YSIFLYADLib",
-    // 6.5.2 目标二进制继续按 iOS 11 构建；资源由资源 target 同步投递。
+    // 6.5.3 目标二进制继续按 iOS 11 构建；资源由资源 target 同步投递。
     platforms: [
         .iOS("11.0"),
     ],
