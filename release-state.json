@@ -4,31 +4,31 @@
   "distributionBackend": "tos",
   "phase": "FAST_PUBLISHED",
   "verification": "not-run",
-  "version": "6.5.4",
+  "version": "6.5.5-beta.1",
   "channel": "ys",
   "repository": "LJMcarryu/YSIFLYADLib_iOS",
-  "releaseRecordUrl": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.4/ys/fast-release-record.json",
+  "releaseRecordUrl": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.5-beta.1/ys/fast-release-record.json",
   "assets": [
     {
-      "name": "YSIFLYADLib-6.5.4.zip",
-      "size": 3582217,
-      "sha256": "83a15bd8b6205b1b5869638115969e30f50ff9ce4f8c731294126328c7e7d5ba",
-      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.4/ys/YSIFLYADLib-6.5.4.zip",
-      "key": "ios_sdk/6.5.4/ys/YSIFLYADLib-6.5.4.zip"
+      "name": "YSIFLYADLib-6.5.5-beta.1.zip",
+      "size": 4587342,
+      "sha256": "e2e754fcfd51aae6dcd6076ba03100fc37ee3c203d0c91f2c3cce33e8911b164",
+      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.5-beta.1/ys/YSIFLYADLib-6.5.5-beta.1.zip",
+      "key": "ios_sdk/6.5.5-beta.1/ys/YSIFLYADLib-6.5.5-beta.1.zip"
     },
     {
       "name": "YSIFLYADLib.xcframework.zip",
-      "size": 3484282,
-      "sha256": "9b42e4001b725cef2c554bdba8da69691117fde4fed1726a278afa7927da164f",
-      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.4/ys/YSIFLYADLib.xcframework.zip",
-      "key": "ios_sdk/6.5.4/ys/YSIFLYADLib.xcframework.zip"
+      "size": 4222027,
+      "sha256": "3d2a2f63ce426103271b86a33a696961997a907255496680189b4950efc0f5fd",
+      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.5-beta.1/ys/YSIFLYADLib.xcframework.zip",
+      "key": "ios_sdk/6.5.5-beta.1/ys/YSIFLYADLib.xcframework.zip"
     },
     {
       "name": "checksums.txt",
-      "size": 290,
-      "sha256": "841081707b407e6b811cf8973a70dcedeb8e0eee1246ee16aea4c8e4205f93aa",
-      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.4/ys/checksums.txt",
-      "key": "ios_sdk/6.5.4/ys/checksums.txt"
+      "size": 297,
+      "sha256": "e7cab6ff19869e629cfba289d4d10fae929d576b7d5a1e9bab5362232d0848fc",
+      "url": "https://download-adsdk.voiceads.cn/ios_sdk/6.5.5-beta.1/ys/checksums.txt",
+      "key": "ios_sdk/6.5.5-beta.1/ys/checksums.txt"
     }
   ]
 }

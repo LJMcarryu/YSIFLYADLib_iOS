@@ -1,8 +1,14 @@
 # 更新日志
 
+## [6.5.5-beta.1] - 发布说明
+
+<!-- ifly-release-status: {"version":"6.5.5-beta.1","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.5-beta.1/ys/fast-release-record.json"} -->
+
+本版尚未完成安装、构建与广告展示验证，请先在宿主 App 中联调。
+
 ## [6.5.4] - 发布说明
 
-<!-- ifly-release-status: {"version":"6.5.4","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.4/ys/fast-release-record.json"} -->
+
 
 修复自渲染信息流从横屏打开仅竖屏落地页时反复旋转的问题。使用默认方向配置的接入方无需新增适配；升级后请在宿主 App 中核对左右横屏进入落地页、关闭返回和前后台切换。
 
