@@ -2,11 +2,11 @@
 
 Pod::Spec.new do |s|
   s.name     = 'YSIFLYADLib'
-  s.version  = '6.5.5-beta.1'
+  s.version  = '6.5.5'
   s.summary  = 'YSIFLYADLib —— YS 媒体定制 iOS 广告 SDK。'
   s.homepage = 'https://github.com/LJMcarryu/YSIFLYADLib_iOS'
   s.author   = { 'LJMcarryu' => 'jmliu6@iflytek.com' }
-  s.source   = { :http => 'https://download-adsdk.voiceads.cn/ios_sdk/6.5.5-beta.1/ys/YSIFLYADLib-6.5.5-beta.1.zip' }
+  s.source   = { :http => 'https://download-adsdk.voiceads.cn/ios_sdk/6.5.5/ys/YSIFLYADLib-6.5.5.zip' }
   s.license  = { :type => 'MIT', :file => 'LICENSE' }
   s.platform = :ios, '11.0'
   s.static_framework = true

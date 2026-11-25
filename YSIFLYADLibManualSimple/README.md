@@ -1,12 +1,6 @@
 # Manual 接入示例
 
-此独立示例固定使用 SDK `6.5.5-beta.1`；仓库当前发布版本另见[根 README](../README.md)。工程包含与本仓 CocoaPods Demo 对应的广告示例页面，应用 Bundle Identifier 独立，可以分别安装对比。示例源码是生成时的独立副本。
-
-## 激励预发布版
-
-`6.5.5-beta.1` 新增图片与视频激励广告；本示例已固定对应 Tag 的同版本依赖和资源，首页显示“激励广告”。先在本副本 `YSIFLYADLibSimple/Supporting Files/YSIFLYAdPrefixHeader.pch` 填写 `__REWARD_AD_UNIT_ID__`，空值不会发起请求。
-
-操作为 `Load` → `DidReady` → `Show` → 奖励回调 / 关闭。页面仅记录奖励生效，不发放真实业务奖励；播放完成、失败和关闭不代替奖励生效回调。接入要求与源码见[激励指南](../docs/接入指南/广告加载与展示.md#激励广告655-beta1)。预发布版本的本次构建检查见下方“已验证范围”；广告加载与展示仍须使用自己的广告位联调。
+此独立示例固定使用 SDK `6.5.5`；仓库当前发布版本另见[根 README](../README.md)。工程包含与本仓 CocoaPods Demo 对应的广告示例页面，应用 Bundle Identifier 独立，可以分别安装对比。示例源码是生成时的独立副本。
 
 ## 获取示例
 
@@ -17,7 +11,7 @@ git clone --branch main --single-branch https://github.com/LJMcarryu/YSIFLYADLib
 cd YSIFLYADLib_iOS/YSIFLYADLibManualSimple
 ```
 
-以下命令均在这个示例目录执行。已有仓库先确认使用最新 main，并检查本页声明的 SDK 版本；当前 main 的独立示例固定使用 `6.5.5-beta.1`，历史 Tag 的示例不会随 main 更新。安装自己的 App 请按[安装指南](../docs/接入指南/安装与资源配置.md)操作。
+以下命令均在这个示例目录执行。已有仓库先确认使用最新 main，并检查本页声明的 SDK 版本；当前 main 的独立示例固定使用 `6.5.5`，历史 Tag 的示例不会随 main 更新。安装自己的 App 请按[安装指南](../docs/接入指南/安装与资源配置.md)操作。
 
 ## 运行
 
@@ -49,7 +43,7 @@ xcodebuild -workspace YSIFLYADLibManualSimple.xcworkspace \
 
 ## 运行与排错
 
-构建成功后运行 App，首页应显示 SDK `6.5.5-beta.1`。广告位宏、页面按钮顺序及回调观察见 [CocoaPods 示例的页面说明](../YSIFLYADLibSimple/README.md)；本副本中的对应源码仍位于 `YSIFLYADLibSimple/`，请修改本副本文件，不是另一示例的文件。内置格式等待 Ready 后 Show；信息流按页面完成加载、渲染与挂载。无填充不能据此认定安装失败。
+构建成功后运行 App，首页应显示 SDK `6.5.5`。广告位宏、页面按钮顺序及回调观察见 [CocoaPods 示例的页面说明](../YSIFLYADLibSimple/README.md)；本副本中的对应源码仍位于 `YSIFLYADLibSimple/`，请修改本副本文件，不是另一示例的文件。内置格式等待 Ready 后 Show；信息流按页面完成加载、渲染与挂载。无填充不能据此认定安装失败。
 
 若找不到 workspace，先确认终端目录；若依赖下载失败，先恢复网络并重试。手动方式的 `--archive-dir` 接受 `sdk-artifacts.json` 指定的各模块 `.xcframework.zip`，不接受完整合包或资源 ZIP 代替。资源缺失、重复符号和模块名问题见[安装排查](../docs/接入指南/安装与资源配置.md#安装失败排查)。
 
@@ -59,4 +53,4 @@ xcodebuild -workspace YSIFLYADLibManualSimple.xcworkspace \
 
 ## 版本维护
 
-此示例不会随仓库当前版本自动升级。更新依赖时同时更新工程、锁文件或资产摘要、同版资源及说明，并重新验证模拟器与设备架构。不得混用不同版本的库与资源。`示例来源.json` 记录本副本的 SDK Tag 和示例源码提交。
+发布时同步此示例的 SDK 依赖。更新依赖时同时更新工程、锁文件或资产摘要、同版资源及说明，并重新验证模拟器与设备架构。不得混用不同版本的库与资源。`示例来源.json` 记录示例源码来源和当前 SDK 依赖。

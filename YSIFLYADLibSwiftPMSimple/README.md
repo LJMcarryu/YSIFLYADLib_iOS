@@ -1,12 +1,6 @@
 # SwiftPM 接入示例
 
-此独立示例固定使用 SDK `6.5.5-beta.1`；仓库当前发布版本另见[根 README](../README.md)。工程包含与本仓 CocoaPods Demo 对应的广告示例页面，应用 Bundle Identifier 独立，可以分别安装对比。示例源码是生成时的独立副本。
-
-## 激励预发布版
-
-本示例使用的 `6.5.5-beta.1` 新增图片与视频激励广告，首页显示“激励广告”入口。先在本副本 `YSIFLYADLibSimple/Supporting Files/YSIFLYAdPrefixHeader.pch` 填写 `__REWARD_AD_UNIT_ID__`，空值不会发起请求。
-
-操作为 `Load` → `DidReady` → `Show` → 奖励回调 / 关闭。页面仅记录奖励生效，不发放真实业务奖励；播放完成、失败和关闭不代替奖励生效回调。接入要求与源码见[激励指南](../docs/接入指南/广告加载与展示.md#激励广告655-beta1)。本示例的依赖解析、构建与静态核对范围见下方“已验证范围”；广告运行仍须在宿主 App 联调。
+此独立示例固定使用 SDK `6.5.5`；仓库当前发布版本另见[根 README](../README.md)。工程包含与本仓 CocoaPods Demo 对应的广告示例页面，应用 Bundle Identifier 独立，可以分别安装对比。示例源码是生成时的独立副本。
 
 ## 获取示例
 
@@ -17,7 +11,7 @@ git clone --branch main --single-branch https://github.com/LJMcarryu/YSIFLYADLib
 cd YSIFLYADLib_iOS/YSIFLYADLibSwiftPMSimple
 ```
 
-以下命令均在这个示例目录执行。已有仓库先确认使用最新 main，并检查本页声明的 SDK 版本；当前 main 的独立示例固定使用 `6.5.5-beta.1`，历史 Tag 的示例不会随 main 更新。安装自己的 App 请按[安装指南](../docs/接入指南/安装与资源配置.md)操作。
+以下命令均在这个示例目录执行。已有仓库先确认使用最新 main，并检查本页声明的 SDK 版本；当前 main 的独立示例固定使用 `6.5.5`，历史 Tag 的示例不会随 main 更新。安装自己的 App 请按[安装指南](../docs/接入指南/安装与资源配置.md)操作。
 
 ## 运行
 
@@ -27,7 +21,7 @@ cd YSIFLYADLib_iOS/YSIFLYADLibSwiftPMSimple
 open YSIFLYADLibSwiftPMSimple.xcworkspace
 ```
 
-Xcode 自动从 `https://github.com/LJMcarryu/YSIFLYADLib_iOS.git` 解析 **Exact Version 6.5.5-beta.1**，选择的 Product 为 **YSIFLYADLib**；二进制从 TOS 下载。提交的 `Package.resolved` 绑定该版本 Tag。初次构建需联网，后续不要同时添加 Pods 或手动 framework。
+Xcode 自动从 `https://github.com/LJMcarryu/YSIFLYADLib_iOS.git` 解析 **Exact Version 6.5.5**，选择的 Product 为 **YSIFLYADLib**；二进制从 TOS 下载。首次解析后核对 `Package.resolved` 中的版本与 Tag 提交。初次构建需联网，后续不要同时添加 Pods 或手动 framework。
 
 在 Xcode 选择 **YSIFLYADLibSwiftPMSimple** scheme，再选择模拟器或真机。真机运行时设置自己的 Team 与 Bundle Identifier，替换源码 `Supporting Files` 中的广告位配置。示例 ID 不保证填充。工程最低声明 iOS 11.0，实际可用系统范围需结合所用 Xcode 与 SDK 验证。
 
@@ -47,7 +41,7 @@ xcodebuild -workspace YSIFLYADLibSwiftPMSimple.xcworkspace \
 
 ## 运行与排错
 
-构建成功后运行 App，首页应显示 SDK `6.5.5-beta.1`。广告位宏、页面按钮顺序及回调观察见 [CocoaPods 示例的页面说明](../YSIFLYADLibSimple/README.md)；本副本中的对应源码仍位于 `YSIFLYADLibSimple/`，请修改本副本文件，不是另一示例的文件。内置格式等待 Ready 后 Show；信息流按页面完成加载、渲染与挂载。无填充不能据此认定安装失败。
+构建成功后运行 App，首页应显示 SDK `6.5.5`。广告位宏、页面按钮顺序及回调观察见 [CocoaPods 示例的页面说明](../YSIFLYADLibSimple/README.md)；本副本中的对应源码仍位于 `YSIFLYADLibSimple/`，请修改本副本文件，不是另一示例的文件。内置格式等待 Ready 后 Show；信息流按页面完成加载、渲染与挂载。无填充不能据此认定安装失败。
 
 若找不到 workspace，先确认终端目录；若依赖下载失败，先恢复网络并重试。资源缺失、重复符号和模块名问题见[安装排查](../docs/接入指南/安装与资源配置.md#安装失败排查)。
 
@@ -59,4 +53,4 @@ xcodebuild -workspace YSIFLYADLibSwiftPMSimple.xcworkspace \
 
 ## 版本维护
 
-此示例不会随仓库当前版本自动升级。更新依赖时同时更新工程、锁文件或资产摘要、同版资源及说明，并重新验证模拟器与设备架构。不得混用不同版本的库与资源。`示例来源.json` 记录本副本的 SDK Tag 和示例源码提交。
+发布时同步此示例的 SDK 依赖。更新依赖时同时更新工程、锁文件或资产摘要、同版资源及说明，并重新验证模拟器与设备架构。不得混用不同版本的库与资源。`示例来源.json` 记录示例源码来源和当前 SDK 依赖。

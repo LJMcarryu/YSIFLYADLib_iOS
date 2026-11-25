@@ -7,7 +7,7 @@ import PackageDescription
 
 let package = Package(
     name: "YSIFLYADLib",
-    // 6.5.5-beta.1 目标二进制继续按 iOS 11 构建；资源由资源 target 同步投递。
+    // 6.5.5 目标二进制继续按 iOS 11 构建；资源由资源 target 同步投递。
     platforms: [
         .iOS("11.0"),
     ],
@@ -17,8 +17,8 @@ let package = Package(
     targets: [
         .binaryTarget(
             name: "YSIFLYADLib",
-            url: "https://download-adsdk.voiceads.cn/ios_sdk/6.5.5-beta.1/ys/YSIFLYADLib.xcframework.zip",
-            checksum: "3d2a2f63ce426103271b86a33a696961997a907255496680189b4950efc0f5fd"
+            url: "https://download-adsdk.voiceads.cn/ios_sdk/6.5.5/ys/YSIFLYADLib.xcframework.zip",
+            checksum: "7c55f2a21cfb5a7bd68d724822428fe75fc7591081fc6e4f728ec339b2eb223d"
         ),
         .target(
             name: "YSIFLYADLibResources",

@@ -1,11 +1,11 @@
 # 版本说明
 
-## 当前版本：6.5.5-beta.1
+## 当前版本：6.5.5
 
 <!-- ifly-fast-release-notice:start -->
-当前版本：`6.5.5-beta.1`。接入示例的补充验证见[版本说明](README.md#655-beta1-版本说明)。
+当前版本：`6.5.5`。本版尚未完成安装、构建与广告展示验证，请先在宿主 App 中联调。
 
-<!-- ifly-release-status: {"version":"6.5.5-beta.1","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.5-beta.1/ys/fast-release-record.json"} -->
+<!-- ifly-release-status: {"version":"6.5.5","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.5/ys/fast-release-record.json"} -->
 
 <!-- ifly-fast-release-notice:end -->
 
@@ -13,4 +13,4 @@
 
 已发布版本的 Tag 与下载文件保持不变；修复通过新版本提供。
 
-线上接入文档仅保留[通用版](https://download-adsdk.voiceads.cn/general/)。定制版本请从合并资源包内 IntegrationGuide/README.md 开始阅读。
+本版线上[接入指南](https://download-adsdk.voiceads.cn/ys/)。

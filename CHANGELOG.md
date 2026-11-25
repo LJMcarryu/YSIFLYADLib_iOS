@@ -1,8 +1,18 @@
 # 更新日志
 
+## [6.5.5] - 发布说明
+
+<!-- ifly-release-status: {"version":"6.5.5","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.5/ys/fast-release-record.json"} -->
+
+本版提供开屏、Banner、插屏和自渲染信息流四种广告形式，不包含激励广告。
+
+从 `6.5.5-beta.1` 升级时，请移除激励广告入口及相关 API 调用，重新安装同版 SDK 和完整资源包后编译。历史 `6.5.5-beta.1` 的激励能力与验证记录仍归属该版本，不代表本版能力。
+
+本版尚未完成安装、构建与广告展示验证，请先在宿主 App 中联调。
+
 ## [6.5.5-beta.1] - 发布说明
 
-<!-- ifly-release-status: {"version":"6.5.5-beta.1","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.5-beta.1/ys/fast-release-record.json"} -->
+
 
 新增激励广告。main 上 CocoaPods、SwiftPM 和手动示例已同步到此版本并通过构建和模拟器启动检查。见[版本说明](README.md#655-beta1-版本说明)。
 
@@ -12,13 +22,13 @@
 
 修复自渲染信息流从横屏打开仅竖屏落地页时反复旋转的问题。使用默认方向配置的接入方无需新增适配；升级后请在宿主 App 中核对左右横屏进入落地页、关闭返回和前后台切换。
 
-新增激励广告。main 上 CocoaPods、SwiftPM 和手动示例已同步到此版本并通过构建和模拟器启动检查。见[版本说明](README.md#655-beta1-版本说明)。旧系统真机、真实媒体宿主及 Apple 审核仍需分别验证。
+旧系统真机、真实媒体宿主及 Apple 审核仍需分别验证。
 
 ## [6.5.3] - 发布说明
 
 
 
-新增激励广告。main 上 CocoaPods、SwiftPM 和手动示例已同步到此版本并通过构建和模拟器启动检查。见[版本说明](README.md#655-beta1-版本说明)。
+
 
 ## [6.5.3-beta.1] - 预发布候选
 
@@ -35,7 +45,7 @@
 
 优化广告展示与交互体验，调整请求处理与日志输出。
 
-新增激励广告。main 上 CocoaPods、SwiftPM 和手动示例已同步到此版本并通过构建和模拟器启动检查。见[版本说明](README.md#655-beta1-版本说明)。
+
 
 ## [6.5.1] - 发布说明
 
@@ -43,7 +53,7 @@
 
 
 
-新增激励广告。main 上 CocoaPods、SwiftPM 和手动示例已同步到此版本并通过构建和模拟器启动检查。见[版本说明](README.md#655-beta1-版本说明)。
+
 
 ## [6.5.0] - 更新说明
 
