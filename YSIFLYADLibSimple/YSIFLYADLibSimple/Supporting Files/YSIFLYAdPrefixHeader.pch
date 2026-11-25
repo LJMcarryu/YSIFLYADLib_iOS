@@ -29,4 +29,7 @@
 #define __FEED_VIDEO_AD_UNIT_ID__        @"3AE3AC7B093A4CC6A1E2F19CF16709FC"
 #define __INTERSTITIAL_AD_UNIT_ID__      @"22E131CFF097584531EAB3281C40769C"
 
+// 6.5.5-beta.1 激励版：填写平台分配给当前 App 的激励广告位。
+#define __REWARD_AD_UNIT_ID__            @""
+
 #endif /* YSIFLYAdPrefixHeader_pch */

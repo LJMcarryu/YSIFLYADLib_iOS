@@ -1,23 +1,29 @@
 # YS 广告接入示例
 
-本工程使用 `YSIFLYADLib 6.5.4`，演示开屏、Banner、插屏和自渲染信息流，支持信息流列表复用及视频素材。SDK 不包含激励广告。
+本工程使用 `YSIFLYADLib 6.5.5-beta.1`，演示开屏、Banner、插屏、自渲染信息流与激励广告，支持信息流列表复用及视频素材。支持激励广告（图片、视频）。
 
 先按本文运行和替换广告位；将能力接入自己的 App 时，参考[SDK 接入说明](../README.md)与各页面代码。
 
-本示例的 `Podfile` 固定版本为 `6.5.4`；窗口与 Scene 的接入条件见[广告加载与展示](../docs/接入指南/广告加载与展示.md#展示窗口与-scene)。
+本示例的 `Podfile` 固定版本为 `6.5.5-beta.1`；窗口与 Scene 的接入条件见[广告加载与展示](../docs/接入指南/广告加载与展示.md#展示窗口与-scene)。
+
+## 激励预发布版
+
+`6.5.5-beta.1` 新增图片与视频激励广告；本预发布版提供激励入口。使用对应 Tag 的同版本依赖后，含 `IFLYRewardVideoAd.h` 时首页显示“激励广告”。先在本副本 `YSIFLYADLibSimple/Supporting Files/YSIFLYAdPrefixHeader.pch` 填写 `__REWARD_AD_UNIT_ID__`，空值不会发起请求。
+
+操作为 `Load` → `DidReady` → `Show` → 奖励回调 / 关闭。页面仅记录奖励生效，不发放真实业务奖励；播放完成、失败和关闭不代替奖励生效回调。接入要求与源码见[激励指南](../docs/接入指南/广告加载与展示.md#激励广告655-beta1)。预发布版本尚未完成安装、构建与广告展示验证。
 
 ## 下载入口与版本
 
-无需 Git 时，可下载 [GitHub main 分支源码 ZIP](https://github.com/LJMcarryu/YSIFLYADLib_iOS/archive/refs/heads/main.zip)，解压后进入 `YSIFLYADLib_iOS-main/YSIFLYADLibSimple/`，再执行下方安装命令。不要只下载 `.xcodeproj`。使用 Git 的命令见下文；已有副本先确认本页与 Podfile 都固定 SDK `6.5.4`。
+无需 Git 时，可下载 [GitHub 6.5.5-beta.1 Tag 源码 ZIP](https://github.com/LJMcarryu/YSIFLYADLib_iOS/archive/refs/tags/6.5.5-beta.1.zip)，解压后进入 `YSIFLYADLib_iOS-6.5.5-beta.1/YSIFLYADLibSimple/`，再执行下方安装命令。不要只下载 `.xcodeproj`。使用 Git 的命令见下文；已有副本先确认本页与 Podfile 都固定 SDK `6.5.5-beta.1`。
 
-依赖安装后核对 `Podfile.lock` 中 `YSIFLYADLib` 为 `6.5.4`。版本找不到或锁文件冲突的处理见[安装指南](../docs/接入指南/安装与资源配置.md#cocoapods)。
+依赖安装后核对 `Podfile.lock` 中 `YSIFLYADLib` 为 `6.5.5-beta.1`。版本找不到或锁文件冲突的处理见[安装指南](../docs/接入指南/安装与资源配置.md#cocoapods)。
 
 ## 从下载到运行
 
 准备 macOS、Xcode、CocoaPods 和可访问 GitHub、CocoaPods 与 TOS 下载地址的网络。最低部署目标为 iOS 11.0。使用模拟器可检查安装、链接和页面；真实广告填充、跳转和 ATT 请用真机联调。
 
 ```bash
-git clone https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
+git clone --branch 6.5.5-beta.1 --single-branch https://github.com/LJMcarryu/YSIFLYADLib_iOS.git
 cd YSIFLYADLib_iOS/YSIFLYADLibSimple
 pod install
 open YSIFLYADLibSimple.xcworkspace
@@ -26,7 +32,7 @@ open YSIFLYADLibSimple.xcworkspace
 1. 在 Xcode 选择 `YSIFLYADLibSimple` scheme 和模拟器或已连接的 iPhone。
 2. 真机运行前，在 App target 的 **Signing & Capabilities** 选择自己的 Team；必要时将 Bundle Identifier 改为自己的标识。
 3. 按下文替换广告位，确认后台授权的 App 信息与当前 App 一致，然后运行。
-4. 首页应显示 `SDK Version: 6.5.4`。示例的 `Podfile` 固定使用 `6.5.4`，示例页面可以随本仓库更新。
+4. 首页应显示 `SDK Version: 6.5.5-beta.1`。示例的 `Podfile` 固定使用 `6.5.5-beta.1`，示例页面可以随本仓库更新。
 
 使用 CocoaPods 后始终打开 `.xcworkspace`。它自动加入 `YSAdvSDK.bundle`（含隐私清单）和 `-ObjC`；不需再手工嵌入静态 framework。其他安装方式见[SDK 接入说明](../docs/接入指南/安装与资源配置.md)。
 
@@ -74,13 +80,13 @@ SDK 不要求额外 App ID 初始化。广告位须与媒体获授权的 App 和
 
 构建成功、展示成功和线上有填充是不同层面的结果，可依次检查：
 
-1. **安装与启动**：`pod install` 成功，workspace 构建通过，App 首页显示的 SDK 版本与本示例 `Podfile` 固定版本一致，并有四种广告入口。
+1. **安装与启动**：`pod install` 成功，workspace 构建通过，App 首页显示的 SDK 版本与本示例 `Podfile` 固定版本一致，并有五种广告入口。
 2. **内置渲染**：加载后看到 `DidLoad`，随后 `DidReady`；点击 `Show` 后广告可见，日志有展示/曝光回调；关闭后页面可继续操作。
 3. **自渲染**：有 `nativeFeedAdDidLoad`，素材显示且挂载成功，进入有效可见状态后收到曝光回调；视频素材在曝光后按播放策略播放。
 4. **列表复用**：广告离屏再回屏能恢复；同一逻辑广告不重复触发曝光回调。换一条后旧图片或旧回调不应覆盖新广告。
 5. **交互与退出**：真机验证可点击素材的点击、跳转、返回；退出页面后不再展示该页广告。网络失败或无填充时应显示错误并允许主动重试。
 
-`DidLoad` 仅表示响应解析成功；开屏、Banner、插屏仍须等待 `DidReady`。信息流没有 Ready 回调，由媒体完成素材 UI 再 attach。收到失败回调且页面仍可操作，表示失败路径已执行，不能据此认定展示成功。
+`DidLoad` 仅表示响应解析成功；开屏、Banner、插屏、激励广告仍须等待 `DidReady`。信息流没有 Ready 回调，由媒体完成素材 UI 再 attach。收到失败回调且页面仍可操作，表示失败路径已执行，不能据此认定展示成功。
 
 ## 常见问题
 
@@ -101,4 +107,4 @@ SDK 不要求额外 App ID 初始化。广告位须与媒体获授权的 App 和
 
 ## 已验证范围
 
-2026-11-24，固定 SDK `6.5.4`，使用 Xcode 26.2 完成 Debug 的 iOS Simulator arm64 和 iOS 设备 arm64 构建，并核对依赖身份、链接符号、资源及隐私清单。设备架构构建关闭代码签名。未安装或运行 App，未验证广告加载、填充、展示、点击跳转、签名分发、x86_64 或 iOS 11 设备运行。
+本预发布版本尚未完成安装、构建与广告展示验证；须在实际宿主 App 中联调。历史版本的验证结果不适用于本预发布版本。

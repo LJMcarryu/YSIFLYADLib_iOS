@@ -10,6 +10,9 @@
 #import "YSIFLYNativeViewController.h"
 #import "YSIFLYSplashViewController.h"
 #import "ViewController.h"
+#if __has_include(<YSIFLYADLib/IFLYRewardVideoAd.h>)
+#import "YSIFLYRewardVideoViewController.h"
+#endif
 
 #import "YSIFLYADUtil.h"
 #import <YSIFLYADLib/YSIFLYADLib.h>
@@ -56,6 +59,9 @@
         @{@"title" : @"Banner 广告", @"selector" : @"bannerADTypeClick:"},
         @{@"title" : @"插屏广告", @"selector" : @"interstitialADTypeClick:"},
         @{@"title" : @"自渲染信息流", @"selector" : @"nativeADTypeClick:"},
+#if __has_include(<YSIFLYADLib/IFLYRewardVideoAd.h>)
+        @{@"title" : @"激励广告", @"selector" : @"rewardADTypeClick:"},
+#endif
     ];
 
     for (NSDictionary<NSString *, NSString *> *item in items) {
@@ -86,5 +92,11 @@
 - (void)interstitialADTypeClick:(UIButton *)sender {
     [self.navigationController pushViewController:YSIFLYInterstitialViewController.alloc.init animated:YES];
 }
+
+#if __has_include(<YSIFLYADLib/IFLYRewardVideoAd.h>)
+- (void)rewardADTypeClick:(UIButton *)sender {
+    [self.navigationController pushViewController:[[YSIFLYRewardVideoViewController alloc] init] animated:YES];
+}
+#endif
 
 @end

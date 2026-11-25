@@ -1,9 +1,9 @@
-# YS 定制 SDK：开屏、Banner、插屏和信息流（含视频）。
+# YS 媒体定制广告 SDK；具体能力以所用版本接入指南为准。
 
 Pod::Spec.new do |s|
   s.name     = 'YSIFLYADLib'
   s.version  = '6.5.4'
-  s.summary  = 'YSIFLYADLib —— YS 媒体定制广告 SDK（开屏/Banner/插屏/信息流，含视频，无激励）。'
+  s.summary  = 'YSIFLYADLib —— YS 媒体定制 iOS 广告 SDK。'
   s.homepage = 'https://github.com/LJMcarryu/YSIFLYADLib_iOS'
   s.author   = { 'LJMcarryu' => 'jmliu6@iflytek.com' }
   s.source   = { :http => 'https://download-adsdk.voiceads.cn/ios_sdk/6.5.4/ys/YSIFLYADLib-6.5.4.zip' }

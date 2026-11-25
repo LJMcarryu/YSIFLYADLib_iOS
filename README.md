@@ -7,27 +7,35 @@
 
 <!-- ifly-fast-release-notice:end -->
 
-`YSIFLYADLib` 为 YS 媒体提供 iOS 开屏、Banner、插屏和自渲染信息流广告；本仓库包含分发清单、接入指南与示例。
+`YSIFLYADLib` 为 YS 媒体提供 iOS 广告 SDK；本仓库包含分发清单、接入指南与示例，具体广告能力按版本区分。
 
 [指南目录](docs/接入指南/README.md) · [运行示例](YSIFLYADLibSimple/README.md) · [安装指南](docs/接入指南/安装与资源配置.md) · [广告接入](docs/接入指南/广告加载与展示.md) · [更新记录](CHANGELOG.md) · [隐私与网络](docs/接入指南/隐私与网络.md) · [支持说明](#隐私支持与许可) · [许可](LICENSE)
 
 ## 三种接入示例
 
-最新示例请从 [main 分支源码 ZIP](https://github.com/LJMcarryu/YSIFLYADLib_iOS/archive/refs/heads/main.zip) 下载并解压，或克隆 main；下面各 README 说明进入哪个目录及如何运行。接入自己的 App 请从[安装指南](docs/接入指南/安装与资源配置.md)开始，包含完整下载、资源来源、Xcode 配置和安装检查。
+最新示例请从 [6.5.5-beta.1 Tag 源码 ZIP](https://github.com/LJMcarryu/YSIFLYADLib_iOS/archive/refs/tags/6.5.5-beta.1.zip) 下载并解压，或克隆对应 Tag；下面各 README 说明进入哪个目录及如何运行。接入自己的 App 请从[安装指南](docs/接入指南/安装与资源配置.md)开始，包含完整下载、资源来源、Xcode 配置和安装检查。
 
 | 接入方式 | 独立示例 | 首次准备 |
 | --- | --- | --- |
 | CocoaPods | [YSIFLYADLibSimple](YSIFLYADLibSimple/README.md) | 在示例目录运行 `pod install` |
-| SwiftPM | [YSIFLYADLibSwiftPMSimple](YSIFLYADLibSwiftPMSimple/README.md) | 打开 workspace，解析远程 6.5.4 包 |
+| SwiftPM | [YSIFLYADLibSwiftPMSimple](YSIFLYADLibSwiftPMSimple/README.md) | 打开 workspace，解析远程 6.5.4 基线包 |
 | 手动集成 | [YSIFLYADLibManualSimple](YSIFLYADLibManualSimple/README.md) | 运行示例内 `准备SDK.py`，再打开 workspace |
 
-三种接入示例的依赖均固定为 SDK `6.5.4`；各方式的验证范围见对应示例 README，接入后仍需在实际宿主 App 中验证广告展示与业务流程。
+CocoaPods 示例的依赖以 Podfile 为准。SwiftPM 与手动独立示例仍固定 SDK `6.5.4`，其历史构建验证不适用于 beta；升级这些副本须同步依赖清单、锁文件和同版资源。各方式的验证范围见对应示例 README。
+
+## 6.5.5-beta.1 激励预发布版
+
+`6.5.5-beta.1` 在 YS 原有广告形式上增加激励广告，支持图片和视频素材。本预发布版本须显式指定版本接入；`6.5.4` 稳定版及其既有依赖不提供激励 API。安装步骤见[预发布接入](docs/接入指南/安装与资源配置.md#655-beta1-激励预发布接入)，奖励回调与清理见[激励广告](docs/接入指南/广告加载与展示.md#激励广告655-beta1)。
+
+三个示例已提供激励页面；使用含 `IFLYRewardVideoAd.h` 的 SDK 时显示激励入口。示例当前精确依赖版本见各自清单，体验预发布版须将其升级到 `6.5.5-beta.1`。先在 `YSIFLYAdPrefixHeader.pch` 配置 `__REWARD_AD_UNIT_ID__`，空值不会发起请求。
+
+本预发布版本尚未完成安装、构建与广告展示验证，请先在宿主 App 中联调。预发布源码请使用对应 Tag，不使用 main 作为 SDK 依赖版本。
 
 ## 能力与接入身份
 
 | 项目 | 说明 |
 | --- | --- |
-| 广告能力 | 开屏、Banner、插屏、自渲染信息流（单图、多图、视频）；不包含激励广告 |
+| 广告能力 | `6.5.5-beta.1`：开屏、Banner、插屏、自渲染信息流（单图、多图、视频）、激励广告（图片、视频）；历史 `6.5.4` 不含激励 |
 | CocoaPods product | `YSIFLYADLib` |
 | 代码模块 / 导入 | `YSIFLYADLib` / `#import <YSIFLYADLib/YSIFLYADLib.h>` |
 | 资源包 | `YSAdvSDK.bundle`，含 `PrivacyInfo.xcprivacy` |
@@ -42,19 +50,11 @@
 - 静态 XCFramework，包含设备与模拟器切片；App 最终链接需要 `-ObjC`，无需 **Embed & Sign**。
 - [环境与安装说明](docs/接入指南/安装与资源配置.md#环境要求)区分部署目标、清单要求与工具兼容范围。
 
-## 6.5.4 版本说明
+## 6.5.5-beta.1 版本说明
 
-修复自渲染信息流从横屏打开仅竖屏落地页时反复旋转的问题。使用默认方向配置的接入方无需新增适配；升级后请在宿主 App 中核对左右横屏进入落地页、关闭返回和前后台切换。
+新增图片和视频激励广告，原有开屏、Banner、插屏、自渲染信息流能力保留。安装与示例须精确指定 `6.5.5-beta.1`，资源使用同版本完整 bundle。
 
-本次快速发布未执行安装、构建与广告展示复验；旧系统真机、真实媒体宿主及 Apple 审核仍需分别验证。
-
-当前版本为 6.5.4；接入时将 Podfile 中的对应依赖精确指定为：
-
-```ruby
-pod 'YSIFLYADLib', '6.5.4'
-```
-
-保留既有资源与链接配置，重新执行 `pod install` 并检查 `Podfile.lock` 中的版本。SwiftPM 测试接入请选择 Exact Version `6.5.4`，不要使用浮动版本范围。
+本预发布版本尚未完成安装、构建与广告展示验证，请先在宿主 App 中联调；历史验证结果不适用于本版本。
 
 6.5.3 移除 `YSIFLYNativeFeedAdData.marketURL` 和 `YSIFLYNativeFeedAdData.downloadURL`。使用这些属性的接入方须移除访问并重新编译适配层。`targetURL` 仅表示落地页地址，不能等价替代已移除的商店或下载地址；点击和跳转继续由 SDK 处理。详情见[NativeFeed 迁移说明](docs/接入指南/广告加载与展示.md#653-迁移)。
 
@@ -68,7 +68,7 @@ platform :ios, '11.0'
 
 target 'YourApp' do
   use_frameworks!
-  pod 'YSIFLYADLib', '6.5.4'
+  pod 'YSIFLYADLib', '6.5.5-beta.1'
 end
 ```
 
@@ -83,7 +83,7 @@ open YourApp.xcworkspace
 
 ## 最小使用流程
 
-SDK 无需额外 App ID 初始化。完成宿主隐私流程，使用平台分配给当前 App 和广告形式的广告位，创建并强持有广告对象、设置 delegate，然后调用 `ysifly_loadAd`。开屏、Banner、插屏收到 Ready 后检查有效性、来源窗口与宿主展示时机，再调用展示方法；失败、结束或宿主放弃等待时继续业务并清理对象。成功展示后的下一次机会需新建对象。
+SDK 无需额外 App ID 初始化。完成宿主隐私流程，使用平台分配给当前 App 和广告形式的广告位，创建并强持有广告对象、设置 delegate，然后调用 `ysifly_loadAd`。开屏、Banner、插屏、激励广告收到 Ready 后检查有效性、来源窗口与宿主展示时机，再调用展示方法；失败、结束或宿主放弃等待时继续业务并清理对象。成功展示后的下一次机会需新建对象。
 
 完整普通请求示例、稍后展示与失败出口见[广告加载与展示](docs/接入指南/广告加载与展示.md)。NativeFeed 使用 DidLoad → 媒体渲染 → attach 流程，没有 Ready 回调；临时离屏按具体容器 detach，数据项继续持有同一广告。
 
@@ -94,6 +94,7 @@ SDK 无需额外 App ID 初始化。完成宿主隐私流程，使用平台分�
 | 图片 / 视频开屏 | [开屏广告](docs/接入指南/广告加载与展示.md#开屏广告) | [开屏页面](YSIFLYADLibSimple/YSIFLYADLibSimple/biz/splash/YSIFLYSplashViewController.m) |
 | Banner | [Banner 广告](docs/接入指南/广告加载与展示.md#banner-广告) | [Banner 页面](YSIFLYADLibSimple/YSIFLYADLibSimple/biz/banner/YSIFLYBannerViewController.m) |
 | 插屏 | [插屏广告](docs/接入指南/广告加载与展示.md#插屏广告) | [插屏页面](YSIFLYADLibSimple/YSIFLYADLibSimple/biz/interstitial/YSIFLYInterstitialViewController.m) |
+| 激励广告（`6.5.5-beta.1`） | [奖励回调与生命周期](docs/接入指南/广告加载与展示.md#激励广告655-beta1) | [激励页面](YSIFLYADLibSimple/YSIFLYADLibSimple/biz/reward/YSIFLYRewardVideoViewController.m) |
 | 自渲染信息流 | [素材、列表复用与外部 CTA](docs/接入指南/广告加载与展示.md#自渲染信息流) | [信息流页面](YSIFLYADLibSimple/YSIFLYADLibSimple/biz/native/YSIFLYNativeViewController.m) |
 
 普通广告无需服务端竞价；已开通媒体可查阅 [S2S 与 Header Bidding](docs/接入指南/竞价接入.md)。

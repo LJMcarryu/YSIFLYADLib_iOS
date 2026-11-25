@@ -2,6 +2,12 @@
 
 此独立示例固定使用 SDK `6.5.4`；仓库当前发布版本另见[根 README](../README.md)。工程包含与本仓 CocoaPods Demo 对应的广告示例页面，应用 Bundle Identifier 独立，可以分别安装对比。示例源码是生成时的独立副本。
 
+## 激励预发布版
+
+`6.5.5-beta.1` 新增图片与视频激励广告；本示例固定的 `6.5.4` 依赖不提供激励入口。使用对应 Tag 的同版本依赖后，含 `IFLYRewardVideoAd.h` 时首页显示“激励广告”。先在本副本 `YSIFLYADLibSimple/Supporting Files/YSIFLYAdPrefixHeader.pch` 填写 `__REWARD_AD_UNIT_ID__`，空值不会发起请求。
+
+操作为 `Load` → `DidReady` → `Show` → 奖励回调 / 关闭。页面仅记录奖励生效，不发放真实业务奖励；播放完成、失败和关闭不代替奖励生效回调。接入要求与源码见[激励指南](../docs/接入指南/广告加载与展示.md#激励广告655-beta1)。预发布版本尚未完成安装、构建与广告展示验证。
+
 ## 获取示例
 
 使用 [GitHub main 分支源码 ZIP](https://github.com/LJMcarryu/YSIFLYADLib_iOS/archive/refs/heads/main.zip)，解压后进入 `YSIFLYADLib_iOS-main/YSIFLYADLibManualSimple/`。不要只下载本页、`.xcodeproj` 或准备脚本，工程依赖同目录源码与资源。也可以从终端获取：
