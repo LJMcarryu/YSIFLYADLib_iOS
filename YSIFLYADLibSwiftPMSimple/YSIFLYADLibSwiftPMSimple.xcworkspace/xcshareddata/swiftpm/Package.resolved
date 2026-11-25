@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/LJMcarryu/YSIFLYADLib_iOS.git",
       "state" : {
-        "revision" : "14e70a7ca88d2eb7a8803846542bb2ef760cff72",
-        "version" : "6.5.4"
+        "revision" : "02f456849b372fdf05329f7ab30e986f99c8ecc6",
+        "version" : "6.5.5-beta.1"
       }
     }
   ],

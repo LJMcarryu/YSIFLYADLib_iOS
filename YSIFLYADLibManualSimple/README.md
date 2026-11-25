@@ -1,12 +1,12 @@
 # Manual 接入示例
 
-此独立示例固定使用 SDK `6.5.4`；仓库当前发布版本另见[根 README](../README.md)。工程包含与本仓 CocoaPods Demo 对应的广告示例页面，应用 Bundle Identifier 独立，可以分别安装对比。示例源码是生成时的独立副本。
+此独立示例固定使用 SDK `6.5.5-beta.1`；仓库当前发布版本另见[根 README](../README.md)。工程包含与本仓 CocoaPods Demo 对应的广告示例页面，应用 Bundle Identifier 独立，可以分别安装对比。示例源码是生成时的独立副本。
 
 ## 激励预发布版
 
-`6.5.5-beta.1` 新增图片与视频激励广告；本示例固定的 `6.5.4` 依赖不提供激励入口。使用对应 Tag 的同版本依赖后，含 `IFLYRewardVideoAd.h` 时首页显示“激励广告”。先在本副本 `YSIFLYADLibSimple/Supporting Files/YSIFLYAdPrefixHeader.pch` 填写 `__REWARD_AD_UNIT_ID__`，空值不会发起请求。
+`6.5.5-beta.1` 新增图片与视频激励广告；本示例已固定对应 Tag 的同版本依赖和资源，首页显示“激励广告”。先在本副本 `YSIFLYADLibSimple/Supporting Files/YSIFLYAdPrefixHeader.pch` 填写 `__REWARD_AD_UNIT_ID__`，空值不会发起请求。
 
-操作为 `Load` → `DidReady` → `Show` → 奖励回调 / 关闭。页面仅记录奖励生效，不发放真实业务奖励；播放完成、失败和关闭不代替奖励生效回调。接入要求与源码见[激励指南](../docs/接入指南/广告加载与展示.md#激励广告655-beta1)。预发布版本尚未完成安装、构建与广告展示验证。
+操作为 `Load` → `DidReady` → `Show` → 奖励回调 / 关闭。页面仅记录奖励生效，不发放真实业务奖励；播放完成、失败和关闭不代替奖励生效回调。接入要求与源码见[激励指南](../docs/接入指南/广告加载与展示.md#激励广告655-beta1)。预发布版本的本次构建检查见下方“已验证范围”；广告加载与展示仍须使用自己的广告位联调。
 
 ## 获取示例
 
@@ -17,7 +17,7 @@ git clone --branch main --single-branch https://github.com/LJMcarryu/YSIFLYADLib
 cd YSIFLYADLib_iOS/YSIFLYADLibManualSimple
 ```
 
-以下命令均在这个示例目录执行。已有仓库先确认使用最新 main，并检查本页声明的 SDK 版本；当前 main 的独立示例固定使用 `6.5.4`，历史 Tag 的示例不会随 main 更新。安装自己的 App 请按[安装指南](../docs/接入指南/安装与资源配置.md)操作。
+以下命令均在这个示例目录执行。已有仓库先确认使用最新 main，并检查本页声明的 SDK 版本；当前 main 的独立示例固定使用 `6.5.5-beta.1`，历史 Tag 的示例不会随 main 更新。安装自己的 App 请按[安装指南](../docs/接入指南/安装与资源配置.md)操作。
 
 ## 运行
 
@@ -49,13 +49,13 @@ xcodebuild -workspace YSIFLYADLibManualSimple.xcworkspace \
 
 ## 运行与排错
 
-构建成功后运行 App，首页应显示 SDK `6.5.4`。广告位宏、页面按钮顺序及回调观察见 [CocoaPods 示例的页面说明](../YSIFLYADLibSimple/README.md)；本副本中的对应源码仍位于 `YSIFLYADLibSimple/`，请修改本副本文件，不是另一示例的文件。内置格式等待 Ready 后 Show；信息流按页面完成加载、渲染与挂载。无填充不能据此认定安装失败。
+构建成功后运行 App，首页应显示 SDK `6.5.5-beta.1`。广告位宏、页面按钮顺序及回调观察见 [CocoaPods 示例的页面说明](../YSIFLYADLibSimple/README.md)；本副本中的对应源码仍位于 `YSIFLYADLibSimple/`，请修改本副本文件，不是另一示例的文件。内置格式等待 Ready 后 Show；信息流按页面完成加载、渲染与挂载。无填充不能据此认定安装失败。
 
 若找不到 workspace，先确认终端目录；若依赖下载失败，先恢复网络并重试。手动方式的 `--archive-dir` 接受 `sdk-artifacts.json` 指定的各模块 `.xcframework.zip`，不接受完整合包或资源 ZIP 代替。资源缺失、重复符号和模块名问题见[安装排查](../docs/接入指南/安装与资源配置.md#安装失败排查)。
 
 ## 已验证范围
 
-2026-11-24，固定 SDK `6.5.4`，使用 Xcode 26.2 完成 Debug 的 iOS Simulator arm64 和 iOS 设备 arm64 构建，并核对依赖身份、链接符号、资源及隐私清单。设备架构构建关闭代码签名。未安装或运行 App，未验证广告加载、填充、展示、点击跳转、签名分发、x86_64 或 iOS 11 设备运行。
+2026-11-25，固定 SDK `6.5.5-beta.1`，按远端 Tag（提交 `02f456849b372fdf05329f7ab30e986f99c8ecc6`）更新资产摘要与同版资源，并核对示例源码。实际运行 `python3 准备SDK.py --refresh` 完成下载及 SHA-256 校验，再次运行准备脚本成功复用 Vendor。使用 Xcode 26.2（Build `17C52`）通过本示例 workspace 完成 Debug 的 iOS Simulator arm64 和 iOS 设备 arm64 构建；两路 App 均核对激励类与发奖回调 selector、完整版本标识、62 个同版资源（含 36 个激励资源）及隐私清单。静态 SDK 未嵌入 App。设备架构构建关闭代码签名。另在 iOS 26.2 模拟器安装并启动 App，核对版本、进入激励页并验证空广告位 Load 提示。未验证广告加载、填充、展示、点击跳转、签名分发、x86_64 或 iOS 11 设备运行。
 
 ## 版本维护
 

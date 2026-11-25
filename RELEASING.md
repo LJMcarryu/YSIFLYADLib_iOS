@@ -3,7 +3,7 @@
 ## 当前版本：6.5.5-beta.1
 
 <!-- ifly-fast-release-notice:start -->
-当前版本：`6.5.5-beta.1`。本版尚未完成安装、构建与广告展示验证，请先在宿主 App 中联调。
+当前版本：`6.5.5-beta.1`。接入示例的补充验证见[版本说明](README.md#655-beta1-版本说明)。
 
 <!-- ifly-release-status: {"version":"6.5.5-beta.1","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.5-beta.1/ys/fast-release-record.json"} -->
 

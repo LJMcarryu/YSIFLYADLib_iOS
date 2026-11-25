@@ -1,7 +1,7 @@
 # YS 广告 iOS SDK
 
 <!-- ifly-fast-release-notice:start -->
-当前版本：`6.5.5-beta.1`。本版尚未完成安装、构建与广告展示验证，请先在宿主 App 中联调。
+当前版本：`6.5.5-beta.1`。三个示例的安装与构建结果见下方版本说明。
 
 <!-- ifly-release-status: {"version":"6.5.5-beta.1","status":"FAST_UNVERIFIED","distribution":"tos","releaseUrl":"https://download-adsdk.voiceads.cn/ios_sdk/6.5.5-beta.1/ys/fast-release-record.json"} -->
 
@@ -13,23 +13,23 @@
 
 ## 三种接入示例
 
-最新示例请从 [6.5.5-beta.1 Tag 源码 ZIP](https://github.com/LJMcarryu/YSIFLYADLib_iOS/archive/refs/tags/6.5.5-beta.1.zip) 下载并解压，或克隆对应 Tag；下面各 README 说明进入哪个目录及如何运行。接入自己的 App 请从[安装指南](docs/接入指南/安装与资源配置.md)开始，包含完整下载、资源来源、Xcode 配置和安装检查。
+三个示例请从 [main 分支源码 ZIP](https://github.com/LJMcarryu/YSIFLYADLib_iOS/archive/refs/heads/main.zip) 下载，或克隆 main。SDK 依赖固定到 `6.5.5-beta.1`。接入自己的 App 请从[安装指南](docs/接入指南/安装与资源配置.md)开始，包含完整下载、资源来源、Xcode 配置和安装检查。
 
 | 接入方式 | 独立示例 | 首次准备 |
 | --- | --- | --- |
 | CocoaPods | [YSIFLYADLibSimple](YSIFLYADLibSimple/README.md) | 在示例目录运行 `pod install` |
-| SwiftPM | [YSIFLYADLibSwiftPMSimple](YSIFLYADLibSwiftPMSimple/README.md) | 打开 workspace，解析远程 6.5.4 基线包 |
+| SwiftPM | [YSIFLYADLibSwiftPMSimple](YSIFLYADLibSwiftPMSimple/README.md) | 打开 workspace，解析固定版本 `6.5.5-beta.1` |
 | 手动集成 | [YSIFLYADLibManualSimple](YSIFLYADLibManualSimple/README.md) | 运行示例内 `准备SDK.py`，再打开 workspace |
 
-CocoaPods 示例的依赖以 Podfile 为准。SwiftPM 与手动独立示例仍固定 SDK `6.5.4`，其历史构建验证不适用于 beta；升级这些副本须同步依赖清单、锁文件和同版资源。各方式的验证范围见对应示例 README。
+发布时的 Tag 中，独立 SwiftPM 和手动示例仍固定在 `6.5.4`。main 已同步两个工程的版本、依赖记录和配套资源。
 
 ## 6.5.5-beta.1 激励预发布版
 
 `6.5.5-beta.1` 在 YS 原有广告形式上增加激励广告，支持图片和视频素材。本预发布版本须显式指定版本接入；`6.5.4` 稳定版及其既有依赖不提供激励 API。安装步骤见[预发布接入](docs/接入指南/安装与资源配置.md#655-beta1-激励预发布接入)，奖励回调与清理见[激励广告](docs/接入指南/广告加载与展示.md#激励广告655-beta1)。
 
-三个示例已提供激励页面；使用含 `IFLYRewardVideoAd.h` 的 SDK 时显示激励入口。示例当前精确依赖版本见各自清单，体验预发布版须将其升级到 `6.5.5-beta.1`。先在 `YSIFLYAdPrefixHeader.pch` 配置 `__REWARD_AD_UNIT_ID__`，空值不会发起请求。
+三个示例已提供激励页面；使用含 `IFLYRewardVideoAd.h` 的 SDK 时显示激励入口。main 上三个示例均已固定到该预发布版。先在 `YSIFLYAdPrefixHeader.pch` 配置 `__REWARD_AD_UNIT_ID__`，空值不会发起请求。
 
-本预发布版本尚未完成安装、构建与广告展示验证，请先在宿主 App 中联调。预发布源码请使用对应 Tag，不使用 main 作为 SDK 依赖版本。
+接入自己的 App 时，使用同版二进制和资源包，并配置分配给该 App 的激励广告位。
 
 ## 能力与接入身份
 
@@ -54,7 +54,7 @@ CocoaPods 示例的依赖以 Podfile 为准。SwiftPM 与手动独立示例仍�
 
 新增图片和视频激励广告，原有开屏、Banner、插屏、自渲染信息流能力保留。安装与示例须精确指定 `6.5.5-beta.1`，资源使用同版本完整 bundle。
 
-本预发布版本尚未完成安装、构建与广告展示验证，请先在宿主 App 中联调；历史验证结果不适用于本版本。
+三个示例已通过 Xcode 26.2 的 arm64 模拟器和设备架构构建。iOS 26.2 模拟器上均已确认版本号、激励页面和未配置广告位时的提示。iPhone 15 联调时，横版与竖版激励测试位均返回 `70204`（无有效广告内容），本次未验证播放和奖励回调。
 
 6.5.3 移除 `YSIFLYNativeFeedAdData.marketURL` 和 `YSIFLYNativeFeedAdData.downloadURL`。使用这些属性的接入方须移除访问并重新编译适配层。`targetURL` 仅表示落地页地址，不能等价替代已移除的商店或下载地址；点击和跳转继续由 SDK 处理。详情见[NativeFeed 迁移说明](docs/接入指南/广告加载与展示.md#653-迁移)。
 
